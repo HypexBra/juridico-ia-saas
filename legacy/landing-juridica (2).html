@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jurídico IA — Seu Estagiário Jurídico no WhatsApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0a1628;
+    --navy2:   #0f2040;
+    --navy3:   #162a52;
+    --gold:    #c9a84c;
+    --gold2:   #e8c96a;
+    --gold3:   #f5e0a0;
+    --ice:     #f0f4f8;
+    --ice2:    #e2eaf4;
+    --white:   #ffffff;
+    --muted:   #8a9ab5;
+    --green:   #22c55e;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--navy);
+    color: var(--ice);
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ─────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: .4;
+  }
+
+  /* ── NAV ────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 5%;
+    background: rgba(10,22,40,.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(201,168,76,.15);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: .75rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem; font-weight: 700;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    font-size: .85rem; font-weight: 500;
+    color: var(--muted); text-decoration: none;
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    padding: .55rem 1.25rem;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: var(--navy) !important;
+    font-weight: 600 !important;
+    border-radius: 8px;
+    transition: opacity .2s !important;
+  }
+  .nav-cta:hover { opacity: .85 !important; }
+
+  /* ── HERO ───────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8rem 5% 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,.12) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(22,42,82,.8) 0%, transparent 60%);
+  }
+
+  /* Linhas decorativas */
+  .hero-lines {
+    position: absolute; inset: 0; z-index: 0; overflow: hidden;
+  }
+  .hero-lines::before, .hero-lines::after {
+    content: '';
+    position: absolute;
+    border: 1px solid rgba(201,168,76,.08);
+    border-radius: 50%;
+  }
+  .hero-lines::before {
+    width: 900px; height: 900px;
+    top: 50%; left: 50%; transform: translate(-50%,-60%);
+  }
+  .hero-lines::after {
+    width: 600px; height: 600px;
+    top: 50%; left: 50%; transform: translate(-50%,-55%);
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .45rem 1rem;
+    border: 1px solid rgba(201,168,76,.3);
+    border-radius: 99px;
+    font-size: .78rem; font-weight: 500;
+    color: var(--gold2);
+    background: rgba(201,168,76,.08);
+    margin-bottom: 2rem;
+    position: relative; z-index: 1;
+  }
+
+  .hero-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(1.3); }
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.08;
+    text-align: center;
+    max-width: 900px;
+    position: relative; z-index: 1;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem; font-weight: 300; line-height: 1.7;
+    color: var(--muted); text-align: center; max-width: 580px;
+    position: relative; z-index: 1;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-actions {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    position: relative; z-index: 1;
+    margin-bottom: 4rem;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .875rem 2rem;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: var(--navy);
+    font-weight: 600; font-size: .95rem;
+    border-radius: 10px; text-decoration: none;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 8px 32px rgba(201,168,76,.25);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(201,168,76,.35); }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .875rem 2rem;
+    border: 1px solid rgba(255,255,255,.15);
+    color: var(--ice); font-size: .95rem;
+    border-radius: 10px; text-decoration: none;
+    transition: border-color .2s, background .2s;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.05); }
+
+  /* ── DEMO TERMINAL ──────────────────────────────────── */
+  .demo-wrap {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 760px;
+  }
+
+  .demo-glow {
+    position: absolute; inset: -40px;
+    background: radial-gradient(ellipse at center, rgba(201,168,76,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .demo-terminal {
+    background: rgba(15,32,64,.9);
+    border: 1px solid rgba(201,168,76,.2);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,.5);
+    backdrop-filter: blur(8px);
+  }
+
+  .demo-header {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .875rem 1.25rem;
+    background: rgba(0,0,0,.2);
+    border-bottom: 1px solid rgba(201,168,76,.1);
+  }
+
+  .demo-dots { display: flex; gap: .4rem; }
+  .demo-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .demo-dot:nth-child(1) { background: #ff5f57; }
+  .demo-dot:nth-child(2) { background: #febc2e; }
+  .demo-dot:nth-child(3) { background: #28c840; }
+
+  .demo-title {
+    font-size: .75rem; color: var(--muted); margin: 0 auto;
+    letter-spacing: .05em;
+  }
+
+  .demo-body { padding: 1.25rem; }
+
+  .demo-msg {
+    display: flex; align-items: flex-start; gap: .75rem;
+    margin-bottom: 1rem;
+  }
+
+  .demo-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: .85rem;
+  }
+
+  .demo-avatar.user { background: rgba(201,168,76,.2); }
+  .demo-avatar.ia   { background: rgba(22,42,82,1); border: 1px solid rgba(201,168,76,.3); }
+
+  .demo-bubble {
+    border-radius: 12px; padding: .75rem 1rem;
+    font-size: .82rem; line-height: 1.6; max-width: 90%;
+  }
+
+  .demo-bubble.user {
+    background: rgba(201,168,76,.12);
+    border: 1px solid rgba(201,168,76,.2);
+    color: var(--gold3);
+    margin-left: auto;
+  }
+
+  .demo-bubble.ia {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    color: var(--ice2);
+  }
+
+  .demo-bubble strong { color: var(--white); }
+
+  .typing-cursor {
+    display: inline-block; width: 2px; height: 14px;
+    background: var(--gold); margin-left: 2px; vertical-align: middle;
+    animation: blink .8s infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── STATS ──────────────────────────────────────────── */
+  .stats {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 1px; background: rgba(201,168,76,.1);
+    border-top: 1px solid rgba(201,168,76,.1);
+    border-bottom: 1px solid rgba(201,168,76,.1);
+  }
+
+  .stat {
+    padding: 2.5rem 2rem;
+    background: var(--navy);
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: .82rem; color: var(--muted); margin-top: .5rem;
+    font-weight: 400;
+  }
+
+  /* ── SECTIONS ───────────────────────────────────────── */
+  section { padding: 6rem 5%; }
+
+  .section-eyebrow {
+    font-size: .75rem; font-weight: 600; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.75rem);
+    font-weight: 700; line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .section-title em {
+    font-style: italic; color: var(--gold2);
+  }
+
+  .section-sub {
+    font-size: 1rem; color: var(--muted); line-height: 1.7;
+    max-width: 520px;
+  }
+
+  /* ── FUNCIONALIDADES ────────────────────────────────── */
+  .features { background: var(--navy); }
+
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 1.25rem; margin-top: 3.5rem;
+  }
+
+  .feature-card {
+    background: rgba(15,32,64,.6);
+    border: 1px solid rgba(201,168,76,.1);
+    border-radius: 16px; padding: 1.75rem;
+    transition: border-color .3s, transform .3s;
+    position: relative; overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,.4), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+
+  .feature-card:hover { border-color: rgba(201,168,76,.3); transform: translateY(-4px); }
+  .feature-card:hover::before { opacity: 1; }
+
+  .feature-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: rgba(201,168,76,.1);
+    border: 1px solid rgba(201,168,76,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 1.25rem;
+  }
+
+  .feature-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; font-weight: 700;
+    margin-bottom: .5rem; color: var(--white);
+  }
+
+  .feature-desc {
+    font-size: .85rem; color: var(--muted); line-height: 1.65;
+  }
+
+  /* ── COMO FUNCIONA ──────────────────────────────────── */
+  .how { background: var(--navy2); }
+
+  .how-steps {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+    gap: 2rem; margin-top: 3.5rem;
+    position: relative;
+  }
+
+  .how-steps::before {
+    content: '';
+    position: absolute; top: 28px; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,.3), transparent);
+  }
+
+  .step {
+    text-align: center; position: relative;
+  }
+
+  .step-num {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: var(--navy);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+    box-shadow: 0 8px 24px rgba(201,168,76,.3);
+  }
+
+  .step-title {
+    font-size: 1rem; font-weight: 600;
+    color: var(--white); margin-bottom: .5rem;
+  }
+
+  .step-desc {
+    font-size: .83rem; color: var(--muted); line-height: 1.6;
+  }
+
+  /* ── AREAS ──────────────────────────────────────────── */
+  .areas { background: var(--navy); }
+
+  .areas-grid {
+    display: flex; flex-wrap: wrap; gap: .75rem;
+    margin-top: 2.5rem;
+  }
+
+  .area-tag {
+    padding: .6rem 1.25rem;
+    border: 1px solid rgba(201,168,76,.2);
+    border-radius: 99px;
+    font-size: .82rem; color: var(--ice2);
+    background: rgba(201,168,76,.05);
+    transition: all .2s; cursor: default;
+  }
+
+  .area-tag:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,.12);
+    color: var(--gold2);
+  }
+
+  /* ── DEPOIMENTOS ────────────────────────────────────── */
+  .testimonials { background: var(--navy2); }
+
+  .testimonials-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
+    gap: 1.5rem; margin-top: 3.5rem;
+  }
+
+  .testimonial {
+    background: rgba(10,22,40,.8);
+    border: 1px solid rgba(201,168,76,.12);
+    border-radius: 16px; padding: 2rem;
+    position: relative;
+  }
+
+  .testimonial::before {
+    content: '"';
+    position: absolute; top: 1rem; right: 1.5rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem; line-height: 1;
+    color: rgba(201,168,76,.12);
+    pointer-events: none;
+  }
+
+  .testimonial-text {
+    font-size: .9rem; line-height: 1.75;
+    color: var(--ice2); margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+
+  .testimonial-author {
+    display: flex; align-items: center; gap: .875rem;
+  }
+
+  .testimonial-avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--navy3), var(--navy));
+    border: 2px solid rgba(201,168,76,.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+
+  .testimonial-name {
+    font-weight: 600; font-size: .88rem; color: var(--white);
+  }
+
+  .testimonial-role {
+    font-size: .75rem; color: var(--muted); margin-top: .15rem;
+  }
+
+  .stars { color: var(--gold); font-size: .85rem; margin-bottom: .75rem; }
+
+  /* ── PRICING ────────────────────────────────────────── */
+  .pricing { background: var(--navy); }
+
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 1.5rem; margin-top: 3.5rem; max-width: 960px; margin-inline: auto;
+    margin-top: 3.5rem;
+  }
+
+  .plan {
+    border-radius: 20px; padding: 2.5rem 2rem;
+    border: 1px solid rgba(201,168,76,.12);
+    background: rgba(15,32,64,.5);
+    position: relative; overflow: hidden;
+    transition: transform .3s;
+  }
+
+  .plan:hover { transform: translateY(-6px); }
+
+  .plan.featured {
+    border-color: rgba(201,168,76,.4);
+    background: rgba(22,42,82,.8);
+  }
+
+  .plan.featured::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+  }
+
+  .plan-badge {
+    display: inline-block;
+    padding: .25rem .75rem;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: var(--navy);
+    font-size: .7rem; font-weight: 700;
+    border-radius: 99px; letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+  }
+
+  .plan-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 700;
+    color: var(--white); margin-bottom: .5rem;
+  }
+
+  .plan-desc {
+    font-size: .82rem; color: var(--muted);
+    margin-bottom: 1.75rem; line-height: 1.6;
+  }
+
+  .plan-price {
+    margin-bottom: 2rem;
+  }
+
+  .plan-price .amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 900;
+    color: var(--white);
+  }
+
+  .plan-price .currency {
+    font-size: 1.2rem; vertical-align: super;
+    color: var(--gold);
+  }
+
+  .plan-price .period {
+    font-size: .82rem; color: var(--muted); margin-left: .25rem;
+  }
+
+  .plan-features {
+    list-style: none; display: flex; flex-direction: column; gap: .75rem;
+    margin-bottom: 2rem;
+  }
+
+  .plan-features li {
+    display: flex; align-items: center; gap: .625rem;
+    font-size: .85rem; color: var(--ice2);
+  }
+
+  .plan-features li::before {
+    content: '✓';
+    color: var(--gold); font-weight: 700; flex-shrink: 0;
+  }
+
+  .plan-features li.disabled {
+    color: var(--muted); opacity: .5;
+  }
+
+  .plan-features li.disabled::before { content: '—'; color: var(--muted); }
+
+  .plan-cta {
+    display: block; text-align: center;
+    padding: .875rem;
+    border-radius: 10px;
+    font-weight: 600; font-size: .9rem;
+    text-decoration: none;
+    transition: all .2s;
+  }
+
+  .plan-cta.primary {
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: var(--navy);
+    box-shadow: 0 8px 24px rgba(201,168,76,.25);
+  }
+
+  .plan-cta.primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(201,168,76,.35); }
+
+  .plan-cta.ghost {
+    border: 1px solid rgba(255,255,255,.15);
+    color: var(--ice);
+  }
+
+  .plan-cta.ghost:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.05); }
+
+  /* ── FAQ ────────────────────────────────────────────── */
+  .faq { background: var(--navy2); }
+
+  .faq-list {
+    max-width: 720px; margin: 3rem auto 0;
+    display: flex; flex-direction: column; gap: 1px;
+    background: rgba(201,168,76,.08);
+    border-radius: 16px; overflow: hidden;
+  }
+
+  .faq-item {
+    background: var(--navy2);
+    border-bottom: 1px solid rgba(201,168,76,.08);
+  }
+
+  .faq-item:last-child { border-bottom: none; }
+
+  .faq-q {
+    padding: 1.25rem 1.5rem;
+    font-weight: 500; font-size: .92rem;
+    color: var(--white); cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem;
+    user-select: none;
+  }
+
+  .faq-q:hover { color: var(--gold2); }
+
+  .faq-icon { flex-shrink: 0; font-size: 1.1rem; color: var(--gold); transition: transform .3s; }
+  .faq-item.open .faq-icon { transform: rotate(45deg); }
+
+  .faq-a {
+    max-height: 0; overflow: hidden;
+    transition: max-height .4s ease, padding .3s;
+    padding: 0 1.5rem;
+    font-size: .87rem; line-height: 1.75; color: var(--muted);
+  }
+
+  .faq-item.open .faq-a { max-height: 300px; padding: 0 1.5rem 1.25rem; }
+
+  /* ── CTA FINAL ──────────────────────────────────────── */
+  .cta-section {
+    padding: 7rem 5%;
+    text-align: center;
+    background: var(--navy);
+    position: relative; overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(201,168,76,.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 900; line-height: 1.1;
+    margin-bottom: 1.25rem; position: relative; z-index: 1;
+  }
+
+  .cta-section p {
+    font-size: 1rem; color: var(--muted); max-width: 480px;
+    margin: 0 auto 2.5rem; line-height: 1.7; position: relative; z-index: 1;
+  }
+
+  .cta-actions { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; position: relative; z-index: 1; }
+
+  .wpp-btn {
+    display: inline-flex; align-items: center; gap: .625rem;
+    padding: 1rem 2.25rem;
+    background: #25d366;
+    color: #fff; font-weight: 600; font-size: 1rem;
+    border-radius: 12px; text-decoration: none;
+    box-shadow: 0 8px 32px rgba(37,211,102,.25);
+    transition: transform .2s, box-shadow .2s;
+  }
+
+  .wpp-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(37,211,102,.35); }
+
+  /* ── FOOTER ─────────────────────────────────────────── */
+  footer {
+    padding: 3rem 5%;
+    border-top: 1px solid rgba(201,168,76,.1);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+    background: var(--navy);
+  }
+
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--white); font-weight: 700;
+  }
+
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { font-size: .8rem; color: var(--muted); text-decoration: none; }
+  .footer-links a:hover { color: var(--gold2); }
+
+  .footer-copy { font-size: .78rem; color: var(--muted); }
+
+  /* ── SCROLL REVEAL ──────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s, transform .7s; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ── RESPONSIVE ─────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .stats { grid-template-columns: 1fr; }
+    .how-steps::before { display: none; }
+    footer { flex-direction: column; text-align: center; }
+    .footer-links { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">⚖️</div>
+    Jurídico IA
+  </a>
+  <div class="nav-links">
+    <a href="#funcionalidades">Funcionalidades</a>
+    <a href="#como-funciona">Como funciona</a>
+    <a href="#depoimentos">Depoimentos</a>
+    <a href="#precos">Preços</a>
+    <a href="#faq">FAQ</a>
+    <a href="#contato" class="nav-cta">Começar agora</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-lines"></div>
+
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    IA jurídica ativa · Direito brasileiro
+  </div>
+
+  <h1>Seu estagiário jurídico <em>sempre disponível</em> no WhatsApp</h1>
+
+  <p class="hero-sub">
+    Petições, contratos, jurisprudência do STF e STJ, cálculos de verbas e análise de documentos — tudo produzido em segundos, direto no seu WhatsApp.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#contato" class="btn-primary">
+      <span>Testar gratuitamente</span>
+      <span>→</span>
+    </a>
+    <a href="#como-funciona" class="btn-ghost">Ver como funciona</a>
+  </div>
+
+  <!-- DEMO TERMINAL -->
+  <div class="demo-wrap">
+    <div class="demo-glow"></div>
+    <div class="demo-terminal">
+      <div class="demo-header">
+        <div class="demo-dots">
+          <div class="demo-dot"></div>
+          <div class="demo-dot"></div>
+          <div class="demo-dot"></div>
+        </div>
+        <div class="demo-title">⚖️ Assistente Jurídico IA · WhatsApp</div>
+      </div>
+      <div class="demo-body" id="demo-body">
+        <div class="demo-msg">
+          <div class="demo-avatar user">👨‍💼</div>
+          <div class="demo-bubble user">
+            Preciso de uma petição inicial trabalhista. Empregado dispensado sem justa causa após 3 anos, horas extras não pagas e FGTS não recolhido nos últimos 6 meses. Salário de R$ 4.200.
+          </div>
+        </div>
+        <div class="demo-msg" id="ia-msg" style="display:none">
+          <div class="demo-avatar ia">⚖️</div>
+          <div class="demo-bubble ia" id="ia-bubble"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat reveal">
+    <div class="stat-number">30+</div>
+    <div class="stat-label">Anos de jurisprudência treinada</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-number">2min</div>
+    <div class="stat-label">Para gerar uma petição completa</div>
+  </div>
+  <div class="stat reveal">
+    <div class="stat-number">10x</div>
+    <div class="stat-label">Mais rápido que a pesquisa manual</div>
+  </div>
+</div>
+
+<!-- FUNCIONALIDADES -->
+<section class="features" id="funcionalidades">
+  <div class="section-eyebrow">Funcionalidades</div>
+  <div class="section-title">Tudo que um escritório precisa, <em>num único número</em></div>
+  <div class="section-sub">Do recebimento do cliente à entrega da peça pronta — sem sair do WhatsApp.</div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">📄</div>
+      <div class="feature-title">Peças processuais completas</div>
+      <div class="feature-desc">Petição inicial, contestação, recursos, habeas corpus, mandado de segurança e mais — com fundamentação no CF, CC, CPC, súmulas e jurisprudência do STF/STJ.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔍</div>
+      <div class="feature-title">Jurisprudência em tempo real</div>
+      <div class="feature-desc">Busca automática de precedentes atualizados do STF, STJ e tribunais regionais ao elaborar cada peça, sem você precisar pesquisar.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📎</div>
+      <div class="feature-title">Análise de documentos</div>
+      <div class="feature-desc">Envie o PDF ou foto de um contrato, processo ou decisão diretamente pelo WhatsApp. A IA lê, extrai e analisa o conteúdo jurídico em segundos.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📝</div>
+      <div class="feature-title">Gera arquivo Word (DOCX)</div>
+      <div class="feature-desc">Solicite a peça em Word e ela chega formatada em padrão ABNT direto no seu WhatsApp — pronta para assinar e protocolar.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⏰</div>
+      <div class="feature-title">Controle de prazos</div>
+      <div class="feature-desc">Cadastre prazos processuais e receba lembretes automáticos 7, 3 e 1 dia antes do vencimento — direto no WhatsApp, sem precisar de agenda.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">👥</div>
+      <div class="feature-title">Triagem de clientes externos</div>
+      <div class="feature-desc">Clientes descrevem o caso pelo WhatsApp. A IA faz a triagem, gera um resumo jurídico estruturado e notifica o advogado — tudo automaticamente.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🧮</div>
+      <div class="feature-title">Cálculos detalhados</div>
+      <div class="feature-desc">Verbas rescisórias, horas extras, pensão alimentícia, indenizações — com fórmulas, etapas e tabelas explicadas passo a passo.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📚</div>
+      <div class="feature-title">Biblioteca de modelos</div>
+      <div class="feature-desc">Salve os templates aprovados pelo escritório. A IA adapta cada modelo ao caso concreto, mantendo o padrão e a linguagem da banca.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Painel de gestão completo</div>
+      <div class="feature-desc">Dashboard web com histórico de conversas, fichas de clientes, tags por área, busca global, controle de custos e exportação em PDF.</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section class="how" id="como-funciona">
+  <div class="section-eyebrow">Como funciona</div>
+  <div class="section-title">Do caso à peça em <em>quatro passos</em></div>
+
+  <div class="how-steps">
+    <div class="step reveal">
+      <div class="step-num">1</div>
+      <div class="step-title">Descreva o caso</div>
+      <div class="step-desc">Envie os fatos, partes envolvidas e o que você precisa — em linguagem natural, sem formulários.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">2</div>
+      <div class="step-title">A IA analisa</div>
+      <div class="step-desc">Em segundos, identifica as questões jurídicas, legislação aplicável e busca jurisprudência atualizada.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">3</div>
+      <div class="step-title">Recebe a peça</div>
+      <div class="step-desc">Análise completa (I a IX), minuta da peça, pedidos, fundamentação e documentos necessários chegam no chat.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">4</div>
+      <div class="step-title">Revisa e assina</div>
+      <div class="step-desc">Você revisa, ajusta se necessário e protocola. O arquivo Word já vem formatado para assinar.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ÁREAS -->
+<section class="areas" id="areas">
+  <div class="section-eyebrow">Abrangência</div>
+  <div class="section-title">Todas as <em>áreas do Direito</em> brasileiro</div>
+  <div class="areas-grid">
+    <span class="area-tag">⚖️ Direito Civil</span>
+    <span class="area-tag">👷 Direito Trabalhista</span>
+    <span class="area-tag">🔒 Direito Penal</span>
+    <span class="area-tag">💰 Direito Tributário</span>
+    <span class="area-tag">🏛️ Direito Constitucional</span>
+    <span class="area-tag">🛒 Direito do Consumidor</span>
+    <span class="area-tag">👨‍👩‍👧 Direito de Família</span>
+    <span class="area-tag">📋 Direito Administrativo</span>
+    <span class="area-tag">🏢 Direito Empresarial</span>
+    <span class="area-tag">🧓 Direito Previdenciário</span>
+    <span class="area-tag">🔐 LGPD</span>
+    <span class="area-tag">🏠 Direito Imobiliário</span>
+    <span class="area-tag">💊 Direito da Saúde</span>
+    <span class="area-tag">🌐 Direito Digital</span>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section class="testimonials" id="depoimentos">
+  <div class="section-eyebrow">Depoimentos</div>
+  <div class="section-title">O que dizem os <em>advogados que usam</em></div>
+
+  <div class="testimonials-grid">
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-text">
+        "Reduzi em 70% o tempo que gastava montando petições trabalhistas. A fundamentação que o assistente entrega é tão sólida que meus clientes perguntam se contratei um especialista."
+      </div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">👩‍⚖️</div>
+        <div>
+          <div class="testimonial-name">Dra. Mariana Costa</div>
+          <div class="testimonial-role">Advogada trabalhista · São Paulo/SP</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-text">
+        "Uso a triagem de clientes e o painel para acompanhar tudo. Antes eu perdia casos por falta de tempo para atender — agora o bot faz a primeira escuta e me entrega o resumo pronto."
+      </div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">👨‍⚖️</div>
+        <div>
+          <div class="testimonial-name">Dr. Rafael Mendonça</div>
+          <div class="testimonial-role">Advogado cível · Belo Horizonte/MG</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial reveal">
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-text">
+        "A função de análise de contrato me salvou numa negociação. Mandei o PDF e em 2 minutos tinha uma lista completa das cláusulas abusivas com sugestão de redação alternativa."
+      </div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">👩‍💼</div>
+        <div>
+          <div class="testimonial-name">Dra. Fernanda Lima</div>
+          <div class="testimonial-role">Advogada empresarial · Curitiba/PR</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="precos">
+  <div class="section-eyebrow" style="text-align:center">Planos</div>
+  <div class="section-title" style="text-align:center">Investimento que <em>se paga na primeira peça</em></div>
+
+  <div class="pricing-grid">
+    <div class="plan reveal">
+      <div class="plan-name">Essencial</div>
+      <div class="plan-desc">Para advogados autônomos que querem ganhar velocidade sem complicação.</div>
+      <div class="plan-price">
+        <span class="currency">R$</span>
+        <span class="amount">297</span>
+        <span class="period">/mês</span>
+      </div>
+      <ul class="plan-features">
+        <li>1 número de WhatsApp</li>
+        <li>Peças processuais ilimitadas</li>
+        <li>Análise de PDF e imagem</li>
+        <li>Cálculo de verbas</li>
+        <li>Painel de histórico</li>
+        <li class="disabled">Triagem de clientes externos</li>
+        <li class="disabled">Geração de DOCX</li>
+        <li class="disabled">Controle de prazos</li>
+      </ul>
+      <a href="#contato" class="plan-cta ghost">Começar agora</a>
+    </div>
+
+    <div class="plan featured reveal">
+      <div class="plan-badge">Mais popular</div>
+      <div class="plan-name">Profissional</div>
+      <div class="plan-desc">Para escritórios que querem o sistema completo com triagem de clientes e gestão.</div>
+      <div class="plan-price">
+        <span class="currency">R$</span>
+        <span class="amount">697</span>
+        <span class="period">/mês</span>
+      </div>
+      <ul class="plan-features">
+        <li>Até 5 números de WhatsApp</li>
+        <li>Peças processuais ilimitadas</li>
+        <li>Análise de PDF e imagem</li>
+        <li>Cálculo de verbas</li>
+        <li>Painel completo de gestão</li>
+        <li>Triagem de clientes externos</li>
+        <li>Geração de DOCX (Word)</li>
+        <li>Controle de prazos + lembretes</li>
+        <li>Biblioteca de modelos</li>
+        <li>Dashboard financeiro</li>
+      </ul>
+      <a href="#contato" class="plan-cta primary">Começar agora</a>
+    </div>
+
+    <div class="plan reveal">
+      <div class="plan-name">Escritório</div>
+      <div class="plan-desc">Para bancas com equipe maior, múltiplos advogados e demanda intensa.</div>
+      <div class="plan-price">
+        <span class="amount" style="font-size:2rem;color:var(--gold2)">Sob consulta</span>
+      </div>
+      <ul class="plan-features">
+        <li>Números ilimitados</li>
+        <li>Onboarding dedicado</li>
+        <li>Personalização do sistema</li>
+        <li>Integração com sistemas do escritório</li>
+        <li>SLA e suporte prioritário</li>
+        <li>Relatórios personalizados</li>
+      </ul>
+      <a href="#contato" class="plan-cta ghost">Falar com consultor</a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="section-eyebrow" style="text-align:center">Dúvidas</div>
+  <div class="section-title" style="text-align:center">Perguntas <em>frequentes</em></div>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q">A IA inventa leis ou jurisprudência? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Não. O sistema é instruído a nunca inventar artigos, súmulas ou precedentes. Quando há incerteza, ele sinaliza claramente e indica o que precisa ser verificado. Além disso, ele busca jurisprudência em tempo real nos repositórios do STF e STJ ao elaborar as peças.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Precisa ter conhecimento técnico para usar? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Não. Basta descrever o caso em linguagem natural no WhatsApp, como você faria com um colega. O sistema possui menu guiado que orienta passo a passo para quem prefere mais estrutura.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">As peças substituem a revisão do advogado? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Não, e o sistema é claro sobre isso. Ele funciona como um estagiário de alto nível que produz a minuta — o advogado sempre revisa, ajusta e assina. Isso reduz drasticamente o tempo de produção, mas não elimina o controle profissional.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Os dados dos clientes ficam seguros? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. Todas as conversas são criptografadas e armazenadas em banco de dados privado (PostgreSQL), acessível apenas pelo painel com login e senha do escritório. Os dados nunca são usados para treinar modelos de IA.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Funciona com qualquer número de WhatsApp? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Funciona com WhatsApp Business. O sistema se integra via Z-API, que é uma das soluções mais estáveis do mercado para automação do WhatsApp Business no Brasil.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Posso testar antes de assinar? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Sim. Oferecemos 7 dias de teste gratuito com acesso completo ao plano Profissional. Basta preencher o formulário de contato abaixo.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section" id="contato">
+  <h2>Pronto para ter um estagiário<br><em>que nunca dorme?</em></h2>
+  <p>Teste gratuitamente por 7 dias. Sem cartão de crédito. Configure em menos de 1 hora.</p>
+  <div class="cta-actions">
+    <a href="https://wa.me/5511999999999?text=Olá!%20Quero%20testar%20o%20Jurídico%20IA" class="wpp-btn" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Começar teste grátis
+    </a>
+    <a href="#funcionalidades" class="btn-ghost">Ver funcionalidades</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">⚖️ Jurídico IA</div>
+  <div class="footer-links">
+    <a href="#">Termos de uso</a>
+    <a href="#">Privacidade</a>
+    <a href="#">Suporte</a>
+    <a href="#">Contato</a>
+  </div>
+  <div class="footer-copy">© 2025 Jurídico IA. Todos os direitos reservados.</div>
+</footer>
+
+<script>
+// ── TYPING ANIMATION ─────────────────────────────────────────────────
+const texto = `✅ *I — RESUMO DO CASO*
+Reclamação trabalhista — dispensa sem justa causa após 3 anos. Horas extras não pagas + FGTS não recolhido (6 meses).
+
+*II — QUESTÕES JURÍDICAS*
+• Horas extras habituais (art. 59, CLT + art. 7º, XVI, CF)
+• FGTS em atraso — multa de 40% (Lei 8.036/90)
+• Verbas rescisórias em atraso — multa art. 477, §8º, CLT
+
+*III — JURISPRUDÊNCIA*
+Súmula 338, TST: ônus do empregador comprovar ponto.
+Súmula 461, TST: depósito FGTS é ônus do empregador.
+
+*VI — ESTRATÉGIA RECOMENDADA*
+Ajuizar reclamação com tutela de urgência para liberação do FGTS. Valor estimado: R$ 68.400,00
+
+📄 *Deseja que eu gere a petição inicial completa em Word?*`;
+
+let index  = 0;
+let iniciou = false;
+
+function iniciarDemo() {
+  if (iniciou) return;
+  iniciou = true;
+  setTimeout(() => {
+    document.getElementById('ia-msg').style.display = 'flex';
+    const bubble = document.getElementById('ia-bubble');
+    bubble.innerHTML = '<span class="typing-cursor"></span>';
+    setTimeout(() => digitar(bubble), 300);
+  }, 1200);
+}
+
+function digitar(el) {
+  if (index < texto.length) {
+    const char = texto[index];
+    const cursor = el.querySelector('.typing-cursor');
+    const span = document.createTextNode(char === '\n' ? '' : char);
+    if (char === '\n') {
+      el.insertBefore(document.createElement('br'), cursor);
+    } else {
+      el.insertBefore(span, cursor);
+    }
+    index++;
+    setTimeout(() => digitar(el), char === '\n' ? 40 : 18);
+  }
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      if (e.target.closest('.hero') || e.target === document.querySelector('.demo-wrap')) {
+        iniciarDemo();
+      }
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Inicia demo quando hero fica visível
+const demoWrap = document.querySelector('.demo-wrap');
+if (demoWrap) observer.observe(demoWrap);
+setTimeout(iniciarDemo, 2000); // fallback
+
+// ── FAQ ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.addEventListener('click', () => {
+    const item = q.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+</script>
+</body>
+</html>
