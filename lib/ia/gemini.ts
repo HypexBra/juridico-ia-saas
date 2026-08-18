@@ -13,6 +13,15 @@ const MODELO_PRO = "gemini-2.5-pro";
 const PALAVRAS_TAREFA_COMPLEXA =
   /\b(peti[cç][aã]o|minuta|contesta[cç][aã]o|recurso|apela[cç][aã]o|agravo|parecer|contrato completo|embargos)\b/i;
 
+// Teto explícito de tokens de saída por chamada. Sem isso, o modelo usa o
+// limite máximo default (8192 no Flash, 65536 no Pro) em QUALQUER resposta,
+// inclusive uma saudação de uma palavra — o teto aqui é só uma rede de
+// segurança contra runaway generation; o comportamento normal (resposta
+// curta pra "oi", longa pra pedido de peça) já deve vir do SYSTEM_PROMPT
+// (ver lib/ia/system-prompt.ts, seção "PROPORCIONALIDADE DA RESPOSTA").
+const MAX_OUTPUT_TOKENS_FLASH = 4096;
+const MAX_OUTPUT_TOKENS_PRO = 8192;
+
 function escolherModelo(ultimaMensagem: string): string {
   if (ultimaMensagem.length > 1500 || PALAVRAS_TAREFA_COMPLEXA.test(ultimaMensagem)) {
     return MODELO_PRO;
@@ -20,11 +29,26 @@ function escolherModelo(ultimaMensagem: string): string {
   return MODELO_FLASH;
 }
 
+function maxOutputTokensPara(modelo: string): number {
+  return modelo === MODELO_PRO ? MAX_OUTPUT_TOKENS_PRO : MAX_OUTPUT_TOKENS_FLASH;
+}
+
 const MAX_TENTATIVAS = 3;
 const BASE_DELAY_MS = 600;
+// 429 aqui é quota/rate-limit da API do Gemini, não uma falha de rede
+// pontual: retry rápido em cima de rate-limit só empilha mais chamadas
+// contra uma janela de quota já estourada, piorando o problema em vez de
+// resolvê-lo. Backoff bem mais longo (mín. 15s) dá tempo da janela de quota
+// (tipicamente por minuto) resetar antes da próxima tentativa.
+const BASE_DELAY_MS_QUOTA = 15_000;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isErroDeQuota(erro: unknown): boolean {
+  const mensagem = erro instanceof Error ? erro.message : String(erro);
+  return /429|quota|rate.?limit/i.test(mensagem);
 }
 
 function isErroTransiente(erro: unknown): boolean {
@@ -69,6 +93,7 @@ export async function gerarResposta(
     model: modeloEscolhido,
     systemInstruction: `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
     tools: opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : undefined,
+    generationConfig: { maxOutputTokens: maxOutputTokensPara(modeloEscolhido) },
   });
 
   const chat = model.startChat({
@@ -97,8 +122,15 @@ export async function gerarResposta(
       };
     } catch (erro) {
       ultimoErro = erro;
-      if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1) throw erro;
-      await delay(BASE_DELAY_MS * 2 ** tentativa);
+      const deQuota = isErroDeQuota(erro);
+      // 429 de quota: no máximo UMA retentativa (a chamada seguinte já
+      // esgotada de novo em <1s não ajuda em nada) e com backoff longo, pra
+      // dar chance da janela de rate-limit da API resetar. Demais erros
+      // transientes (rede/5xx) mantêm o backoff exponencial curto original.
+      if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
+        throw erro;
+      }
+      await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
     }
   }
   throw ultimoErro;
