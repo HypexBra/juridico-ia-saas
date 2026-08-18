@@ -2,6 +2,16 @@
 
 Estado em 2026-08-18. Repo: `pedrohenriquesanchesleal4-debug/juridico-ia-saas`.
 Branch de trabalho atual: **`staging`** (não é a `main`/prod — Vercel deploya `main`, então nada aqui vai pro ar sozinho até um merge explícito pedido pelo dono do produto).
+`staging` diverge de `main` exatamente no commit `07dd211`.
+
+## 0. Já em produção (main, commit `07dd211`)
+
+- Mobile responsivo (sidebar drawer) + correção ortográfica.
+- Copiloto jurídico com RAG (Gemini + pgvector) e fluxo de propostas com aprovação humana.
+- Fix de performance (dedup de `auth.getUser()` por request).
+- Motion v1 na landing (GSAP) — **usuário rejeitou o resultado visual**, pediu redesign (ver seção 2).
+- Prazo automático via DJEN, portal do cliente, financeiro/honorários, assinatura eletrônica (Autentique), link "Meu perfil" (OAB) na sidebar.
+- Todas as migrations `0001` a `0007` já rodadas no Supabase pelo usuário.
 
 ## 1. Configuração pendente (usuário precisa fazer)
 
@@ -34,9 +44,9 @@ Usuário pediu explicitamente ("pode botar essas 6") as 6 features sugeridas:
 2. Depois, disparar implementação em paralelo por feature, cada uma em arquivos separados (só cuidado: WhatsApp e lembrete de prazo/parcela podem tocar os mesmos arquivos de prazos/financeiro — sequenciar essas duas ou isolar em helper, como foi feito com notificação do portal).
 3. Ao final de cada leva: eu mesmo validar `npx eslint` + `npx next build` no conjunto todo antes de commitar (os agentes concorrentes não compartilham verificação entre si).
 
-## 4. Entregável pendente
+## 4. Entregável concluído
 
-- **Dossiê comercial** (documento pra vender o produto) foi escrito em HTML e estava prestes a ser publicado como Artifact quando a sessão foi interrompida — conteúdo cobre: problema de mercado (com fontes), os 6 módulos já entregues, diferenciais vs. concorrentes (Astrea/Projuris), segurança/confiança, e roadmap (as 6 features acima). Se o arquivo não estiver mais disponível no scratchpad, recriar é rápido — todo o conteúdo/estrutura está descrito aqui.
+- **Dossiê comercial** publicado: https://claude.ai/code/artifact/0a01e5e5-1612-453a-928e-9893aa3d33b5 — cobre problema de mercado (com fontes), os 6 módulos já entregues, diferenciais vs. concorrentes (Astrea/Projuris), segurança/confiança, e roadmap (as 6 features da seção 3). Privado por padrão — usuário precisa compartilhar pelo menu da própria página se quiser mandar pra terceiros. Pra atualizar depois (ex: quando as 6 features novas saírem do roadmap e virarem módulo entregue), republicar passando `url` desse mesmo link.
 
 ## 5. Lembretes de processo (já validados com o usuário nesta sessão)
 
