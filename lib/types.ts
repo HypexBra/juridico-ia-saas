@@ -109,6 +109,27 @@ export type FichaCaso = {
   questoes_ia: string | null;
   estrategia_ia: string | null;
   lida: boolean;
+  nivel_risco: "baixo" | "medio" | "alto" | null;
+  risco_calculado_em: string | null;
+  criado_em: string;
+};
+
+export type StatusLeadTriagem = "novo" | "em_analise" | "convertido" | "descartado";
+
+export type LeadTriagemPublica = {
+  id: string;
+  escritorio_id: string;
+  nome: string;
+  telefone: string | null;
+  email: string | null;
+  relato: string;
+  tipo_caso_ia: string | null;
+  urgencia_ia: "baixa" | "normal" | "alta" | null;
+  viabilidade_ia: "baixa" | "media" | "alta" | null;
+  resumo_ia: string | null;
+  status: StatusLeadTriagem;
+  ficha_caso_id: string | null;
+  ip_origem: string | null;
   criado_em: string;
 };
 

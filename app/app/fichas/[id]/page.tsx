@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GerarAnaliseButton } from "@/components/app/gerar-analise-button";
+import { GerarRiscoButton } from "@/components/app/gerar-risco-button";
 import { FichaLidaToggle } from "@/components/app/ficha-lida-toggle";
 import { ExcluirFichaButton } from "@/components/app/excluir-ficha-button";
 import { MarkdownLite } from "@/components/app/markdown-lite";
@@ -15,6 +16,18 @@ const URGENCIA_TONE = {
   alta: "red",
   normal: "gold",
   baixa: "muted",
+} as const;
+
+const RISCO_TONE = {
+  alto: "red",
+  medio: "gold",
+  baixo: "green",
+} as const;
+
+const RISCO_LABEL = {
+  alto: "Alto",
+  medio: "Médio",
+  baixo: "Baixo",
 } as const;
 
 export default async function FichaDetalhePage({ params }: PageProps<"/app/fichas/[id]">) {
@@ -60,6 +73,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={URGENCIA_TONE[ficha.urgencia]}>Urgência {ficha.urgencia}</Badge>
+            {ficha.nivel_risco && (
+              <Badge tone={RISCO_TONE[ficha.nivel_risco]}>Risco {RISCO_LABEL[ficha.nivel_risco]}</Badge>
+            )}
             {!ficha.lida && <Badge tone="blue">Não lida</Badge>}
           </div>
         </div>
@@ -109,6 +125,29 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
                 </h3>
                 <MarkdownLite texto={ficha.estrategia_ia} />
               </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-center justify-between">
+          <CardTitle>Score de risco do caso</CardTitle>
+          <GerarRiscoButton fichaId={ficha.id} jaTemRisco={Boolean(ficha.nivel_risco)} />
+        </div>
+
+        {!ficha.nivel_risco ? (
+          <p className="text-sm text-muted">
+            Nenhum score calculado ainda. Clique em &quot;Calcular risco do caso&quot; para que a IA avalie o nível
+            de risco com base nos dados já registrados na ficha.
+          </p>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Badge tone={RISCO_TONE[ficha.nivel_risco]}>Risco {RISCO_LABEL[ficha.nivel_risco]}</Badge>
+            {ficha.risco_calculado_em && (
+              <span className="text-xs text-muted">
+                Calculado em {new Date(ficha.risco_calculado_em).toLocaleDateString("pt-BR")}
+              </span>
             )}
           </div>
         )}

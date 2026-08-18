@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, type FunctionCall } from "@google/generative-ai";
+import { GoogleGenAI, type FunctionCall, type Schema } from "@google/genai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { RAG_TOOLING_PROMPT } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
@@ -7,20 +7,39 @@ import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
 // perguntas (dúvida pontual, resumo curto); PRO entra só quando o pedido tem
 // cara de peça/minuta completa (produção longa e fundamentada, onde a
 // qualidade de raciocínio jurídico compensa o custo/latência maior).
-const MODELO_FLASH = "gemini-2.0-flash";
-const MODELO_PRO = "gemini-2.5-pro";
+//
+// Nomes de modelo (revisar periodicamente — o Google descontinua modelos sem
+// aviso prévio longo; "gemini-2.0-flash"/"gemini-2.5-pro"/"text-embedding-004"
+// pararam de responder de um dia pro outro e foi a causa raiz do chat ficar
+// indisponível). Usamos o alias "-latest" propositalmente: aponta sempre para
+// a versão atual recomendada pelo Google, então uma migração de geração (ex:
+// 3.6 -> 3.7) não quebra o app de novo sem aviso. "gemini-pro-latest" NÃO é
+// usado aqui porque a cota da chave de API atual pra modelos Pro se esgota
+// quase imediatamente (testado: 429 já na segunda chamada) — até validar um
+// plano pago, tarefa complexa também usa o modelo flash, só com teto de saída
+// e orçamento de raciocínio maiores.
+const MODELO_FLASH = "gemini-flash-latest";
+const MODELO_PRO = "gemini-flash-latest";
 
 const PALAVRAS_TAREFA_COMPLEXA =
   /\b(peti[cç][aã]o|minuta|contesta[cç][aã]o|recurso|apela[cç][aã]o|agravo|parecer|contrato completo|embargos)\b/i;
 
-// Teto explícito de tokens de saída por chamada. Sem isso, o modelo usa o
-// limite máximo default (8192 no Flash, 65536 no Pro) em QUALQUER resposta,
-// inclusive uma saudação de uma palavra — o teto aqui é só uma rede de
-// segurança contra runaway generation; o comportamento normal (resposta
-// curta pra "oi", longa pra pedido de peça) já deve vir do SYSTEM_PROMPT
-// (ver lib/ia/system-prompt.ts, seção "PROPORCIONALIDADE DA RESPOSTA").
+// Teto explícito de tokens de SAÍDA VISÍVEL (resposta de texto) por chamada.
+// Não inclui os "thinking tokens" do Gemini 3 (ver THINKING_BUDGET_* abaixo)
+// — esses são orçados à parte e nunca aparecem na resposta.
 const MAX_OUTPUT_TOKENS_FLASH = 4096;
 const MAX_OUTPUT_TOKENS_PRO = 8192;
+
+// Modelos da família Gemini 3 fazem raciocínio interno ("thinking") antes de
+// responder e cobram isso como tokens de saída MESMO em mensagens triviais —
+// "oi" chegou a gastar ~190 tokens só de thinking em teste, contra ~10 de
+// resposta visível. Essa é a causa raiz real do "gasto de token
+// desproporcional" reportado (não era o RAG, que já filtra top-6 chunks
+// relevantes) — era o thinking sem teto explícito. Um budget baixo mantém
+// qualidade de resposta curta sem deixar o modelo "pensar" livremente em toda
+// mensagem.
+const THINKING_BUDGET_FLASH = 256;
+const THINKING_BUDGET_PRO = 1024;
 
 function escolherModelo(ultimaMensagem: string): string {
   if (ultimaMensagem.length > 1500 || PALAVRAS_TAREFA_COMPLEXA.test(ultimaMensagem)) {
@@ -31,6 +50,10 @@ function escolherModelo(ultimaMensagem: string): string {
 
 function maxOutputTokensPara(modelo: string): number {
   return modelo === MODELO_PRO ? MAX_OUTPUT_TOKENS_PRO : MAX_OUTPUT_TOKENS_FLASH;
+}
+
+function thinkingBudgetPara(modelo: string): number {
+  return modelo === MODELO_PRO ? THINKING_BUDGET_PRO : THINKING_BUDGET_FLASH;
 }
 
 const MAX_TENTATIVAS = 3;
@@ -53,13 +76,13 @@ function isErroDeQuota(erro: unknown): boolean {
 
 function isErroTransiente(erro: unknown): boolean {
   const mensagem = erro instanceof Error ? erro.message : String(erro);
-  return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT/i.test(mensagem);
+  return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT|UNAVAILABLE/i.test(mensagem);
 }
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 export type ChatTurno = { role: "user" | "assistant"; conteudo: string };
@@ -79,28 +102,50 @@ export type RespostaIa = {
  * function-calling nativo do Gemini para as tools propose_* (ver
  * lib/rag/tools.ts); por padrão desligado (ex: geração de análise de ficha
  * não precisa de tools).
+ *
+ * `systemPromptOverride`, quando presente, SUBSTITUI inteiramente o
+ * `SYSTEM_PROMPT` do copiloto interno (nunca é concatenado a ele) — uso
+ * exclusivo de pipelines de classificação focados (ex: triagem de lead
+ * público, score de risco) que não devem herdar o escopo/persona do
+ * copiloto. `responseSchema`, quando presente junto, força saída JSON
+ * estruturada nativa do Gemini em vez de texto livre a ser parseado por
+ * regex — desliga tools automaticamente (a API não aceita as duas coisas
+ * juntas).
  */
 export async function gerarResposta(
   historico: ChatTurno[],
-  opcoes: { contextoRag?: string | null; habilitarFerramentas?: boolean } = {},
+  opcoes: {
+    contextoRag?: string | null;
+    habilitarFerramentas?: boolean;
+    systemPromptOverride?: string;
+    responseSchema?: Schema;
+  } = {},
 ): Promise<RespostaIa> {
   const genAI = getClient();
   const ultima = historico[historico.length - 1];
   const anteriores = historico.slice(0, -1);
 
   const modeloEscolhido = escolherModelo(ultima.conteudo);
-  const model = genAI.getGenerativeModel({
-    model: modeloEscolhido,
-    systemInstruction: `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
-    tools: opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : undefined,
-    generationConfig: { maxOutputTokens: maxOutputTokensPara(modeloEscolhido) },
-  });
+  const usaSchema = Boolean(opcoes.responseSchema);
 
-  const chat = model.startChat({
+  const chat = genAI.chats.create({
+    model: modeloEscolhido,
     history: anteriores.map((turno) => ({
       role: turno.role === "assistant" ? "model" : "user",
       parts: [{ text: turno.conteudo }],
     })),
+    config: {
+      systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
+      tools:
+        !usaSchema && opcoes.habilitarFerramentas
+          ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
+          : undefined,
+      maxOutputTokens: maxOutputTokensPara(modeloEscolhido),
+      thinkingConfig: { thinkingBudget: thinkingBudgetPara(modeloEscolhido) },
+      ...(usaSchema
+        ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
+        : {}),
+    },
   });
 
   const mensagemFinal = opcoes.contextoRag
@@ -110,15 +155,14 @@ export async function gerarResposta(
   let ultimoErro: unknown;
   for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
     try {
-      const resultado = await chat.sendMessage(mensagemFinal);
-      const resposta = resultado.response;
+      const resposta = await chat.sendMessage({ message: mensagemFinal });
       const uso = resposta.usageMetadata;
 
       return {
-        texto: resposta.text(),
+        texto: resposta.text ?? "",
         tokensIn: uso?.promptTokenCount ?? 0,
         tokensOut: uso?.candidatesTokenCount ?? 0,
-        functionCalls: resposta.functionCalls() ?? [],
+        functionCalls: resposta.functionCalls ?? [],
       };
     } catch (erro) {
       ultimoErro = erro;

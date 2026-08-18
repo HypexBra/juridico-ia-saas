@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/auth/callback",
   "/portal/login",
   "/portal/ativar",
+  "/portal/consultar",
 ];
 
 export async function updateSession(request: NextRequest) {

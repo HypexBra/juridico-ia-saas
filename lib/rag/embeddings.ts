@@ -1,15 +1,23 @@
 import "server-only";
 
-import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-const MODELO_EMBEDDING = "text-embedding-004"; // 768 dimensões — bate com embeddings_chunks.embedding vector(768)
+// "text-embedding-004" foi descontinuado pelo Google (404) — substituído por
+// "gemini-embedding-001". Esse modelo nativamente devolve vetores de 3072
+// dimensões, mas a coluna `embeddings_chunks.embedding` é `vector(768)`
+// (migration 0002); em vez de migrar a coluna (reindexaria tudo e mudaria
+// custo/armazenamento), usamos `outputDimensionality: 768` — o próprio
+// modelo suporta truncar/projetar pra essa dimensão sem precisar trocar o
+// schema (testado e confirmado contra a API real).
+const MODELO_EMBEDDING = "gemini-embedding-001";
+const DIMENSOES_EMBEDDING = 768; // bate com embeddings_chunks.embedding vector(768)
 const MAX_TENTATIVAS = 3;
 const BASE_DELAY_MS = 500;
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  return new GoogleGenerativeAI(apiKey);
+  return new GoogleGenAI({ apiKey });
 }
 
 function delay(ms: number) {
@@ -18,7 +26,7 @@ function delay(ms: number) {
 
 function isErroTransiente(erro: unknown): boolean {
   const mensagem = erro instanceof Error ? erro.message : String(erro);
-  return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT/i.test(mensagem);
+  return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT|UNAVAILABLE/i.test(mensagem);
 }
 
 /**
@@ -32,16 +40,18 @@ export async function gerarEmbedding(
   taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
 ): Promise<number[]> {
   const genAI = getClient();
-  const model = genAI.getGenerativeModel({ model: MODELO_EMBEDDING });
 
   let ultimoErro: unknown;
   for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
     try {
-      const resultado = await model.embedContent({
-        content: { role: "user", parts: [{ text: texto }] },
-        taskType: taskType === "RETRIEVAL_DOCUMENT" ? TaskType.RETRIEVAL_DOCUMENT : TaskType.RETRIEVAL_QUERY,
+      const resultado = await genAI.models.embedContent({
+        model: MODELO_EMBEDDING,
+        contents: texto,
+        config: { taskType, outputDimensionality: DIMENSOES_EMBEDDING },
       });
-      return resultado.embedding.values;
+      const valores = resultado.embeddings?.[0]?.values;
+      if (!valores) throw new Error("Resposta de embedding sem vetor.");
+      return valores;
     } catch (erro) {
       ultimoErro = erro;
       if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1) throw erro;

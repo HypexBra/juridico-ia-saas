@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SchemaType, type FunctionDeclaration } from "@google/generative-ai";
+import { Type, type FunctionDeclaration } from "@google/genai";
 import { z } from "zod";
 
 /**
@@ -96,21 +96,21 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
     description:
       "Propõe uma alteração em um prazo já existente (ex: mudar data, marcar como concluído, ajustar descrição). NUNCA aplica a mudança — apenas cria uma proposta para o usuário aprovar.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
-        prazo_id: { type: SchemaType.STRING, description: "UUID do prazo a alterar." },
+        prazo_id: { type: Type.STRING, description: "UUID do prazo a alterar." },
         mudancas: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            titulo: { type: SchemaType.STRING },
-            descricao: { type: SchemaType.STRING },
-            data_prazo: { type: SchemaType.STRING, description: "Formato YYYY-MM-DD" },
-            processo: { type: SchemaType.STRING },
-            cliente_nome: { type: SchemaType.STRING },
-            concluido: { type: SchemaType.BOOLEAN },
+            titulo: { type: Type.STRING },
+            descricao: { type: Type.STRING },
+            data_prazo: { type: Type.STRING, description: "Formato YYYY-MM-DD" },
+            processo: { type: Type.STRING },
+            cliente_nome: { type: Type.STRING },
+            concluido: { type: Type.BOOLEAN },
           },
         },
-        motivo: { type: SchemaType.STRING, description: "Explicação curta do porquê da mudança." },
+        motivo: { type: Type.STRING, description: "Explicação curta do porquê da mudança." },
       },
       required: ["prazo_id", "mudancas", "motivo"],
     },
@@ -120,19 +120,19 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
     description:
       "Propõe uma alteração em uma ficha de caso já existente (ex: urgência, resumo dos fatos, área do direito). NUNCA aplica a mudança direto.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
-        ficha_id: { type: SchemaType.STRING, description: "UUID da ficha a alterar." },
+        ficha_id: { type: Type.STRING, description: "UUID da ficha a alterar." },
         mudancas: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            area_direito: { type: SchemaType.STRING },
-            resumo_fatos: { type: SchemaType.STRING },
-            urgencia: { type: SchemaType.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
-            lida: { type: SchemaType.BOOLEAN },
+            area_direito: { type: Type.STRING },
+            resumo_fatos: { type: Type.STRING },
+            urgencia: { type: Type.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
+            lida: { type: Type.BOOLEAN },
           },
         },
-        motivo: { type: SchemaType.STRING },
+        motivo: { type: Type.STRING },
       },
       required: ["ficha_id", "mudancas", "motivo"],
     },
@@ -141,20 +141,20 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
     name: "propose_create_prazo",
     description: "Propõe a criação de um novo prazo a partir da conversa. NUNCA cria o registro direto.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
         dados: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            titulo: { type: SchemaType.STRING },
-            descricao: { type: SchemaType.STRING },
-            data_prazo: { type: SchemaType.STRING, description: "Formato YYYY-MM-DD" },
-            processo: { type: SchemaType.STRING },
-            cliente_nome: { type: SchemaType.STRING },
+            titulo: { type: Type.STRING },
+            descricao: { type: Type.STRING },
+            data_prazo: { type: Type.STRING, description: "Formato YYYY-MM-DD" },
+            processo: { type: Type.STRING },
+            cliente_nome: { type: Type.STRING },
           },
           required: ["titulo", "data_prazo"],
         },
-        motivo: { type: SchemaType.STRING },
+        motivo: { type: Type.STRING },
       },
       required: ["dados", "motivo"],
     },
@@ -163,19 +163,19 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
     name: "propose_create_ficha",
     description: "Propõe a criação de uma nova ficha de caso a partir da conversa. NUNCA cria o registro direto.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
         dados: {
-          type: SchemaType.OBJECT,
+          type: Type.OBJECT,
           properties: {
-            nome_cliente: { type: SchemaType.STRING },
-            telefone: { type: SchemaType.STRING },
-            area_direito: { type: SchemaType.STRING },
-            resumo_fatos: { type: SchemaType.STRING },
-            urgencia: { type: SchemaType.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
+            nome_cliente: { type: Type.STRING },
+            telefone: { type: Type.STRING },
+            area_direito: { type: Type.STRING },
+            resumo_fatos: { type: Type.STRING },
+            urgencia: { type: Type.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
           },
         },
-        motivo: { type: SchemaType.STRING },
+        motivo: { type: Type.STRING },
       },
       required: ["dados", "motivo"],
     },
@@ -185,12 +185,12 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
     description:
       "Propõe a geração de um documento (petição, contrato, notificação etc.) em docx ou pdf a partir do texto já elaborado na conversa. NUNCA gera o arquivo direto — só depois de aprovado o usuário pode baixá-lo.",
     parameters: {
-      type: SchemaType.OBJECT,
+      type: Type.OBJECT,
       properties: {
-        titulo: { type: SchemaType.STRING, description: "Nome do documento, vira o nome do arquivo." },
-        tipo_documento: { type: SchemaType.STRING, description: "Ex: petição inicial, contrato, notificação." },
-        conteudo: { type: SchemaType.STRING, description: "Texto completo do documento já redigido." },
-        formato: { type: SchemaType.STRING, format: "enum", enum: ["docx", "pdf"] },
+        titulo: { type: Type.STRING, description: "Nome do documento, vira o nome do arquivo." },
+        tipo_documento: { type: Type.STRING, description: "Ex: petição inicial, contrato, notificação." },
+        conteudo: { type: Type.STRING, description: "Texto completo do documento já redigido." },
+        formato: { type: Type.STRING, format: "enum", enum: ["docx", "pdf"] },
       },
       required: ["titulo", "tipo_documento", "conteudo"],
     },

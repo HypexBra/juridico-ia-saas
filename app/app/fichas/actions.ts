@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta } from "@/lib/ia/gemini";
+import { classificarRiscoFicha } from "@/lib/ia/risco";
 import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE } from "@/lib/types";
 
 const criarFichaSchema = z.object({
@@ -185,6 +186,47 @@ ${MARCADOR_ESTRATEGIA}
 
   revalidatePath(`/app/fichas/${fichaId}`);
   revalidatePath("/app/financeiro");
+
+  return { ok: true };
+}
+
+export type GerarRiscoResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * Calcula (ou recalcula) o `nivel_risco` da ficha via IA. Diferente da
+ * análise geral (`gerarAnaliseIaAction`), não consome a cota de
+ * `uso_ia`/`LIMITE_MENSAGENS_FREE` — é uma classificação curta e barata
+ * (schema fechado, poucos tokens de saída), não uma peça de análise
+ * completa; manter fora do limite evita que um escritório no plano free
+ * fique sem cota de análise por causa de recálculos de risco.
+ */
+export async function gerarRiscoAction(fichaId: string): Promise<GerarRiscoResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const supabase = await createClient();
+  const { data: ficha, error: erroFicha } = await supabase
+    .from("fichas_caso")
+    .select("resumo_fatos, questoes_ia, estrategia_ia, area_direito, urgencia")
+    .eq("id", fichaId)
+    .single();
+
+  if (erroFicha || !ficha) return { ok: false, error: "Ficha não encontrada." };
+
+  const classificacao = await classificarRiscoFicha(ficha);
+  if (!classificacao) {
+    return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
+  }
+
+  const { error: erroUpdate } = await supabase
+    .from("fichas_caso")
+    .update({ nivel_risco: classificacao.nivelRisco, risco_calculado_em: new Date().toISOString() })
+    .eq("id", fichaId);
+
+  if (erroUpdate) return { ok: false, error: "A IA respondeu, mas houve um erro ao salvar o risco." };
+
+  revalidatePath(`/app/fichas/${fichaId}`);
+  revalidatePath("/app/fichas");
 
   return { ok: true };
 }

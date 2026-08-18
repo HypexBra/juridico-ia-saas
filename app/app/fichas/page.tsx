@@ -19,6 +19,18 @@ const URGENCIA_TONE = {
   baixa: "muted",
 } as const;
 
+const RISCO_TONE = {
+  alto: "red",
+  medio: "gold",
+  baixo: "green",
+} as const;
+
+const RISCO_LABEL = {
+  alto: "Alto",
+  medio: "Médio",
+  baixo: "Baixo",
+} as const;
+
 export default async function FichasPage() {
   const usuario = await getUsuarioAtual();
   if (!usuario) redirect("/login");
@@ -61,8 +73,13 @@ export default async function FichasPage() {
                 </div>
                 <p className="mb-3 text-xs text-muted">{ficha.area_direito ?? "Área não informada"}</p>
                 <p className="mb-4 line-clamp-3 text-sm text-ice-2">{ficha.resumo_fatos}</p>
-                <div className="flex items-center justify-between">
-                  <Badge tone={URGENCIA_TONE[ficha.urgencia]}>Urgência {ficha.urgencia}</Badge>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={URGENCIA_TONE[ficha.urgencia]}>Urgência {ficha.urgencia}</Badge>
+                    {ficha.nivel_risco && (
+                      <Badge tone={RISCO_TONE[ficha.nivel_risco]}>Risco {RISCO_LABEL[ficha.nivel_risco]}</Badge>
+                    )}
+                  </div>
                   <span className="text-xs text-muted">{formatarDataHora(ficha.criado_em)}</span>
                 </div>
               </Card>

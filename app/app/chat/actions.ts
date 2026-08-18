@@ -199,7 +199,7 @@ export async function enviarMensagemAction(
   // proposta é criada por turno — reforça o limite de "uma ação por vez".
   let propostaId: string | null = null;
   const chamada = respostaIa.functionCalls[0];
-  if (chamada && chamada.name in TOOL_SCHEMAS) {
+  if (chamada?.name && chamada.name in TOOL_SCHEMAS) {
     const nomeTool = chamada.name as NomeTool;
     const schema = TOOL_SCHEMAS[nomeTool];
     const argsValidados = schema.safeParse(chamada.args);
