@@ -1,4 +1,4 @@
-import { ProgressLine } from "./progress-line";
+import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 
 const STEPS = [
@@ -30,7 +30,8 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="bg-navy-2 py-24 sm:py-32">
+    <section id="como-funciona" className="relative overflow-hidden py-24 sm:py-32">
+      <LightBeam angle={198} origin="bottom-right" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
@@ -42,7 +43,6 @@ export function HowItWorks() {
         </div>
 
         <div className="relative space-y-0">
-          <ProgressLine className="left-6 top-2 bottom-2 hidden sm:block" />
           {STEPS.map((step, index) => (
             <Reveal key={step.number} delayMs={index * 80}>
               <div

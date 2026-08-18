@@ -58,7 +58,22 @@ export function FeaturesScroller({ articles }: { articles: ScrollerArticle[] }) 
           end: () => `+=${(panels.length - 1) * window.innerHeight}`,
           scrub: 0.8,
           pin: stage,
-          anticipatePin: 1,
+          // Root cause of the "stuck / panels stacking in the wrong place" bug:
+          // ScrollTrigger's default pinning method sets `position: fixed` on
+          // the pinned element. The page's root wrapper (`app/page.tsx`) has
+          // `overflow-x: hidden`, and any ancestor with `overflow` other than
+          // `visible` breaks `position: fixed` containment in some browsers —
+          // it's a documented GSAP gotcha (see ScrollTrigger docs, "pinning
+          // does not work" / overflow warning). The pinned stage was being
+          // positioned relative to that overflow-clipped ancestor instead of
+          // the viewport, so as soon as ScrollTrigger recalculated on scroll
+          // it looked like the pin "wasn't releasing" and every panel
+          // rendered stacked at the same (wrong) offset. Forcing
+          // `pinType: "transform"` makes GSAP pin via `transform` on the
+          // element instead of `position: fixed`, which is immune to
+          // ancestor overflow and works correctly regardless of it.
+          pinType: "transform",
+          invalidateOnRefresh: true,
           onUpdate: (self) => setCounter(Math.round(self.progress * (panels.length - 1))),
         },
       });
@@ -88,30 +103,43 @@ export function FeaturesScroller({ articles }: { articles: ScrollerArticle[] }) 
     <div ref={wrapperRef} className="hidden lg:block">
       <div
         ref={stageRef}
-        className="relative mx-auto flex max-w-5xl flex-col justify-center gap-16 px-5 py-10 sm:px-8"
+        className="relative mx-auto max-w-6xl px-5 py-10 sm:px-8"
       >
-        {articles.map((article, i) => (
-          <div
-            key={article.numeral}
-            ref={(el) => {
-              panelsRef.current[i] = el;
-            }}
-            className="grid grid-cols-[140px_64px_1fr] items-start gap-10"
-          >
-            <span className="pt-1 font-display text-4xl font-black text-gold/25">
-              {article.numeral}
-            </span>
-            <span className="flex h-16 w-16 items-center justify-center rounded-sm border border-gold/20 bg-gold/5 text-gold">
-              {article.icon}
-            </span>
-            <div className="max-w-xl">
-              <h3 className="font-display text-4xl font-bold leading-tight text-ice">
-                {article.title}
-              </h3>
-              <p className="mt-5 text-lg leading-relaxed text-muted">{article.description}</p>
+        {articles.map((article, i) => {
+          const alignRight = i % 2 === 1;
+          return (
+            <div
+              key={article.numeral}
+              ref={(el) => {
+                panelsRef.current[i] = el;
+              }}
+              className={`grid grid-cols-1 ${alignRight ? "justify-items-end" : "justify-items-start"}`}
+            >
+              {/* Oversized ghost numeral — the "clause number" as background
+                  type, not a boxed grid column. It's what the golden thread
+                  visually threads past. */}
+              <span
+                aria-hidden
+                className={`relative z-0 select-none font-display text-[7rem] font-black leading-none text-gold/10 sm:text-[9rem] ${alignRight ? "pr-[6%]" : "pl-[2%]"}`}
+              >
+                {article.numeral}
+              </span>
+              <div
+                className={`relative z-10 -mt-16 flex max-w-xl flex-col gap-4 sm:-mt-24 ${
+                  alignRight ? "items-end pr-[6%] text-right" : "items-start pl-[2%]"
+                }`}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-sm border border-gold/25 bg-gold/8 text-gold">
+                  {article.icon}
+                </span>
+                <h3 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
+                  {article.title}
+                </h3>
+                <p className="text-lg leading-relaxed text-muted">{article.description}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <span
           aria-hidden

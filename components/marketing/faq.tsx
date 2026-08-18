@@ -45,7 +45,7 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="bg-navy-2 py-24 sm:py-32">
+    <section id="faq" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-5 sm:px-8">
         <div className="mb-14 text-center">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">

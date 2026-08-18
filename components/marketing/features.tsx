@@ -1,4 +1,5 @@
 import { FeaturesScroller } from "./features-scroller";
+import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 import {
   IconChart,
@@ -80,7 +81,8 @@ export function Features() {
   }));
 
   return (
-    <section id="funcionalidades" className="bg-navy py-24 sm:py-32">
+    <section id="funcionalidades" className="relative overflow-hidden py-24 sm:py-32">
+      <LightBeam angle={-16} origin="top-left" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
@@ -98,18 +100,24 @@ export function Features() {
       {/* Desktop (>=1024px): pinned scrollytelling, one artigo por vez. */}
       <FeaturesScroller articles={scrollerArticles} />
 
-      {/* Mobile/tablet + no-JS + reduced-motion fallback: lista estática empilhada. */}
+      {/* Mobile/tablet + no-JS + reduced-motion fallback: lista estática empilhada,
+          com leve alternância esquerda/direita (>=sm) para não ler como grid rígida. */}
       <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:hidden">
         <div className="divide-y divide-gold/10 border-y border-gold/10">
           {ARTICLES.map((article, index) => {
             const Icon = article.icon;
+            const alignRight = index % 2 === 1;
             return (
               <Reveal key={article.numeral} delayMs={index * 60}>
-                <div className="grid grid-cols-1 gap-4 py-8 sm:grid-cols-[110px_44px_1fr] sm:items-start sm:gap-6">
-                  <span className="font-display text-sm font-bold tracking-wide text-gold-2 sm:pt-1">
+                <div
+                  className={`flex flex-col gap-4 py-8 sm:flex-row sm:items-start sm:gap-6 ${
+                    alignRight ? "sm:flex-row-reverse sm:text-right" : ""
+                  }`}
+                >
+                  <span className="font-display text-sm font-bold tracking-wide text-gold-2 sm:w-[90px] sm:shrink-0 sm:pt-1">
                     {article.numeral}
                   </span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-sm border border-gold/20 bg-gold/5 text-gold">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-gold/20 bg-gold/5 text-gold">
                     <Icon className="h-5 w-5" strokeWidth={1.4} />
                   </span>
                   <div>

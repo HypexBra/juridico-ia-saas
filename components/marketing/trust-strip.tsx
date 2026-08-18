@@ -15,7 +15,7 @@ const AREAS = [
 
 export function TrustStrip() {
   return (
-    <section className="border-y border-gold/10 bg-navy-2/60 py-14">
+    <section className="relative border-y border-gold/10 bg-navy-2/25 py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="max-w-xl font-display text-xl italic leading-snug text-ice-2 sm:text-2xl">
           Feito para escritórios que não têm tempo a perder — do advogado

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { HeroVisual } from "./hero-visual";
 import { IconArrowRight, IconClock } from "./icons";
+import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 import { TextReveal } from "./text-reveal";
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
+      <LightBeam angle={26} origin="top-right" className="-z-10" />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"

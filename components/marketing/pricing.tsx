@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 import { IconCheck, IconDash } from "./icons";
 
@@ -29,7 +30,8 @@ const PRO_FEATURES: PlanFeature[] = [
 
 export function Pricing() {
   return (
-    <section id="precos" className="bg-navy py-24 sm:py-32">
+    <section id="precos" className="relative overflow-hidden py-24 sm:py-32">
+      <LightBeam angle={16} origin="top-right" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
@@ -44,7 +46,10 @@ export function Pricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Colunas com largura e deslocamento vertical assimétricos — o card
+            Pro é mais largo e desce (md:mt-10), quebrando o par de cards
+            idênticos lado a lado. */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.1fr] md:items-start">
           <Reveal>
             <div className="flex h-full flex-col rounded-md border border-white/10 bg-navy-2/50 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
               <h3 className="font-display text-lg font-bold text-ice">Free</h3>
@@ -83,7 +88,7 @@ export function Pricing() {
             </div>
           </Reveal>
 
-          <Reveal delayMs={100}>
+          <Reveal delayMs={100} className="md:mt-10">
             <div className="relative flex h-full flex-col overflow-hidden rounded-md border border-gold/40 bg-navy-3/70 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
               <span
                 aria-hidden
