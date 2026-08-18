@@ -111,16 +111,115 @@ export type FichaCaso = {
   criado_em: string;
 };
 
+export type OrigemPrazo = "manual" | "djen" | "importado";
+
 export type Prazo = {
   id: string;
   escritorio_id: string;
   criado_por: string | null;
+  ficha_caso_id: string | null;
   titulo: string;
   descricao: string | null;
   data_prazo: string;
   processo: string | null;
   cliente_nome: string | null;
   concluido: boolean;
+  numero_processo_cnj: string | null;
+  origem: OrigemPrazo;
+  tribunal: string | null;
+  data_intimacao: string | null;
+  prazo_em_dobro: boolean;
+  criado_em: string;
+};
+
+export type SincronizacaoDjen = {
+  id: string;
+  escritorio_id: string;
+  oab_consultada: string;
+  ultima_consulta_em: string | null;
+  ultimo_id_comunicacao_processado: string | null;
+  criado_em: string;
+};
+
+export type ClientePortal = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  auth_user_id: string | null;
+  nome: string;
+  email: string;
+  token_convite: string | null;
+  convite_expira_em: string | null;
+  criado_em: string;
+};
+
+export type TipoContratoHonorario = "fixo" | "exito" | "aaj";
+
+export type ContratoHonorario = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo: TipoContratoHonorario;
+  valor_total: number | null;
+  percentual_exito: number | null;
+  criado_em: string;
+};
+
+export type StatusParcelaHonorario = "pendente" | "pago" | "atrasado";
+
+export type ParcelaHonorario = {
+  id: string;
+  escritorio_id: string;
+  contrato_id: string;
+  numero_parcela: number;
+  valor: number;
+  vencimento: string;
+  status: StatusParcelaHonorario;
+  pago_em: string | null;
+  criado_em: string;
+};
+
+export type RateioSocio = {
+  id: string;
+  escritorio_id: string;
+  contrato_id: string;
+  perfil_id: string;
+  percentual: number;
+  criado_em: string;
+};
+
+export type StatusDocumentoAssinatura = "rascunho" | "aguardando_assinatura" | "assinado" | "recusado";
+export type ProvedorAssinatura = "clicksign" | "autentique";
+
+export type SignatarioDocumento = {
+  nome: string;
+  email: string;
+  status: string;
+};
+
+export type DocumentoParaAssinatura = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  criado_por: string | null;
+  nome_documento: string;
+  arquivo_gerado_em: string | null;
+  status: StatusDocumentoAssinatura;
+  provedor: ProvedorAssinatura | null;
+  id_externo_provedor: string | null;
+  signatarios: SignatarioDocumento[];
+  criado_em: string;
+};
+
+export type NotificacaoCliente = {
+  id: string;
+  escritorio_id: string;
+  cliente_portal_id: string;
+  ficha_caso_id: string | null;
+  tipo: string;
+  mensagem: string;
+  lida: boolean;
+  enviada_em: string | null;
   criado_em: string;
 };
 
