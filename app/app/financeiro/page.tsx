@@ -5,12 +5,35 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { NovoContratoHonorarioDialog } from "@/components/app/novo-contrato-honorario-dialog";
 import { ContratoHonorarioCard, type ContratoHonorarioComRelacoes } from "@/components/app/contrato-honorario-card";
 import { sincronizarParcelasAtrasadas } from "@/app/app/financeiro/actions";
+import { BorderGlow } from "@/components/ui/border-glow/border-glow";
+import { BarChart } from "@/components/app/charts/bar-chart";
+import { UsageRing } from "@/components/app/charts/usage-ring";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
 
 export const metadata = { title: "Financeiro — Jurídico IA" };
 
+const MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarMoedaCompacta(valor: number) {
+  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".0", "")}k`;
+  return valor.toFixed(0);
+}
+
+/** Últimos `meses` mes_ref (YYYY-MM) terminando no mês atual, mais antigo primeiro. */
+function ultimosMesesRef(meses: number): string[] {
+  const referencia = new Date();
+  referencia.setDate(1);
+  const resultado: string[] = [];
+  for (let i = meses - 1; i >= 0; i -= 1) {
+    const data = new Date(referencia);
+    data.setMonth(data.getMonth() - i);
+    resultado.push(data.toISOString().slice(0, 7));
+  }
+  return resultado;
 }
 
 export default async function FinanceiroPage() {
@@ -70,6 +93,22 @@ export default async function FinanceiroPage() {
   const chamadasIaNoMes = usoIaMesAtual.length;
   const percentualUsoIa = Math.min(100, Math.round((chamadasIaNoMes / LIMITE_MENSAGENS_FREE) * 100));
 
+  // Faturamento (parcelas pagas) dos últimos 6 meses — alimenta o gráfico de
+  // barras mobile. Mês corrente à direita, sempre em destaque.
+  const meses6 = ultimosMesesRef(6);
+  const faturamentoPorMes = new Map<string, number>();
+  for (const mes of meses6) faturamentoPorMes.set(mes, 0);
+  for (const parcela of todasParcelas) {
+    if (parcela.status !== "pago" || !parcela.pago_em) continue;
+    const mesRef = parcela.pago_em.slice(0, 7);
+    if (!faturamentoPorMes.has(mesRef)) continue;
+    faturamentoPorMes.set(mesRef, (faturamentoPorMes.get(mesRef) ?? 0) + parcela.valor);
+  }
+  const dadosFaturamento = meses6.map((mes) => ({
+    label: MESES_ABREV[Number(mes.slice(5, 7)) - 1] ?? mes,
+    value: faturamentoPorMes.get(mes) ?? 0,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -83,19 +122,21 @@ export default async function FinanceiroPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="transition-transform duration-150 ease-out active:scale-[0.98]">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">Recebido no mês</p>
           <p className="mt-2 font-display text-3xl font-bold text-ice">{formatarMoeda(recebidoNoMes)}</p>
           <p className="mt-2 text-xs text-muted">Parcelas pagas com vencimento neste mês.</p>
         </Card>
 
-        <Card>
+        <Card className="transition-transform duration-150 ease-out active:scale-[0.98]">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">A receber no mês</p>
           <p className="mt-2 font-display text-3xl font-bold text-gold-2">{formatarMoeda(aReceberNoMes)}</p>
           <p className="mt-2 text-xs text-muted">Parcelas pendentes/atrasadas com vencimento neste mês.</p>
         </Card>
 
-        <Card className={parcelasAtrasadas.length > 0 ? "border-red-500/30" : ""}>
+        <Card
+          className={`transition-transform duration-150 ease-out active:scale-[0.98] ${parcelasAtrasadas.length > 0 ? "border-red-500/30" : ""}`}
+        >
           <p className="text-xs font-medium uppercase tracking-wide text-muted">Em atraso</p>
           <p className="mt-2 font-display text-3xl font-bold text-red-400">{formatarMoeda(totalAtrasado)}</p>
           <p className="mt-2 text-xs text-muted">
@@ -103,6 +144,12 @@ export default async function FinanceiroPage() {
           </p>
         </Card>
       </div>
+
+      <Card>
+        <CardTitle className="mb-1">Faturamento recebido — últimos 6 meses</CardTitle>
+        <p className="mb-4 text-xs text-muted">Soma de parcelas pagas por mês de pagamento.</p>
+        <BarChart data={dadosFaturamento} formatValue={formatarMoedaCompacta} />
+      </Card>
 
       <div>
         <CardTitle className="mb-4">Contratos ({contratos.length})</CardTitle>
@@ -121,23 +168,28 @@ export default async function FinanceiroPage() {
         )}
       </div>
 
-      <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+      <BorderGlow
+        glowColor="42 75 70"
+        backgroundColor="#0f2040"
+        borderRadius={12}
+        glowRadius={30}
+        glowIntensity={0.9}
+        colors={["#c9a84c", "#0f2040", "#e8c96a"]}
+      >
+        <div className="flex flex-wrap items-center gap-5 p-5">
+          <UsageRing
+            percent={percentualUsoIa}
+            label="Uso de IA no plano gratuito"
+            tone={percentualUsoIa >= 90 ? "red" : "gold"}
+          />
+          <div className="min-w-0">
             <CardTitle>Uso de IA no plano gratuito</CardTitle>
             <p className="mt-1 text-xs text-muted">
               {chamadasIaNoMes} / {LIMITE_MENSAGENS_FREE} chamadas de IA usadas este mês.
             </p>
           </div>
-          <span className="font-display text-xl font-semibold text-ice">{percentualUsoIa}%</span>
         </div>
-        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className={`h-full rounded-full ${percentualUsoIa >= 90 ? "bg-red-400" : "bg-gold"}`}
-            style={{ width: `${percentualUsoIa}%` }}
-          />
-        </div>
-      </Card>
+      </BorderGlow>
     </div>
   );
 }

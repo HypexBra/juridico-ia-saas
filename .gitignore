@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (o .example é o template versionado — nunca tem segredo real,
+# só placeholder; sem essa exceção `.env*` também ignorava ele, deixando o
+# repo sem nenhum arquivo de referência de env pra quem clona)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -49,3 +52,4 @@ CLAUDE.md
 RULES.md
 SYSTEM.md
 opencode.json
+supabase/.temp

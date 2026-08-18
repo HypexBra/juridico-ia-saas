@@ -66,21 +66,21 @@ export function Nav() {
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-sm border border-gold/20 text-ice md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-sm border border-gold/20 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5 md:hidden"
         >
           {open ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
         </button>
       </div>
 
       {open ? (
-        <div className="border-t border-gold/15 bg-navy px-5 pb-6 pt-2 md:hidden">
+        <div className="mobile-menu-enter border-t border-gold/15 bg-navy px-5 pb-6 pt-2 md:hidden">
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="rounded-sm px-2 py-3 text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-ice"
+                className="rounded-sm px-2 py-3 text-sm font-medium text-muted transition-colors duration-150 ease-out hover:bg-white/5 hover:text-ice active:bg-white/10 active:text-ice"
               >
                 {link.label}
               </a>
@@ -90,14 +90,14 @@ export function Nav() {
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="rounded-sm border border-white/15 px-4 py-2.5 text-center text-sm font-medium text-ice"
+              className="rounded-sm border border-white/15 px-4 py-2.5 text-center text-sm font-medium text-ice transition-transform duration-150 ease-out active:scale-[0.97] active:bg-white/5"
             >
               Entrar
             </Link>
             <Link
               href="/cadastro"
               onClick={() => setOpen(false)}
-              className="rounded-sm bg-gradient-to-br from-gold to-gold-2 px-4 py-2.5 text-center text-sm font-semibold text-navy"
+              className="rounded-sm bg-gradient-to-br from-gold to-gold-2 px-4 py-2.5 text-center text-sm font-semibold text-navy transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               Começar grátis
             </Link>

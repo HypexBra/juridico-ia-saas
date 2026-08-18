@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
+import { BorderGlow } from "@/components/ui/border-glow/border-glow";
+import { DonutChart } from "@/components/app/charts/donut-chart";
+import { UsageRing } from "@/components/app/charts/usage-ring";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
 import type { FichaCaso, Prazo } from "@/lib/types";
 
@@ -45,7 +48,7 @@ export default async function DashboardPage() {
   limiteAlerta.setDate(limiteAlerta.getDate() + 3);
   const dataLimiteAlerta = limiteAlerta.toISOString().slice(0, 10);
 
-  const [prazosRes, alertasPrazoRes, fichasRes, usoRes] = await Promise.all([
+  const [prazosRes, alertasPrazoRes, fichasRes, usoRes, todosPrazosRes] = await Promise.all([
     supabase
       .from("prazos")
       .select("*")
@@ -71,6 +74,10 @@ export default async function DashboardPage() {
       .limit(6)
       .returns<FichaCaso[]>(),
     supabase.from("uso_ia").select("id").eq("mes_ref", mesRef),
+    // Distribuição de todos os prazos em aberto por faixa de urgência —
+    // alimenta o donut do dashboard mobile (leitura à parte da lista curta
+    // acima, que só traz os 6 mais próximos).
+    supabase.from("prazos").select("data_prazo").eq("concluido", false).returns<{ data_prazo: string }[]>(),
   ]);
 
   const prazos = prazosRes.data ?? [];
@@ -78,6 +85,21 @@ export default async function DashboardPage() {
   const fichas = fichasRes.data ?? [];
   const usoMes = usoRes.data?.length ?? 0;
   const percentualUso = Math.min(100, Math.round((usoMes / LIMITE_MENSAGENS_FREE) * 100));
+
+  const distribuicaoPrazos = { vencidos: 0, urgentes: 0, semana: 0, futuros: 0 };
+  for (const prazo of todosPrazosRes.data ?? []) {
+    const dias = diasAte(prazo.data_prazo);
+    if (dias < 0) distribuicaoPrazos.vencidos += 1;
+    else if (dias <= 1) distribuicaoPrazos.urgentes += 1;
+    else if (dias <= 7) distribuicaoPrazos.semana += 1;
+    else distribuicaoPrazos.futuros += 1;
+  }
+  const segmentosPrazos = [
+    { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#f87171" },
+    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#e8c96a" },
+    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#c9a84c" },
+    { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#22c55e" },
+  ];
 
   return (
     <div className="space-y-8">
@@ -106,7 +128,7 @@ export default async function DashboardPage() {
               return (
                 <li
                   key={prazo.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] active:bg-navy-3/70"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
@@ -125,34 +147,53 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Prazos em aberto</p>
-          <p className="mt-2 font-display text-3xl font-bold text-ice">{prazos.length}</p>
-          <Link href="/app/prazos" className="mt-3 inline-block text-xs font-medium text-gold hover:text-gold-2">
-            Ver todos →
-          </Link>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Fichas não lidas</p>
-          <p className="mt-2 font-display text-3xl font-bold text-ice">{fichas.length}</p>
-          <Link href="/app/fichas" className="mt-3 inline-block text-xs font-medium text-gold hover:text-gold-2">
-            Ver todas →
-          </Link>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Uso de IA no mês</p>
-          <p className="mt-2 font-display text-3xl font-bold text-ice">
-            {usoMes}
-            <span className="text-base font-normal text-muted"> / {LIMITE_MENSAGENS_FREE}</span>
-          </p>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              className={`h-full rounded-full ${percentualUso >= 90 ? "bg-red-400" : "bg-gold"}`}
-              style={{ width: `${percentualUso}%` }}
-            />
+        <Link
+          href="/app/prazos"
+          className="block rounded-xl transition-transform duration-150 ease-out active:scale-[0.97]"
+        >
+          <Card className="h-full">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Prazos em aberto</p>
+            <p className="mt-2 font-display text-3xl font-bold text-ice">{prazos.length}</p>
+            <span className="mt-3 inline-block text-xs font-medium text-gold">Ver todos →</span>
+          </Card>
+        </Link>
+        <Link
+          href="/app/fichas"
+          className="block rounded-xl transition-transform duration-150 ease-out active:scale-[0.97]"
+        >
+          <Card className="h-full">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Fichas não lidas</p>
+            <p className="mt-2 font-display text-3xl font-bold text-ice">{fichas.length}</p>
+            <span className="mt-3 inline-block text-xs font-medium text-gold">Ver todas →</span>
+          </Card>
+        </Link>
+
+        <BorderGlow
+          className="h-full"
+          glowColor="42 75 70"
+          backgroundColor="#0f2040"
+          borderRadius={12}
+          glowRadius={26}
+          glowIntensity={0.9}
+          colors={["#c9a84c", "#0f2040", "#e8c96a"]}
+        >
+          <div className="flex h-full items-center gap-4 p-5">
+            <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "gold"} size={72} strokeWidth={7} />
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Uso de IA no mês</p>
+              <p className="mt-1 font-display text-lg font-bold text-ice">
+                {usoMes}
+                <span className="text-sm font-normal text-muted"> / {LIMITE_MENSAGENS_FREE}</span>
+              </p>
+            </div>
           </div>
-        </Card>
+        </BorderGlow>
       </div>
+
+      <Card>
+        <CardTitle className="mb-4">Prazos por urgência</CardTitle>
+        <DonutChart segments={segmentosPrazos} />
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -169,7 +210,7 @@ export default async function DashboardPage() {
               {prazos.map((prazo) => {
                 const urgencia = urgenciaPrazo(diasAte(prazo.data_prazo));
                 return (
-                  <li key={prazo.id} className="flex items-center justify-between gap-3 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                  <li key={prazo.id} className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-colors duration-150 ease-out last:border-0 last:pb-0 active:bg-white/5">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
                       <p className="text-xs text-muted">
@@ -200,7 +241,7 @@ export default async function DashboardPage() {
                 <li key={ficha.id}>
                   <Link
                     href={`/app/fichas/${ficha.id}`}
-                    className="flex items-center justify-between gap-3 border-b border-white/5 pb-3 last:border-0 last:pb-0 hover:opacity-80"
+                    className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-all duration-150 ease-out last:border-0 last:pb-0 hover:opacity-80 active:scale-[0.98] active:bg-white/5"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">

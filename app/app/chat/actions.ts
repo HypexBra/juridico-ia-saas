@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, type ChatTurno } from "@/lib/ia/gemini";
-import { buscarContextoRelevante, montarBlocoContexto } from "@/lib/rag/retrieval";
+import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
@@ -133,6 +133,41 @@ export async function enviarMensagemAction(
   }
   const conversaId: string = conversaIdResolvido;
 
+  // Guard de custo (item 5): reenvio idêntico da mesma pergunta em sequência
+  // rápida (ex: double-click, duplo submit de rede) não deve gastar uma nova
+  // chamada de embedding + Gemini — reaproveita a resposta já dada. Olha só
+  // a ÚLTIMA mensagem da conversa: se for do mesmo usuário, texto idêntico e
+  // dentro de uma janela curta, a resposta seguinte (se já existir) é
+  // devolvida sem chamar a IA de novo. Não é dedução por hash global (custo/
+  // complexidade desnecessários) — é o caso concreto reportado (reenvio sem
+  // mudar nada), tratado no ponto mais barato possível.
+  const JANELA_DEDUP_MS = 15_000;
+  {
+    const { data: ultimasDuas } = await supabase
+      .from("mensagens")
+      .select("*")
+      .eq("conversa_id", conversaId)
+      .order("criado_em", { ascending: false })
+      .limit(2);
+
+    const [maisRecente, penultima] = ultimasDuas ?? [];
+    if (
+      maisRecente &&
+      penultima &&
+      maisRecente.role === "assistant" &&
+      penultima.role === "user" &&
+      penultima.conteudo === parsed.data.texto &&
+      Date.now() - new Date(penultima.criado_em).getTime() < JANELA_DEDUP_MS
+    ) {
+      return {
+        ok: true,
+        conversaId,
+        assistente: maisRecente as Mensagem,
+        usoMes: usoAtual ?? 0,
+      };
+    }
+  }
+
   // Monta o histórico existente ANTES de persistir a mensagem do usuário, para
   // poder chamar a IA primeiro e só gravar algo no banco se a chamada tiver sucesso
   // (evita deixar a mensagem do usuário órfã, sem resposta, se o Gemini falhar).
@@ -164,9 +199,10 @@ export async function enviarMensagemAction(
   // chat — degrada para "sem contexto" e o modelo é instruído a não fingir
   // que consultou uma base (ver RAG_TOOLING_PROMPT).
   let contextoRag: string | null = null;
+  let chunksRag: ChunkRecuperado[] = [];
   try {
-    const chunks = await buscarContextoRelevante(supabase, escritorioId, parsed.data.texto);
-    contextoRag = montarBlocoContexto(chunks);
+    chunksRag = await buscarContextoRelevante(supabase, escritorioId, parsed.data.texto);
+    contextoRag = montarBlocoContexto(chunksRag);
   } catch {
     contextoRag = null;
   }
@@ -257,6 +293,7 @@ export async function enviarMensagemAction(
       tokens_in: respostaIa.tokensIn,
       tokens_out: respostaIa.tokensOut,
       proposta_id: propostaId,
+      fontes: chunksRag.length > 0 ? montarFontesCitaveis(chunksRag) : null,
     })
     .select("*")
     .single();

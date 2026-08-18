@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { MarkdownLite } from "./markdown-lite";
@@ -15,7 +16,47 @@ import type { Mensagem } from "@/lib/types";
 
 type MensagemLocal = Pick<Mensagem, "id" | "role" | "conteudo" | "criado_em"> & {
   proposta_id?: string | null;
+  fontes?: Mensagem["fontes"];
 };
+
+/** Fontes RAG citadas por uma resposta — clicáveis quando a fonte tem tela de detalhe (ver lib/rag/retrieval.ts#montarFontesCitaveis). */
+function FontesCitadas({ fontes }: { fontes: Mensagem["fontes"] | undefined }) {
+  if (!fontes || fontes.length === 0) return null;
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {fontes.map((fonte) => {
+        const conteudo = (
+          <span className="truncate">{fonte.label}</span>
+        );
+        const classe =
+          "inline-flex max-w-[220px] items-center gap-1 rounded-full border border-white/10 bg-navy-3/60 px-2.5 py-1 text-[11px] text-muted transition-colors";
+
+        if (!fonte.href) {
+          return (
+            <span key={`${fonte.tipo}-${fonte.fonteId}`} className={classe} title={fonte.label}>
+              {conteudo}
+            </span>
+          );
+        }
+
+        const externo = fonte.href.startsWith("http");
+        return (
+          <Link
+            key={`${fonte.tipo}-${fonte.fonteId}`}
+            href={fonte.href}
+            target={externo ? "_blank" : undefined}
+            rel={externo ? "noopener noreferrer" : undefined}
+            className={`${classe} hover:border-gold/40 hover:text-gold-2`}
+            title={fonte.label}
+          >
+            {conteudo}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 function formatarHora(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -171,6 +212,7 @@ export function ChatApp({
                   ) : (
                     <p className="whitespace-pre-wrap text-sm">{m.conteudo}</p>
                   )}
+                  {m.role === "assistant" && <FontesCitadas fontes={m.fontes} />}
                   <p className="mt-1.5 text-right text-[10px] text-muted">{formatarHora(m.criado_em)}</p>
                 </div>
                 {m.role === "assistant" && m.proposta_id && <PropostaAcaoCard propostaId={m.proposta_id} />}

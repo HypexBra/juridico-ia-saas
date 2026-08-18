@@ -3,6 +3,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BarChart } from "@/components/app/charts/bar-chart";
 
 export const metadata = { title: "Relatórios — Jurídico IA" };
 
@@ -21,6 +22,11 @@ type LinhaProdutividade = {
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatarMoedaCompacta(valor: number) {
+  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".0", "")}k`;
+  return valor.toFixed(0);
 }
 
 /**
@@ -154,6 +160,14 @@ export default async function RelatoriosPage() {
 
   linhas.sort((a, b) => b.honorariosRecebidos - a.honorariosRecebidos || b.totalCasos - a.totalCasos);
 
+  const dadosHonorariosPorAdvogado = linhas
+    .filter((linha) => linha.honorariosRecebidos > 0)
+    .slice(0, 6)
+    .map((linha) => ({
+      label: linha.nome.split(" ")[0] ?? linha.nome,
+      value: linha.honorariosRecebidos,
+    }));
+
   const semAtribuicao = listaFichas.filter((ficha) => {
     if (!ficha.conversa_id) return true;
     return !conversaParaAdvogado.get(ficha.conversa_id);
@@ -168,6 +182,14 @@ export default async function RelatoriosPage() {
         </p>
       </div>
 
+      {dadosHonorariosPorAdvogado.length > 0 && (
+        <Card>
+          <CardTitle className="mb-1">Honorários recebidos por advogado</CardTitle>
+          <p className="mb-4 text-xs text-muted">Parcela do rateio sobre parcelas já pagas.</p>
+          <BarChart data={dadosHonorariosPorAdvogado} formatValue={formatarMoedaCompacta} />
+        </Card>
+      )}
+
       {linhas.length === 0 ? (
         <Card>
           <p className="text-sm text-muted">Nenhum perfil ativo cadastrado neste escritório ainda.</p>
@@ -175,7 +197,7 @@ export default async function RelatoriosPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {linhas.map((linha) => (
-            <Card key={linha.perfilId}>
+            <Card key={linha.perfilId} className="transition-transform duration-150 ease-out active:scale-[0.99]">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>{linha.nome}</CardTitle>
                 <div className="flex items-center gap-2">

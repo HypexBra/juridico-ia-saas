@@ -167,8 +167,8 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? "bg-gold/15 text-gold-2" : "text-muted hover:bg-white/5 hover:text-ice"
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] ${
+                  isActive ? "bg-gold/15 text-gold-2" : "text-muted hover:bg-white/5 hover:text-ice active:bg-white/10"
                 }`}
               >
                 <NavIcon name={item.icon} />

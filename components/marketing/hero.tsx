@@ -48,14 +48,14 @@ export function Hero() {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
                 href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-sm bg-gradient-to-br from-gold to-gold-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_8px_32px_rgba(201,168,76,.25)] transition-transform hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 rounded-sm bg-gradient-to-br from-gold to-gold-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_8px_32px_rgba(201,168,76,.25)] transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0"
               >
                 Criar conta grátis
                 <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="#como-funciona"
-                className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-6 py-3.5 text-sm font-medium text-ice transition-colors hover:border-white/30 hover:bg-white/5"
+                className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-6 py-3.5 text-sm font-medium text-ice transition-all duration-150 ease-out hover:border-white/30 hover:bg-white/5 active:scale-[0.97] active:bg-white/10"
               >
                 Ver como funciona
               </a>

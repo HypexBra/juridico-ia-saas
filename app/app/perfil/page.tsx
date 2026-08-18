@@ -1,13 +1,35 @@
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
+import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { OabForm } from "@/components/app/oab-form";
+import { WhatsappCanalForm } from "@/components/app/whatsapp-canal-form";
 
 export const metadata = { title: "Meu perfil — Jurídico IA" };
 
 export default async function PerfilPage() {
   const usuario = await getUsuarioAtual();
   if (!usuario) redirect("/login");
+
+  const podeGerenciarWhatsapp = usuario.perfil.role === "owner" || usuario.perfil.role === "admin";
+
+  // A RLS `canais_whatsapp_admin` (migration 0008) já restringe esta leitura
+  // a owner/admin do próprio escritório — para `advogado` a query volta
+  // vazia por política, então nem tentamos buscar (evita um round-trip
+  // que sempre retornaria nulo para esse papel).
+  let canalExistente: { phoneNumberId: string; numeroExibicao: string | null; ativo: boolean } | null = null;
+  if (podeGerenciarWhatsapp) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("canais_whatsapp_escritorio")
+      .select("phone_number_id, numero_exibicao, ativo")
+      .eq("escritorio_id", usuario.perfil.escritorio_id)
+      .maybeSingle();
+
+    canalExistente = data
+      ? { phoneNumberId: data.phone_number_id, numeroExibicao: data.numero_exibicao, ativo: data.ativo }
+      : null;
+  }
 
   return (
     <div className="space-y-6">
@@ -25,6 +47,19 @@ export default async function PerfilPage() {
         </p>
         <OabForm oabAtual={usuario.perfil.oab} />
       </Card>
+
+      {podeGerenciarWhatsapp && (
+        <Card>
+          <CardTitle className="mb-1">Lembretes via WhatsApp</CardTitle>
+          <p className="mb-4 text-sm text-muted">
+            Conecte o número do WhatsApp Business do escritório (Meta Cloud API) para enviar lembretes
+            automáticos aos clientes 3 dias antes, 1 dia antes e no dia do vencimento de prazos e parcelas de
+            honorários — e um aviso caso passem do vencimento. Só titular e administradores veem e configuram
+            esta credencial.
+          </p>
+          <WhatsappCanalForm canalExistente={canalExistente} />
+        </Card>
+      )}
     </div>
   );
 }

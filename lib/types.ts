@@ -43,6 +43,13 @@ export type Conversa = {
   total_msgs: number;
 };
 
+export type FonteCitadaMensagem = {
+  tipo: "documento_upload" | "ficha_caso" | "prazo" | "modelo" | "jurisprudencia";
+  fonteId: string;
+  label: string;
+  href: string | null;
+};
+
 export type Mensagem = {
   id: string;
   escritorio_id: string;
@@ -52,6 +59,7 @@ export type Mensagem = {
   tokens_in: number;
   tokens_out: number;
   proposta_id: string | null;
+  fontes: FonteCitadaMensagem[] | null;
   criado_em: string;
 };
 
@@ -261,6 +269,34 @@ export type Modelo = {
   uso_count: number;
   criado_em: string;
   atualizado_em: string;
+};
+
+export type CanalWhatsappEscritorio = {
+  id: string;
+  escritorio_id: string;
+  phone_number_id: string;
+  token_acesso: string;
+  numero_exibicao: string | null;
+  ativo: boolean;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+export type TipoReferenciaLembrete = "prazo" | "parcela_honorario";
+export type MarcoLembrete = "d3" | "d1" | "d0" | "atraso";
+export type StatusLembreteWhatsapp = "enviado" | "falhou";
+
+export type LembreteWhatsappEnviado = {
+  id: string;
+  escritorio_id: string;
+  tipo_referencia: TipoReferenciaLembrete;
+  referencia_id: string;
+  marco: MarcoLembrete;
+  telefone_destino: string;
+  status: StatusLembreteWhatsapp;
+  mensagem_id_externo: string | null;
+  erro: string | null;
+  criado_em: string;
 };
 
 export const AREAS_DIREITO = [

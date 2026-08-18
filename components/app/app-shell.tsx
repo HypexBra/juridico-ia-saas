@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { MobileTabBar } from "./mobile-tab-bar";
+import { PageTransition } from "./page-transition";
+import { PullToRefresh } from "./pull-to-refresh";
 import { Sidebar } from "./sidebar";
 import type { Role } from "@/lib/types";
 
@@ -49,12 +52,15 @@ export function AppShell({
       />
 
       <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-navy/95 px-4 backdrop-blur-md md:hidden">
+        <header
+          className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-navy/95 px-4 backdrop-blur-md md:hidden"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
           <button
             type="button"
             aria-label="Abrir menu"
             onClick={() => setMenuAberto(true)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 text-ice"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <path d="M4 6.5h16" />
@@ -70,8 +76,14 @@ export function AppShell({
           </Link>
         </header>
 
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-8">{children}</main>
+        <main className="min-w-0 flex-1 px-4 py-6 pb-24 sm:px-6 md:px-10 md:py-8 md:pb-8">
+          <PullToRefresh>
+            <PageTransition>{children}</PageTransition>
+          </PullToRefresh>
+        </main>
       </div>
+
+      <MobileTabBar onMore={() => setMenuAberto(true)} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 import { IconCheck, IconDash } from "./icons";
+import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 
 interface PlanFeature {
   label: string;
@@ -89,11 +90,22 @@ export function Pricing() {
           </Reveal>
 
           <Reveal delayMs={100} className="md:mt-10">
-            <div className="relative flex h-full flex-col overflow-hidden rounded-md border border-gold/40 bg-navy-3/70 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
-              <span
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold to-gold-2"
-              />
+            <BorderGlow
+              className="h-full transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
+              backgroundColor="#162a52"
+              borderRadius={10}
+              glowColor="42 80 72"
+              glowRadius={44}
+              glowIntensity={1.1}
+              coneSpread={30}
+              colors={["#c9a84c", "#162a52", "#f5e0a0"]}
+              fillOpacity={0.35}
+            >
+              <div className="relative flex h-full flex-col overflow-hidden p-8">
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold to-gold-2"
+                />
               <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-gold to-gold-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
                 Em breve
               </span>
@@ -121,7 +133,8 @@ export function Pricing() {
               >
                 Entrar na lista de espera
               </Link>
-            </div>
+              </div>
+            </BorderGlow>
           </Reveal>
         </div>
       </div>
