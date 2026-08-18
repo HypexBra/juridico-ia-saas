@@ -50,7 +50,48 @@ export type Mensagem = {
   conteudo: string;
   tokens_in: number;
   tokens_out: number;
+  proposta_id: string | null;
   criado_em: string;
+};
+
+export type TipoPropostaAcao =
+  | "update_ficha"
+  | "update_prazo"
+  | "create_ficha"
+  | "create_prazo"
+  | "generate_documento";
+
+export type StatusPropostaAcao = "pending" | "approved" | "rejected" | "applied" | "failed" | "expired";
+
+export type PropostaAcao = {
+  id: string;
+  escritorio_id: string;
+  conversa_id: string | null;
+  criado_por: string | null;
+  tipo: TipoPropostaAcao;
+  tabela_alvo: string | null;
+  registro_id: string | null;
+  resumo: string;
+  payload: Record<string, unknown>;
+  status: StatusPropostaAcao;
+  erro: string | null;
+  expira_em: string;
+  criado_em: string;
+  resolvido_em: string | null;
+  resolvido_por: string | null;
+};
+
+export type DocumentoConhecimento = {
+  id: string;
+  escritorio_id: string;
+  criado_por: string | null;
+  nome_arquivo: string;
+  tipo_conteudo: "legislacao" | "jurisprudencia" | "doutrina" | "outro";
+  status: "pendente" | "processando" | "pronto" | "erro";
+  total_chunks: number;
+  erro: string | null;
+  criado_em: string;
+  processado_em: string | null;
 };
 
 export type FichaCaso = {

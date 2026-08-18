@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, type ChatTurno } from "@/lib/ia/gemini";
+import { buscarContextoRelevante, montarBlocoContexto } from "@/lib/rag/retrieval";
+import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
+import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
 import type { Conversa, Mensagem } from "@/lib/types";
 
@@ -146,9 +149,34 @@ export async function enviarMensagemAction(
     { role: "user", conteudo: parsed.data.texto },
   ];
 
+  // Gate de segurança do agente: só habilita as ferramentas de ação
+  // (propose_*) se não houver nenhuma proposta pendente nesta conversa.
+  // Evita empilhar múltiplas ações de escrita não confirmadas — o usuário
+  // sempre resolve uma de cada vez antes do agente poder propor a próxima.
+  const { count: propostasPendentes } = await supabase
+    .from("propostas_acao")
+    .select("id", { count: "exact", head: true })
+    .eq("conversa_id", conversaId)
+    .eq("status", "pending");
+
+  // RAG: busca por similaridade na base de conhecimento do escritório
+  // (uploads + dados internos já indexados). Falha na busca não derruba o
+  // chat — degrada para "sem contexto" e o modelo é instruído a não fingir
+  // que consultou uma base (ver RAG_TOOLING_PROMPT).
+  let contextoRag: string | null = null;
+  try {
+    const chunks = await buscarContextoRelevante(supabase, escritorioId, parsed.data.texto);
+    contextoRag = montarBlocoContexto(chunks);
+  } catch {
+    contextoRag = null;
+  }
+
   let respostaIa;
   try {
-    respostaIa = await gerarResposta(historico);
+    respostaIa = await gerarResposta(historico, {
+      contextoRag,
+      habilitarFerramentas: (propostasPendentes ?? 0) === 0,
+    });
   } catch {
     return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
   }
@@ -161,15 +189,69 @@ export async function enviarMensagemAction(
   });
   if (erroInsertUser) return { ok: false, error: "Não foi possível salvar a mensagem." };
 
+  // Trata no máximo a PRIMEIRA function call retornada: mesmo que o modelo
+  // (não confiável) tente propor mais de uma ação na mesma resposta, só uma
+  // proposta é criada por turno — reforça o limite de "uma ação por vez".
+  let propostaId: string | null = null;
+  const chamada = respostaIa.functionCalls[0];
+  if (chamada && chamada.name in TOOL_SCHEMAS) {
+    const nomeTool = chamada.name as NomeTool;
+    const schema = TOOL_SCHEMAS[nomeTool];
+    const argsValidados = schema.safeParse(chamada.args);
+
+    if (argsValidados.success) {
+      const args = argsValidados.data as Record<string, unknown>;
+      const tabelaAlvo =
+        nomeTool === "propose_update_prazo" || nomeTool === "propose_create_prazo"
+          ? "prazos"
+          : nomeTool === "propose_update_ficha" || nomeTool === "propose_create_ficha"
+            ? "fichas_caso"
+            : null;
+      const registroId =
+        nomeTool === "propose_update_prazo"
+          ? (args.prazo_id as string)
+          : nomeTool === "propose_update_ficha"
+            ? (args.ficha_id as string)
+            : null;
+
+      const { data: novaProposta, error: erroProposta } = await supabase
+        .from("propostas_acao")
+        .insert({
+          escritorio_id: escritorioId,
+          conversa_id: conversaId,
+          criado_por: perfilId,
+          tipo: TOOL_PARA_TIPO_PROPOSTA[nomeTool],
+          tabela_alvo: tabelaAlvo,
+          registro_id: registroId,
+          resumo: montarResumoProposta(nomeTool, args),
+          payload: args,
+        })
+        .select("id")
+        .single();
+
+      if (!erroProposta && novaProposta) propostaId = novaProposta.id;
+    }
+    // Se a validação falhar, a proposta é silenciosamente descartada (o
+    // modelo não é confiável por padrão) e o turno segue só com o texto da
+    // resposta — nunca criamos uma proposta com dados fora do schema.
+  }
+
+  const textoResposta =
+    respostaIa.texto ||
+    (propostaId
+      ? "Preparei uma proposta de ação — revise e aprove ou rejeite no card abaixo."
+      : "Não foi possível gerar uma resposta em texto para esta mensagem.");
+
   const { data: mensagemAssistente, error: erroInsertAssistente } = await supabase
     .from("mensagens")
     .insert({
       escritorio_id: escritorioId,
       conversa_id: conversaId,
       role: "assistant",
-      conteudo: respostaIa.texto,
+      conteudo: textoResposta,
       tokens_in: respostaIa.tokensIn,
       tokens_out: respostaIa.tokensOut,
+      proposta_id: propostaId,
     })
     .select("*")
     .single();

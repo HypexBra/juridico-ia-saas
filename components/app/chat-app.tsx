@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { MarkdownLite } from "./markdown-lite";
+import { PropostaAcaoCard } from "./proposta-acao-card";
 import {
   carregarMensagensAction,
   enviarMensagemAction,
@@ -12,7 +13,9 @@ import {
 } from "@/app/app/chat/actions";
 import type { Mensagem } from "@/lib/types";
 
-type MensagemLocal = Pick<Mensagem, "id" | "role" | "conteudo" | "criado_em">;
+type MensagemLocal = Pick<Mensagem, "id" | "role" | "conteudo" | "criado_em"> & {
+  proposta_id?: string | null;
+};
 
 function formatarHora(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -157,7 +160,7 @@ export function ChatApp({
             </div>
           ) : (
             mensagens.map((m) => (
-              <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                     m.role === "user" ? "bg-gold/15 text-ice" : "bg-navy-3/80 text-ice"
@@ -170,6 +173,7 @@ export function ChatApp({
                   )}
                   <p className="mt-1.5 text-right text-[10px] text-muted">{formatarHora(m.criado_em)}</p>
                 </div>
+                {m.role === "assistant" && m.proposta_id && <PropostaAcaoCard propostaId={m.proposta_id} />}
               </div>
             ))
           )}

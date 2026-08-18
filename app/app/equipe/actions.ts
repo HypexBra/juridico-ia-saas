@@ -28,6 +28,6 @@ export async function convidarAction(
 
   return {
     error: null,
-    sucesso: `O envio de convites por e-mail ainda está em breve. Por enquanto, peça para ${parsed.data.email} se cadastrar diretamente e depois ajuste o papel dele(a) na equipe.`,
+    sucesso: `O envio de convites por e-mail ainda estará disponível em breve. Por enquanto, peça para ${parsed.data.email} se cadastrar diretamente e depois ajuste o papel dele(a) na equipe.`,
   };
 }

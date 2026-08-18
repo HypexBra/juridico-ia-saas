@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
-import { Sidebar } from "@/components/app/sidebar";
+import { AppShell } from "@/components/app/app-shell";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
   const usuario = await getUsuarioAtual();
@@ -10,15 +10,12 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar
-        nomeEscritorio={usuario.perfil.escritorio.nome}
-        nomeUsuario={usuario.perfil.nome}
-        role={usuario.perfil.role}
-      />
-      <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
-        <main className="flex-1 px-6 py-8 md:px-10">{children}</main>
-      </div>
-    </div>
+    <AppShell
+      nomeEscritorio={usuario.perfil.escritorio.nome}
+      nomeUsuario={usuario.perfil.nome}
+      role={usuario.perfil.role}
+    >
+      {children}
+    </AppShell>
   );
 }
