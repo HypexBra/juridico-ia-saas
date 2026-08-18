@@ -1,3 +1,4 @@
+import { ProgressLine } from "./progress-line";
 import { Reveal } from "./reveal";
 
 const STEPS = [
@@ -40,7 +41,8 @@ export function HowItWorks() {
           </h2>
         </div>
 
-        <div className="space-y-0">
+        <div className="relative space-y-0">
+          <ProgressLine className="left-6 top-2 bottom-2 hidden sm:block" />
           {STEPS.map((step, index) => (
             <Reveal key={step.number} delayMs={index * 80}>
               <div

@@ -16,6 +16,12 @@ export function Nav() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/15 bg-navy/85 backdrop-blur-md">
+      {/* Reading-progress bar: CSS scroll-driven (animation-timeline: scroll(root)),
+          zero JS. Thematic nod to "progresso na leitura do artigo". */}
+      <div
+        aria-hidden
+        className="nav-progress absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-gradient-to-r from-gold to-gold-2"
+      />
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
         <Link
           href="/"

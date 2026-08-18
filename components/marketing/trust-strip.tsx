@@ -22,15 +22,23 @@ export function TrustStrip() {
           autônomo à banca com equipe de várias áreas.
         </p>
 
-        <div className="mt-7 flex flex-wrap gap-2.5">
-          {AREAS.map((area) => (
-            <span
-              key={area}
-              className="rounded-full border border-gold/20 bg-gold/5 px-3.5 py-1.5 text-xs text-ice-2/90"
-            >
-              {area}
-            </span>
-          ))}
+        {/*
+          Marquee contínuo em CSS puro (translate3d, GPU-accelerated) — sem
+          JS, sem ScrollTrigger: é decoração ambiente, não algo ligado à
+          posição de scroll. `motion-reduce:animate-none` desliga o loop para
+          quem pediu menos movimento.
+        */}
+        <div className="mt-7 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
+          <div className="flex w-max animate-[marquee_34s_linear_infinite] gap-2.5 motion-reduce:animate-none">
+            {[...AREAS, ...AREAS].map((area, index) => (
+              <span
+                key={`${area}-${index}`}
+                className="shrink-0 rounded-full border border-gold/20 bg-gold/5 px-3.5 py-1.5 text-xs text-ice-2/90"
+              >
+                {area}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </section>

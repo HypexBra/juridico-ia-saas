@@ -1,3 +1,4 @@
+import { FeaturesScroller } from "./features-scroller";
 import { Reveal } from "./reveal";
 import {
   IconChart,
@@ -70,6 +71,14 @@ const ARTICLES: Article[] = [
 ];
 
 export function Features() {
+  // Rendered once here (Server Component) so the client scroller only ever
+  // receives plain ReactNode icons — no function references cross the RSC
+  // boundary.
+  const scrollerArticles = ARTICLES.map(({ icon: Icon, ...rest }) => ({
+    ...rest,
+    icon: <Icon className="h-6 w-6" strokeWidth={1.4} />,
+  }));
+
   return (
     <section id="funcionalidades" className="bg-navy py-24 sm:py-32">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
@@ -84,7 +93,13 @@ export function Features() {
             Sete cláusulas, nenhuma promessa vazia — cada uma existe e funciona hoje.
           </p>
         </div>
+      </div>
 
+      {/* Desktop (>=1024px): pinned scrollytelling, one artigo por vez. */}
+      <FeaturesScroller articles={scrollerArticles} />
+
+      {/* Mobile/tablet + no-JS + reduced-motion fallback: lista estática empilhada. */}
+      <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:hidden">
         <div className="divide-y divide-gold/10 border-y border-gold/10">
           {ARTICLES.map((article, index) => {
             const Icon = article.icon;

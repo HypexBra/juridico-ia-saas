@@ -46,7 +46,7 @@ export function Pricing() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Reveal>
-            <div className="flex h-full flex-col rounded-md border border-white/10 bg-navy-2/50 p-8">
+            <div className="flex h-full flex-col rounded-md border border-white/10 bg-navy-2/50 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
               <h3 className="font-display text-lg font-bold text-ice">Free</h3>
               <p className="mt-1.5 text-sm text-muted">
                 Para advogados autônomos testarem o copiloto no dia a dia.
@@ -84,7 +84,7 @@ export function Pricing() {
           </Reveal>
 
           <Reveal delayMs={100}>
-            <div className="relative flex h-full flex-col overflow-hidden rounded-md border border-gold/40 bg-navy-3/70 p-8">
+            <div className="relative flex h-full flex-col overflow-hidden rounded-md border border-gold/40 bg-navy-3/70 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
               <span
                 aria-hidden
                 className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold to-gold-2"

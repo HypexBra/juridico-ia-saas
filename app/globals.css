@@ -36,3 +36,77 @@ body {
   background: var(--color-navy);
   color: var(--color-ice);
 }
+
+/* ---- Motion primitives (GSAP-driven components read these) ---- */
+
+/* SplitText word wrapper: clips the translateY reveal without cutting
+   descenders (g, y, j, ç) off the bottom of each word. */
+.text-reveal__unit {
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ---- Nav scroll-progress bar: CSS Scroll-Driven Animation ----
+   Simple, linear, no pin/callback needed -> native `animation-timeline`
+   first, per the framework's CSS-before-GSAP rule. No @supports match =
+   the bar just stays at scale-x-0 (invisible), zero dependency on it. */
+@supports (animation-timeline: scroll()) {
+  .nav-progress {
+    animation: nav-progress-fill linear forwards;
+    animation-timeline: scroll(root);
+  }
+}
+
+@keyframes nav-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---- CTA glow: CSS Scroll-Driven Animation (view timeline) ----
+   Same rationale: a simple scale/opacity tied to view progress, no pin,
+   no callback. Falls back to the element's static inline opacity. */
+@supports (animation-timeline: view()) {
+  .cta-glow {
+    animation: cta-glow-in linear forwards;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+}
+
+@keyframes cta-glow-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  to {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress,
+  .cta-glow {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

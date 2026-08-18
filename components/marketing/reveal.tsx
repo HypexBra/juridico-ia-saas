@@ -1,58 +1,81 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { getGsap, prefersReducedMotion } from "@/lib/motion/gsap";
 
 interface RevealProps {
   children: ReactNode;
   delayMs?: number;
   className?: string;
   as?: "div" | "li";
+  /** Vertical travel distance in px before settling. Default 28. */
+  distance?: number;
 }
 
 /**
- * Client-only scroll reveal. No animation library: a single IntersectionObserver
- * flips one boolean per element, CSS transitions do the rest. Used sparingly
- * (feature articles, steps, pricing) — not on every DOM node.
+ * Scroll reveal powered by GSAP ScrollTrigger (power3.out, ~900ms). Replaces
+ * the previous IntersectionObserver + CSS-transition implementation with the
+ * same public API, so every call site keeps working unchanged.
+ *
+ * Respects `prefers-reduced-motion`: the element is made visible immediately
+ * with no animation. Each instance tears itself down on unmount via
+ * `gsap.context().revert()` so no ScrollTrigger keeps listening off-screen.
  */
-export function Reveal({ children, delayMs = 0, className = "", as = "div" }: RevealProps) {
-  const ref = useRef<HTMLDivElement | HTMLLIElement | null>(null);
-  const supportsObserver = typeof IntersectionObserver !== "undefined";
-  const [visible, setVisible] = useState(!supportsObserver);
+export function Reveal({
+  children,
+  delayMs = 0,
+  className = "",
+  as = "div",
+  distance = 28,
+}: RevealProps) {
+  const divRef = useRef<HTMLDivElement | null>(null);
+  const liRef = useRef<HTMLLIElement | null>(null);
 
   useEffect(() => {
-    const node = ref.current;
-    if (!node || !supportsObserver) return;
+    const node = as === "li" ? liRef.current : divRef.current;
+    if (!node) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.2, rootMargin: "0px 0px -40px 0px" },
-    );
+    if (prefersReducedMotion()) {
+      node.style.opacity = "1";
+      node.style.transform = "none";
+      return;
+    }
 
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [supportsObserver]);
+    const { gsap } = getGsap();
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        node,
+        { autoAlpha: 0, y: distance },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.9,
+          ease: "power3.out",
+          delay: delayMs / 1000,
+          scrollTrigger: {
+            trigger: node,
+            start: "top 88%",
+            toggleActions: "play none none reverse",
+          },
+        },
+      );
+    });
 
-  const style = { transitionDelay: `${delayMs}ms` };
-  const classes = `transition-all duration-700 ease-out will-change-transform ${
-    visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-  } ${className}`;
+    return () => ctx.revert();
+  }, [as, delayMs, distance]);
+
+  const classes = `opacity-0 will-change-transform ${className}`;
 
   if (as === "li") {
     return (
-      <li ref={ref as React.RefObject<HTMLLIElement>} style={style} className={classes}>
+      <li ref={liRef} className={classes}>
         {children}
       </li>
     );
   }
 
   return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} style={style} className={classes}>
+    <div ref={divRef} className={classes}>
       {children}
     </div>
   );
