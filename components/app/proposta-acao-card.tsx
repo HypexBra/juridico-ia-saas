@@ -3,12 +3,107 @@
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input, Label } from "@/components/ui/input";
 import {
   aprovarPropostaAction,
+  buscarDocumentoAssinaturaDaPropostaAction,
   buscarPropostaAction,
+  enviarPropostaParaAssinaturaAction,
   rejeitarPropostaAction,
 } from "@/app/app/chat/propostas-actions";
-import type { PropostaAcao } from "@/lib/types";
+import type { DocumentoParaAssinatura, PropostaAcao, StatusDocumentoAssinatura } from "@/lib/types";
+
+const RÓTULO_STATUS_DOC: Record<StatusDocumentoAssinatura, string> = {
+  rascunho: "Não enviado",
+  aguardando_assinatura: "Aguardando assinatura",
+  assinado: "Assinado",
+  recusado: "Recusado",
+};
+
+const TONE_STATUS_DOC: Record<StatusDocumentoAssinatura, "muted" | "gold" | "green" | "red"> = {
+  rascunho: "muted",
+  aguardando_assinatura: "gold",
+  assinado: "green",
+  recusado: "red",
+};
+
+type SignatarioCampo = { id: string; nome: string; email: string };
+
+function EnvioAssinaturaInline({
+  propostaId,
+  onEnviado,
+}: {
+  propostaId: string;
+  onEnviado: (documento: DocumentoParaAssinatura | null) => void;
+}) {
+  const [signatarios, setSignatarios] = useState<SignatarioCampo[]>([{ id: crypto.randomUUID(), nome: "", email: "" }]);
+  const [erro, setErro] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function enviar() {
+    setErro(null);
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("signatarios", JSON.stringify(signatarios.map(({ nome, email }) => ({ nome, email }))));
+      const resultado = await enviarPropostaParaAssinaturaAction(propostaId, { error: null, ok: false }, formData);
+      if (!resultado.ok) {
+        setErro(resultado.error);
+        return;
+      }
+      onEnviado(await buscarDocumentoAssinaturaDaPropostaAction(propostaId));
+    });
+  }
+
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-navy-2/50 p-2.5">
+      {signatarios.map((s, i) => (
+        <div key={s.id} className="grid grid-cols-2 gap-2">
+          <div>
+            <Label htmlFor={`na-${s.id}`} className="mb-1 text-[10px]">
+              Signatário {i + 1}
+            </Label>
+            <Input
+              id={`na-${s.id}`}
+              placeholder="Nome"
+              value={s.nome}
+              onChange={(e) =>
+                setSignatarios((atual) => atual.map((x) => (x.id === s.id ? { ...x, nome: e.target.value } : x)))
+              }
+            />
+          </div>
+          <div>
+            <Label htmlFor={`ea-${s.id}`} className="mb-1 text-[10px]">
+              E-mail
+            </Label>
+            <Input
+              id={`ea-${s.id}`}
+              type="email"
+              placeholder="email@exemplo.com"
+              value={s.email}
+              onChange={(e) =>
+                setSignatarios((atual) => atual.map((x) => (x.id === s.id ? { ...x, email: e.target.value } : x)))
+              }
+            />
+          </div>
+        </div>
+      ))}
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setSignatarios((a) => [...a, { id: crypto.randomUUID(), nome: "", email: "" }])}
+        >
+          + Signatário
+        </Button>
+        <Button type="button" size="sm" disabled={isPending} onClick={enviar}>
+          {isPending ? "Enviando…" : "Confirmar envio"}
+        </Button>
+      </div>
+      {erro && <p className="text-xs text-red-400">{erro}</p>}
+    </div>
+  );
+}
 
 const RÓTULO_TIPO: Record<PropostaAcao["tipo"], string> = {
   update_prazo: "Atualizar prazo",
@@ -38,6 +133,8 @@ const RÓTULO_STATUS: Record<PropostaAcao["status"], string> = {
 
 export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
   const [proposta, setProposta] = useState<PropostaAcao | null>(null);
+  const [documentoAssinatura, setDocumentoAssinatura] = useState<DocumentoParaAssinatura | null>(null);
+  const [mostrarFormAssinatura, setMostrarFormAssinatura] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -45,6 +142,9 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
     let cancelado = false;
     buscarPropostaAction(propostaId).then((p) => {
       if (!cancelado) setProposta(p);
+    });
+    buscarDocumentoAssinaturaDaPropostaAction(propostaId).then((d) => {
+      if (!cancelado) setDocumentoAssinatura(d);
     });
     return () => {
       cancelado = true;
@@ -94,12 +194,33 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
       )}
 
       {proposta.tipo === "generate_documento" && (proposta.status === "approved" || proposta.status === "applied") && (
-        <a
-          href={`/api/propostas/${proposta.id}/documento`}
-          className="mt-3 inline-block text-sm font-medium text-gold-2 underline underline-offset-2"
-        >
-          Baixar {String(payload.formato ?? "docx").toUpperCase()}
-        </a>
+        <>
+          <a
+            href={`/api/propostas/${proposta.id}/documento`}
+            className="mt-3 inline-block text-sm font-medium text-gold-2 underline underline-offset-2"
+          >
+            Baixar {String(payload.formato ?? "docx").toUpperCase()}
+          </a>
+
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">Assinatura eletrônica</span>
+            {documentoAssinatura && (
+              <Badge tone={TONE_STATUS_DOC[documentoAssinatura.status]}>
+                {RÓTULO_STATUS_DOC[documentoAssinatura.status]}
+              </Badge>
+            )}
+          </div>
+
+          {!documentoAssinatura && !mostrarFormAssinatura && (
+            <Button type="button" size="sm" variant="secondary" className="mt-2" onClick={() => setMostrarFormAssinatura(true)}>
+              Enviar pra assinatura
+            </Button>
+          )}
+
+          {!documentoAssinatura && mostrarFormAssinatura && (
+            <EnvioAssinaturaInline propostaId={proposta.id} onEnviado={setDocumentoAssinatura} />
+          )}
+        </>
       )}
     </div>
   );

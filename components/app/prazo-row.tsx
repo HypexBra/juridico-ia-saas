@@ -63,6 +63,18 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
             {prazo.cliente_nome ? ` · ${prazo.cliente_nome}` : ""}
             {prazo.processo ? ` · ${prazo.processo}` : ""}
           </p>
+          {(prazo.numero_processo_cnj || prazo.tribunal) && (
+            <p className="mt-1 text-xs text-muted">
+              {prazo.numero_processo_cnj ? `Processo CNJ: ${prazo.numero_processo_cnj}` : ""}
+              {prazo.numero_processo_cnj && prazo.tribunal ? " · " : ""}
+              {prazo.tribunal ? `Tribunal: ${prazo.tribunal}` : ""}
+            </p>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {prazo.origem === "djen" && <Badge tone="blue">Importado via DJEN</Badge>}
+            {prazo.origem === "importado" && <Badge tone="muted">Importado</Badge>}
+            {prazo.prazo_em_dobro && <Badge tone="gold">Prazo em dobro</Badge>}
+          </div>
           {prazo.descricao && <p className="mt-1 text-xs text-muted">{prazo.descricao}</p>}
           {erro && <p className="mt-1 text-xs text-red-400">{erro}</p>}
         </div>

@@ -8,7 +8,8 @@ import { GerarAnaliseButton } from "@/components/app/gerar-analise-button";
 import { FichaLidaToggle } from "@/components/app/ficha-lida-toggle";
 import { ExcluirFichaButton } from "@/components/app/excluir-ficha-button";
 import { MarkdownLite } from "@/components/app/markdown-lite";
-import type { FichaCaso } from "@/lib/types";
+import { PortalClienteCard } from "@/components/app/portal-cliente-card";
+import type { ClientePortal, FichaCaso } from "@/lib/types";
 
 const URGENCIA_TONE = {
   alta: "red",
@@ -29,6 +30,12 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
     .maybeSingle<FichaCaso>();
 
   if (!ficha) notFound();
+
+  const { data: clientePortal } = await supabase
+    .from("clientes_portal")
+    .select("*")
+    .eq("ficha_caso_id", ficha.id)
+    .maybeSingle<ClientePortal>();
 
   const temAnalise = Boolean(ficha.resumo_ia || ficha.questoes_ia || ficha.estrategia_ia);
 
@@ -105,6 +112,11 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
             )}
           </div>
         )}
+      </Card>
+
+      <Card>
+        <CardTitle className="mb-4">Portal do cliente</CardTitle>
+        <PortalClienteCard fichaId={ficha.id} clientePortal={clientePortal ?? null} />
       </Card>
     </div>
   );

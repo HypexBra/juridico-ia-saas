@@ -5,7 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { EditarModeloForm } from "@/components/app/editar-modelo-form";
 import { ExcluirModeloButton } from "@/components/app/excluir-modelo-button";
-import type { Modelo } from "@/lib/types";
+import { EnviarAssinaturaForm } from "@/components/app/enviar-assinatura-form";
+import { autentiqueEstaConfigurado } from "@/lib/assinatura/autentique";
+import { enviarModeloParaAssinaturaAction, listarDocumentosAssinaturaDoModeloAction } from "./actions";
+import type { DocumentoParaAssinatura, Modelo } from "@/lib/types";
 
 export default async function ModeloDetalhePage({ params }: PageProps<"/app/modelos/[id]">) {
   const usuario = await getUsuarioAtual();
@@ -21,6 +24,9 @@ export default async function ModeloDetalhePage({ params }: PageProps<"/app/mode
 
   if (!modelo) notFound();
 
+  const historicoAssinatura: DocumentoParaAssinatura[] = await listarDocumentosAssinaturaDoModeloAction(modelo.id);
+  const enviarAssinaturaAction = enviarModeloParaAssinaturaAction.bind(null, modelo.id);
+
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
@@ -33,6 +39,12 @@ export default async function ModeloDetalhePage({ params }: PageProps<"/app/mode
       <Card>
         <EditarModeloForm modelo={modelo} />
       </Card>
+
+      <EnviarAssinaturaForm
+        action={enviarAssinaturaAction}
+        historico={historicoAssinatura}
+        provedorConfigurado={autentiqueEstaConfigurado()}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ export type Perfil = {
   nome: string;
   role: Role;
   ativo: boolean;
+  oab: string | null;
   criado_em: string;
 };
 
@@ -191,16 +192,20 @@ export type RateioSocio = {
 export type StatusDocumentoAssinatura = "rascunho" | "aguardando_assinatura" | "assinado" | "recusado";
 export type ProvedorAssinatura = "clicksign" | "autentique";
 
+export type StatusSignatario = "pendente" | "assinado" | "recusado";
+
 export type SignatarioDocumento = {
   nome: string;
   email: string;
-  status: string;
+  status: StatusSignatario;
 };
 
 export type DocumentoParaAssinatura = {
   id: string;
   escritorio_id: string;
   ficha_caso_id: string | null;
+  modelo_id: string | null;
+  proposta_acao_id: string | null;
   criado_por: string | null;
   nome_documento: string;
   arquivo_gerado_em: string | null;

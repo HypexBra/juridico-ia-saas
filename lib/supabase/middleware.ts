@@ -1,7 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/cadastro", "/precos", "/auth/callback"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/cadastro",
+  "/precos",
+  "/auth/callback",
+  "/portal/login",
+  "/portal/ativar",
+];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -36,6 +44,15 @@ export async function updateSession(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith("/app") && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Portal do cliente é uma área de autenticação totalmente separada da
+  // equipe do escritório: sem sessão, redireciona pro login do PORTAL, nunca
+  // pro /login de advogado.
+  if (!user && request.nextUrl.pathname.startsWith("/portal") && !isPublic) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/portal/login";
     return NextResponse.redirect(url);
   }
 

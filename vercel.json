@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sincronizar-djen",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

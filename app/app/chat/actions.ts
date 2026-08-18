@@ -177,7 +177,12 @@ export async function enviarMensagemAction(
       contextoRag,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
     });
-  } catch {
+  } catch (erro) {
+    // Loga a causa real no servidor (ex: "GEMINI_API_KEY não configurada",
+    // 404 de nome de modelo inválido, 429 de quota) — a UI sempre mostra só
+    // a mensagem amigável abaixo, mas sem este log o operador não tem como
+    // diagnosticar qual das duas categorias de falha está ocorrendo.
+    console.error("[chat/enviarMensagemAction] Falha ao gerar resposta da IA:", erro);
     return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
   }
 

@@ -39,14 +39,29 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
   const mesRef = new Date().toISOString().slice(0, 7);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const limiteAlerta = new Date(hoje);
+  limiteAlerta.setDate(limiteAlerta.getDate() + 3);
+  const dataLimiteAlerta = limiteAlerta.toISOString().slice(0, 10);
 
-  const [prazosRes, fichasRes, usoRes] = await Promise.all([
+  const [prazosRes, alertasPrazoRes, fichasRes, usoRes] = await Promise.all([
     supabase
       .from("prazos")
       .select("*")
       .eq("concluido", false)
       .order("data_prazo", { ascending: true })
       .limit(6)
+      .returns<Prazo[]>(),
+    // Alertas: só leitura, prazos vencidos ou que vencem nos próximos 3 dias
+    // — ordenado por urgência (mais vencido/mais próximo primeiro).
+    supabase
+      .from("prazos")
+      .select("*")
+      .eq("concluido", false)
+      .lte("data_prazo", dataLimiteAlerta)
+      .order("data_prazo", { ascending: true })
+      .limit(10)
       .returns<Prazo[]>(),
     supabase
       .from("fichas_caso")
@@ -59,6 +74,7 @@ export default async function DashboardPage() {
   ]);
 
   const prazos = prazosRes.data ?? [];
+  const alertasPrazo = alertasPrazoRes.data ?? [];
   const fichas = fichasRes.data ?? [];
   const usoMes = usoRes.data?.length ?? 0;
   const percentualUso = Math.min(100, Math.round((usoMes / LIMITE_MENSAGENS_FREE) * 100));
@@ -71,6 +87,42 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-muted">Visão geral do escritório {usuario.perfil.escritorio.nome}.</p>
       </div>
+
+      {alertasPrazo.length > 0 && (
+        <Card className="border-red-500/30 bg-red-950/10">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-red-400" />
+              <CardTitle className="text-ice">Prazos que exigem atenção</CardTitle>
+            </div>
+            <LinkButton href="/app/prazos" variant="ghost" size="sm">
+              Ver todos →
+            </LinkButton>
+          </div>
+          <ul className="space-y-2.5">
+            {alertasPrazo.map((prazo) => {
+              const dias = diasAte(prazo.data_prazo);
+              const urgencia = urgenciaPrazo(dias);
+              return (
+                <li
+                  key={prazo.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
+                    <p className="text-xs text-muted">
+                      {formatarData(prazo.data_prazo)}
+                      {prazo.cliente_nome ? ` · ${prazo.cliente_nome}` : ""}
+                      {prazo.processo ? ` · ${prazo.processo}` : ""}
+                    </p>
+                  </div>
+                  <Badge tone={urgencia.tone}>{urgencia.label}</Badge>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
