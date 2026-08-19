@@ -32,11 +32,30 @@ export async function criarEscritorioEPerfil(
   nomeUsuario: string,
   nomeEscritorio: string,
 ) {
-  const { data: escritorio, error: erroEscritorio } = await supabase
-    .from("escritorios")
-    .insert({ nome: nomeEscritorio, slug: slugify(nomeEscritorio) })
-    .select()
-    .single();
+  // Gera o id do tenant no client (em vez de deixar o Postgres aplicar o
+  // default `gen_random_uuid()` e devolver via `.select()`/RETURNING).
+  //
+  // Causa raiz do bug "Conta criada, mas houve um erro ao configurar o
+  // escritório": a policy `escritorios_select` só libera SELECT quando
+  // `id = escritorio_atual()`, e `escritorio_atual()` lê o `escritorio_id`
+  // do perfil do usuário. No fluxo antigo (`insert(...).select().single()`),
+  // o RETURNING do INSERT já é filtrado por essa policy de SELECT — mas o
+  // perfil (criado só no passo seguinte) ainda não existe nesse instante,
+  // então `escritorio_atual()` retorna null e o RETURNING vem vazio. O
+  // supabase-js interpreta isso como erro ("JSON object requested, ... no
+  // rows returned") mesmo com o INSERT tendo sido commitado com sucesso —
+  // por isso "conta criada" (auth ok) + "erro ao configurar" (onboarding).
+  //
+  // Gerando o id aqui, não precisamos ler o registro de volta antes de criar
+  // o perfil: o INSERT em `escritorios` só depende da policy de INSERT
+  // (`escritorios_insert`), que não exige perfil prévio.
+  const escritorioId = crypto.randomUUID();
+
+  const { error: erroEscritorio } = await supabase.from("escritorios").insert({
+    id: escritorioId,
+    nome: nomeEscritorio,
+    slug: slugify(nomeEscritorio),
+  });
   if (erroEscritorio) {
     // Loga a causa real (ex: RLS negando o insert porque o usuário já tem
     // perfil, colisão de slug, coluna NOT NULL faltando) — sem isso, o
@@ -50,27 +69,42 @@ export async function criarEscritorioEPerfil(
 
   const { error: erroPerfil } = await supabase.from("perfis").insert({
     auth_user_id: authUserId,
-    escritorio_id: escritorio.id,
+    escritorio_id: escritorioId,
     nome: nomeUsuario,
     role: "owner",
   });
   if (erroPerfil) {
     console.error("[onboarding/criarEscritorioEPerfil] Falha ao criar perfil:", erroPerfil, {
       authUserId,
-      escritorioId: escritorio.id,
+      escritorioId,
     });
     throw erroPerfil;
   }
 
   const { error: erroTags } = await supabase
     .from("tags")
-    .insert(TAGS_PADRAO.map((tag) => ({ ...tag, escritorio_id: escritorio.id })));
+    .insert(TAGS_PADRAO.map((tag) => ({ ...tag, escritorio_id: escritorioId })));
   if (erroTags) {
     console.error("[onboarding/criarEscritorioEPerfil] Falha ao criar tags padrão:", erroTags, {
       authUserId,
-      escritorioId: escritorio.id,
+      escritorioId,
     });
     throw erroTags;
+  }
+
+  // A partir daqui o perfil já existe, então `escritorio_atual()` resolve
+  // e a leitura respeita a policy `escritorios_select` normalmente.
+  const { data: escritorio, error: erroLeitura } = await supabase
+    .from("escritorios")
+    .select()
+    .eq("id", escritorioId)
+    .single();
+  if (erroLeitura) {
+    console.error("[onboarding/criarEscritorioEPerfil] Falha ao ler escritório recém-criado:", erroLeitura, {
+      authUserId,
+      escritorioId,
+    });
+    throw erroLeitura;
   }
 
   return escritorio;
