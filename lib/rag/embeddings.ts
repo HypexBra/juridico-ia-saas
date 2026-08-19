@@ -14,6 +14,12 @@ const DIMENSOES_EMBEDDING = 768; // bate com embeddings_chunks.embedding vector(
 const MAX_TENTATIVAS = 3;
 const BASE_DELAY_MS = 500;
 
+// Sem fallback para Groq aqui (ao contrário de lib/ia/provider.ts): a Groq
+// tem um endpoint de embeddings (`nomic-embed-text-v1_5`), mas é um espaço
+// vetorial DIFERENTE do `gemini-embedding-001` já usado para indexar toda a
+// base — misturar os dois na mesma coluna `vector(768)` tornaria a busca por
+// similaridade sem sentido (comparar vetores de modelos distintos não é
+// comparável). Embeddings ficam só no Gemini; o retry abaixo já cobre 429/5xx.
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");

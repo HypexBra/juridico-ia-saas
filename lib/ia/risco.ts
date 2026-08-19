@@ -2,7 +2,7 @@ import "server-only";
 
 import { Type, type Schema } from "@google/genai";
 import { z } from "zod";
-import { gerarResposta } from "@/lib/ia/gemini";
+import { gerarResposta } from "@/lib/ia/provider";
 import type { FichaCaso } from "@/lib/types";
 
 /**

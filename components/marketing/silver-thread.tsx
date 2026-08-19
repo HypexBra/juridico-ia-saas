@@ -23,13 +23,17 @@ const DESKTOP_KNOTS: Knot[] = [
   [0.32, 1],
 ];
 
-// Mobile: collapses to a near-straight vertical line hugging the left edge —
-// "simpler on small screens", per spec, so it never fights with narrow text
-// columns or causes horizontal scroll.
+// Mobile: collapses to a near-straight vertical line hugging the right edge,
+// inside the section's own horizontal padding gutter (`px-5`/`px-8`) —
+// hugging the left edge used to cross under the numeral/icon column that
+// sits flush left in every mobile section, cutting through the words. The
+// right edge is never used by text (mobile sections are single-column,
+// left-aligned), so the thread reads as a margin rule instead of a redline
+// through the copy.
 const MOBILE_KNOTS: Knot[] = [
-  [0.08, 0],
-  [0.11, 0.5],
-  [0.07, 1],
+  [0.94, 0],
+  [0.97, 0.5],
+  [0.94, 1],
 ];
 
 /** Catmull-Rom -> cubic Bezier conversion for a smooth curve through knots. */

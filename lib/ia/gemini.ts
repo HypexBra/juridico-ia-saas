@@ -1,4 +1,4 @@
-import { GoogleGenAI, type FunctionCall, type Schema } from "@google/genai";
+import { GoogleGenAI, type Schema } from "@google/genai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { RAG_TOOLING_PROMPT } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
@@ -95,12 +95,31 @@ function getClient() {
 
 export type ChatTurno = { role: "user" | "assistant"; conteudo: string };
 
+// Forma de function-call desacoplada do SDK do Gemini (@google/genai) — o
+// módulo de fallback (lib/ia/provider.ts) também produz esse mesmo shape a
+// partir da resposta do Groq, então nenhum caller precisa saber qual dos
+// dois providers de fato respondeu.
+export type ChamadaFuncao = { name: string; args: Record<string, unknown> };
+
 export type RespostaIa = {
   texto: string;
   tokensIn: number;
   tokensOut: number;
-  functionCalls: FunctionCall[];
+  functionCalls: ChamadaFuncao[];
 };
+
+/**
+ * Lançado quando TODA a cadeia de modelos Gemini esgota quota/rate-limit
+ * (429) mesmo após retentativas — sinal explícito para `lib/ia/provider.ts`
+ * decidir se aciona o fallback para Groq. Qualquer outro erro (prompt
+ * inválido, 5xx real, rede) propaga como o erro original, nunca como este.
+ */
+export class QuotaExcedidaError extends Error {
+  constructor(public readonly causaOriginal: unknown) {
+    super("Quota do Gemini esgotada em todos os modelos da cadeia.");
+    this.name = "QuotaExcedidaError";
+  }
+}
 
 /**
  * Gera a resposta do copiloto. `contextoRag`, quando presente, é anexado
@@ -120,7 +139,7 @@ export type RespostaIa = {
  * regex — desliga tools automaticamente (a API não aceita as duas coisas
  * juntas).
  */
-export async function gerarResposta(
+export async function gerarRespostaGemini(
   historico: ChatTurno[],
   opcoes: {
     contextoRag?: string | null;
@@ -181,7 +200,9 @@ export async function gerarResposta(
           texto: resposta.text ?? "",
           tokensIn: uso?.promptTokenCount ?? 0,
           tokensOut: uso?.candidatesTokenCount ?? 0,
-          functionCalls: resposta.functionCalls ?? [],
+          functionCalls: (resposta.functionCalls ?? [])
+            .filter((chamada) => Boolean(chamada.name))
+            .map((chamada) => ({ name: chamada.name as string, args: chamada.args ?? {} })),
         };
       } catch (erro) {
         ultimoErro = erro;
@@ -205,5 +226,8 @@ export async function gerarResposta(
       `[gemini/gerarResposta] Quota esgotada em "${modelo}", tentando próximo modelo da cadeia (se houver).`,
     );
   }
-  throw ultimoErro;
+  // Todos os modelos da cadeia Gemini esgotaram quota: sinaliza para
+  // lib/ia/provider.ts acionar o fallback para Groq, em vez de propagar o
+  // erro bruto do SDK do Gemini.
+  throw new QuotaExcedidaError(ultimoErro);
 }
