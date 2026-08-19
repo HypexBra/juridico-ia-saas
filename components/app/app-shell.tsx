@@ -31,11 +31,13 @@ export function AppShell({
   nomeEscritorio,
   nomeUsuario,
   role,
+  isAdminPlataforma = false,
   children,
 }: {
   nomeEscritorio: string;
   nomeUsuario: string;
   role: Role;
+  isAdminPlataforma?: boolean;
   children: ReactNode;
 }) {
   const [menuAberto, setMenuAberto] = useState(false);
@@ -47,6 +49,7 @@ export function AppShell({
         nomeEscritorio={nomeEscritorio}
         nomeUsuario={nomeUsuario}
         role={role}
+        isAdminPlataforma={isAdminPlataforma}
         open={menuAberto}
         onClose={() => setMenuAberto(false)}
       />
