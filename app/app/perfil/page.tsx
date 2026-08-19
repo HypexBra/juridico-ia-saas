@@ -3,6 +3,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { OabForm } from "@/components/app/oab-form";
+import { AssinaturaCard } from "@/components/app/assinatura-card";
 import { WhatsappCanalForm } from "@/components/app/whatsapp-canal-form";
 import { LIMIAR_HORAS_ALERTA_FICHA_URGENTE } from "@/lib/whatsapp/lembretes";
 
@@ -48,6 +49,13 @@ export default async function PerfilPage() {
         <h1 className="font-display text-2xl font-semibold text-ice">Meu perfil</h1>
         <p className="mt-1 text-sm text-muted">{usuario.perfil.nome} — {usuario.perfil.escritorio.nome}</p>
       </div>
+
+      {usuario.perfil.role === "owner" && (
+        <Card>
+          <CardTitle className="mb-1">Assinatura</CardTitle>
+          <AssinaturaCard plano={usuario.perfil.escritorio.plano} />
+        </Card>
+      )}
 
       <Card>
         <CardTitle className="mb-1">OAB</CardTitle>
