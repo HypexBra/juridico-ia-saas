@@ -18,6 +18,17 @@ let registered = false;
 export function getGsap() {
   if (!registered && typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger, SplitText);
+    // Mobile browsers fire `resize` when the URL bar/chrome collapses or
+    // expands mid-scroll (height-only change, no actual layout width
+    // change). ScrollTrigger's own internal resize listener would otherwise
+    // auto-refresh every trigger on that event — recalculating the pinned
+    // "Art. 1º...7º" stage's `end` (which depends on `window.innerHeight`)
+    // and every `Reveal` toggle threshold WHILE the user is actively
+    // scrolling through it. That's the documented cause of ScrollTrigger
+    // content "not showing" or requiring extra scroll on mobile (GSAP
+    // ScrollTrigger docs, `ignoreMobileResize` config option) — disabling it
+    // is the official fix.
+    ScrollTrigger.config({ ignoreMobileResize: true });
     registered = true;
   }
   return { gsap, ScrollTrigger, SplitText };

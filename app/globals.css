@@ -56,6 +56,20 @@ body {
   color: var(--color-ice);
 }
 
+/* Disables native browser scroll anchoring site-wide. Scroll anchoring tries
+   to keep the visible content stable by silently adjusting `scrollTop`
+   whenever layout shifts above the viewport — and ScrollTrigger's pin
+   inserts/resizes a spacer element to reserve scroll room for the "Art.
+   1º...7º" pinned section, which is exactly that kind of shift. Two
+   independent systems fighting over the same scroll position (the browser
+   correcting for the spacer, ScrollTrigger reading `window.scrollY` every
+   scrub frame) is a documented ScrollTrigger gotcha and produces the
+   pinned section's "page going backward" jump. See GSAP ScrollTrigger
+   docs troubleshooting: "disable scroll anchoring". */
+html {
+  overflow-anchor: none;
+}
+
 /* ---- Motion primitives (GSAP-driven components read these) ---- */
 
 /* SplitText word wrapper: clips the translateY reveal without cutting

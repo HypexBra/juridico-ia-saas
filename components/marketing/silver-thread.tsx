@@ -127,7 +127,25 @@ export function SilverThread() {
     });
 
     let resizeTimer: ReturnType<typeof setTimeout>;
+    let lastWidth = window.innerWidth;
     const onResize = () => {
+      // Mobile browsers fire `resize` when the URL bar/chrome collapses or
+      // expands during scroll — a height-only change, not an actual layout
+      // change. Rebuilding the thread's path and force-calling
+      // `ScrollTrigger.refresh()` on every one of those (mid-scroll, often
+      // right on top of the pinned "Art. 1º...7º" section) recalculates
+      // every trigger's start/end — including the pin's own `end`, which
+      // depends on `window.innerHeight` — out from under the user's current
+      // scroll position. That produced both reported bugs: content that had
+      // already revealed re-hiding (mobile "não aparece") and the pinned
+      // stage visibly jumping backward mid-scroll (desktop "voltando").
+      // `ScrollTrigger.config({ ignoreMobileResize: true })` only guards
+      // ScrollTrigger's own internal listener, not this app-level one, so
+      // it must be guarded here too: only redraw/refresh when the width
+      // actually changed (real resize, orientation change, zoom) — never
+      // on a height-only mobile chrome resize.
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         length = draw();
