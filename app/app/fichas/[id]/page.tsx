@@ -12,6 +12,8 @@ import { ExcluirFichaButton } from "@/components/app/excluir-ficha-button";
 import { MarkdownLite } from "@/components/app/markdown-lite";
 import { PortalClienteCard } from "@/components/app/portal-cliente-card";
 import { GerarPeticaoCard, type ModeloParaSelecao } from "@/components/app/gerar-peticao-card";
+import { RedacaoAssistidaCard } from "@/components/app/redacao-assistida-card";
+import { planoTemAcesso } from "@/lib/planos/gating";
 import type { ClientePortal, FichaCaso } from "@/lib/types";
 
 const URGENCIA_TONE = {
@@ -185,6 +187,11 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
       </Card>
 
       <GerarPeticaoCard fichaId={ficha.id} modelos={modelosDisponiveis ?? []} />
+
+      <RedacaoAssistidaCard
+        fichaId={ficha.id}
+        temAcesso={planoTemAcesso(usuario.perfil.escritorio, "redacao_assistida_pecas")}
+      />
 
       <Card>
         <CardTitle className="mb-4">Portal do cliente</CardTitle>
