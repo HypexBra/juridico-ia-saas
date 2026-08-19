@@ -5,7 +5,10 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { OabForm } from "@/components/app/oab-form";
 import { AssinaturaCard } from "@/components/app/assinatura-card";
 import { WhatsappCanalForm } from "@/components/app/whatsapp-canal-form";
+import { ApiKeysCard } from "@/components/app/apikeys-card";
 import { LIMIAR_HORAS_ALERTA_FICHA_URGENTE } from "@/lib/whatsapp/lembretes";
+import { planoTemAcesso } from "@/lib/planos/gating";
+import { listarApiKeysAction } from "@/app/app/perfil/apikeys-actions";
 
 export const metadata = { title: "Meu perfil — Jurídico IA" };
 
@@ -14,6 +17,8 @@ export default async function PerfilPage() {
   if (!usuario) redirect("/login");
 
   const podeGerenciarWhatsapp = usuario.perfil.role === "owner" || usuario.perfil.role === "admin";
+  const temAcessoApiIntegracoes = planoTemAcesso(usuario.perfil.escritorio, "api_integracoes");
+  const chavesApi = temAcessoApiIntegracoes ? await listarApiKeysAction() : [];
 
   // A RLS `canais_whatsapp_admin` (migration 0008) já restringe esta leitura
   // a owner/admin do próprio escritório — para `advogado` a query volta
@@ -65,6 +70,21 @@ export default async function PerfilPage() {
           propostas de prazo para você revisar e aprovar — nenhum prazo é criado sem aprovação.
         </p>
         <OabForm oabAtual={usuario.perfil.oab} />
+      </Card>
+
+      <Card>
+        <CardTitle className="mb-1">API/Integrações</CardTitle>
+        {temAcessoApiIntegracoes ? (
+          <ApiKeysCard chavesIniciais={chavesApi} />
+        ) : (
+          <p className="text-sm text-muted">
+            Disponível no plano Pro: gere chaves de API para integrar fichas de caso e prazos com Zapier, n8n
+            ou sistemas internos do escritório.{" "}
+            {usuario.perfil.role === "owner"
+              ? "Assine o Plano Pro no card de assinatura acima para liberar."
+              : "Peça ao titular do escritório para assinar o Plano Pro."}
+          </p>
+        )}
       </Card>
 
       {podeGerenciarWhatsapp && (
