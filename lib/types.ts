@@ -293,6 +293,24 @@ export type NotificacaoCliente = {
   criado_em: string;
 };
 
+export type RemetenteMensagemPortal = "cliente" | "escritorio";
+
+/**
+ * Chat bidirecional cliente <-> escritório (feature Pro
+ * "portal_cliente_rico", migration 0019). Independente de `Conversa`/
+ * `Mensagem` (chat interno do escritório).
+ */
+export type MensagemPortalCliente = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  cliente_portal_id: string;
+  remetente: RemetenteMensagemPortal;
+  conteudo: string;
+  lida: boolean;
+  criado_em: string;
+};
+
 export type Modelo = {
   id: string;
   escritorio_id: string;

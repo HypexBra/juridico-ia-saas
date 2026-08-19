@@ -13,8 +13,11 @@ import { MarkdownLite } from "@/components/app/markdown-lite";
 import { PortalClienteCard } from "@/components/app/portal-cliente-card";
 import { GerarPeticaoCard, type ModeloParaSelecao } from "@/components/app/gerar-peticao-card";
 import { RedacaoAssistidaCard } from "@/components/app/redacao-assistida-card";
+import { AutomacaoCondicionalCard } from "@/components/app/automacao-condicional-card";
+import { listarModelosCondicionaisAction } from "./mail-merge-condicional-actions";
+import { ChatClienteCard } from "@/components/app/chat-cliente-card";
 import { planoTemAcesso } from "@/lib/planos/gating";
-import type { ClientePortal, FichaCaso } from "@/lib/types";
+import type { ClientePortal, FichaCaso, MensagemPortalCliente } from "@/lib/types";
 
 const URGENCIA_TONE = {
   alta: "red",
@@ -75,6 +78,24 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
     .select("id, nome, tipo")
     .order("nome", { ascending: true })
     .returns<ModeloParaSelecao[]>();
+
+  const modelosCondicionais = await listarModelosCondicionaisAction();
+
+  const temAcessoChat = planoTemAcesso(usuario.perfil.escritorio, "portal_cliente_rico");
+  const clientePortalAtivo = clientePortal?.auth_user_id ? clientePortal : null;
+
+  // Só busca o histórico quando há cliente ativo E a feature está
+  // liberada — sem cliente ativo não há com quem conversar, e sem a
+  // feature o card mostra upsell no lugar (sem custo de rede).
+  const { data: mensagensChat } =
+    clientePortalAtivo && temAcessoChat
+      ? await supabase
+          .from("mensagens_portal_cliente")
+          .select("*")
+          .eq("cliente_portal_id", clientePortalAtivo.id)
+          .order("criado_em", { ascending: true })
+          .returns<MensagemPortalCliente[]>()
+      : { data: null as MensagemPortalCliente[] | null };
 
   const temAnalise = Boolean(ficha.resumo_ia || ficha.questoes_ia || ficha.estrategia_ia);
 
@@ -193,10 +214,40 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
         temAcesso={planoTemAcesso(usuario.perfil.escritorio, "redacao_assistida_pecas")}
       />
 
+      <AutomacaoCondicionalCard
+        fichaId={ficha.id}
+        modelos={modelosCondicionais}
+        temAcesso={planoTemAcesso(usuario.perfil.escritorio, "automacao_documento_condicional")}
+      />
+
       <Card>
         <CardTitle className="mb-4">Portal do cliente</CardTitle>
         <PortalClienteCard fichaId={ficha.id} clientePortal={clientePortal ?? null} />
       </Card>
+
+      {clientePortalAtivo && (
+        <Card>
+          <CardTitle className="mb-4">Chat com o cliente</CardTitle>
+          {temAcessoChat ? (
+            <ChatClienteCard
+              fichaId={ficha.id}
+              clientePortalId={clientePortalAtivo.id}
+              clienteNome={clientePortalAtivo.nome}
+              mensagensIniciais={mensagensChat ?? []}
+            />
+          ) : (
+            <p className="text-sm text-muted">
+              Chat bidirecional em tempo real com o cliente é uma feature do{" "}
+              <span className="font-medium text-ice">Plano Pro</span>. Assine em{" "}
+              <Link href="/app/perfil" className="text-ice underline underline-offset-2">
+                Meu perfil
+              </Link>{" "}
+              para liberar — as mensagens trocadas antes de um eventual downgrade não são perdidas, só ficam
+              indisponíveis nesta tela enquanto o plano estiver no Free.
+            </p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
