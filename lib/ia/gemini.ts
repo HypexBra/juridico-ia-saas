@@ -177,10 +177,21 @@ export async function gerarRespostaGemini(
       })),
       config: {
         systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
-        tools:
-          !usaSchema && opcoes.habilitarFerramentas
-            ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
-            : undefined,
+        // `googleSearch` (grounding nativo do Gemini) fica ligado sempre que
+        // tools são permitidas — não só quando `habilitarFerramentas`
+        // (propose_*) está ativo — porque o problema que resolve (lei/
+        // súmula desatualizada) independe de haver proposta pendente. Gemini
+        // 3 suporta combinar o tool nativo com functionDeclarations na mesma
+        // chamada (`includeServerSideToolInvocations` habilita essa
+        // combinação); `usaSchema` já desliga tools por completo (JSON
+        // estruturado não aceita tools).
+        tools: usaSchema
+          ? undefined
+          : [
+              { googleSearch: {} },
+              ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
+            ],
+        toolConfig: usaSchema ? undefined : { includeServerSideToolInvocations: true },
         maxOutputTokens: maxOutputTokensPara(modelo),
         thinkingConfig: { thinkingBudget: thinkingBudgetPara(modelo) },
         ...(usaSchema
