@@ -92,13 +92,13 @@ export function Pricing() {
           <Reveal delayMs={100} className="md:mt-10">
             <BorderGlow
               className="h-full transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
-              backgroundColor="#162a52"
+              backgroundColor="#24466f"
               borderRadius={10}
               glowColor="42 80 72"
               glowRadius={44}
               glowIntensity={1.1}
               coneSpread={30}
-              colors={["#c7d2e8", "#162a52", "#f5f8fc"]}
+              colors={["#c7d2e8", "#24466f", "#f5f8fc"]}
               fillOpacity={0.35}
             >
               <div className="relative flex h-full flex-col overflow-hidden p-8">

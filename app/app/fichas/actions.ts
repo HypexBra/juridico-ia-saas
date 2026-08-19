@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { gerarResposta } from "@/lib/ia/gemini";
+import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
 import {
   formatarDataHojeMailMerge,

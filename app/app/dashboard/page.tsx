@@ -171,11 +171,11 @@ export default async function DashboardPage() {
         <BorderGlow
           className="h-full"
           glowColor="42 75 70"
-          backgroundColor="#0f2040"
+          backgroundColor="#1c3a66"
           borderRadius={12}
           glowRadius={26}
           glowIntensity={0.9}
-          colors={["#c7d2e8", "#0f2040", "#e3ebf7"]}
+          colors={["#c7d2e8", "#1c3a66", "#e3ebf7"]}
         >
           <div className="flex h-full items-center gap-4 p-5">
             <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "silver"} size={72} strokeWidth={7} />
