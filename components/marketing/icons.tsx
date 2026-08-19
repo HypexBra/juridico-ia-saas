@@ -152,3 +152,93 @@ export function IconDash(props: IconProps) {
     </svg>
   );
 }
+
+export function IconBell(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 10a6 6 0 1 1 12 0c0 3 1 4.5 2 6H4c1-1.5 2-3 2-6Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+export function IconPortal(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3.5" y="4.5" width="17" height="14" rx="1.5" />
+      <path d="M3.5 8.5h17" />
+      <circle cx="12" cy="13.3" r="2.3" />
+    </svg>
+  );
+}
+
+export function IconBanknote(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="6.5" width="18" height="11" rx="1.5" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6.5 9v0" />
+      <path d="M17.5 15v0" />
+    </svg>
+  );
+}
+
+export function IconSignature(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 17c2.5 1 5-1 6.5-3.5S12 8 10 8s-2 3 0 5 5 2 7-1c1-1.5 1-3 3-3" />
+      <path d="M4 20.5h16" />
+    </svg>
+  );
+}
+
+export function IconWhatsapp(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6.5 18.5 4 20l1.4-3.6a8 8 0 1 1 3.1 2.4Z" />
+      <path d="M9 9.2c0 2.9 2 4.9 4.9 4.9" />
+      <path d="M9 9.2c0-.6.5-1.2 1-1.2s.7.4.9.9" />
+      <path d="M13.9 14.1c.6 0 1.2-.5 1.2-1s-.4-.7-.9-.9" />
+    </svg>
+  );
+}
+
+export function IconTrendingUp(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 16l5-5 4 3 7-7" />
+      <path d="M15.5 6.5H20V11" />
+    </svg>
+  );
+}
+
+export function IconGauge(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 15a8 8 0 1 1 16 0" />
+      <path d="M12 15l3.5-4.5" />
+      <circle cx="12" cy="15" r="1.2" />
+    </svg>
+  );
+}
+
+export function IconBookOpen(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 6.5c-1.6-1.3-3.8-2-6.5-2v13c2.7 0 4.9.7 6.5 2 1.6-1.3 3.8-2 6.5-2v-13c-2.7 0-4.9.7-6.5 2Z" />
+      <path d="M12 6.5v13" />
+    </svg>
+  );
+}
+
+export function IconIdCard(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="5.5" width="18" height="13" rx="1.5" />
+      <circle cx="8" cy="11" r="1.8" />
+      <path d="M5.5 16c.5-1.6 1.6-2.4 2.5-2.4s2 .8 2.5 2.4" />
+      <path d="M14 9.5h4" />
+      <path d="M14 13h4" />
+    </svg>
+  );
+}

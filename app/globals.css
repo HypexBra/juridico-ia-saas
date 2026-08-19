@@ -34,9 +34,22 @@
   --font-sans: var(--font-sans);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* `scroll-behavior: smooth` was removed on purpose: it's GSAP's own
+   documented ScrollTrigger gotcha (see ScrollTrigger docs, "avoid
+   scroll-behavior: smooth"). Some browsers apply the native smoothing
+   easing to *every* scroll event, including plain wheel/touch input, not
+   just anchor jumps — and that fights ScrollTrigger's per-frame scrub
+   read of `window.scrollY` every tick. Two independent smoothing/easing
+   layers stacked on the same scroll position is exactly what produced the
+   pinned "Art. 1º...7º" section's erratic/jumpy/stuck-then-lurching
+   behavior: the browser was already lagging the reported scroll position
+   behind the user's actual input, so ScrollTrigger's pin/scrub
+   recalculated against a stale, non-linear value every frame instead of
+   the raw, immediate one it expects. The few in-page anchor links
+   (`#funcionalidades`, `#precos`, `#faq`) now jump instantly instead of
+   easing — an acceptable, standard trade-off; re-introducing smooth
+   anchor jumps later should go through GSAP's own ScrollToPlugin (which
+   is ScrollTrigger-aware) rather than native CSS. */
 
 body {
   background: var(--color-navy);
