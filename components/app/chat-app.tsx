@@ -10,6 +10,8 @@ import { PropostaAcaoCard } from "./proposta-acao-card";
 import {
   carregarMensagensAction,
   enviarMensagemAction,
+  excluirConversaAction,
+  excluirTodasConversasAction,
   type ConversaResumo,
 } from "@/app/app/chat/actions";
 import type { Mensagem } from "@/lib/types";
@@ -65,18 +67,23 @@ function formatarHora(iso: string) {
 export function ChatApp({
   conversasIniciais,
   usoInicial,
+  perfilIdAtual,
 }: {
   conversasIniciais: ConversaResumo[];
   usoInicial: { usados: number; limite: number };
+  perfilIdAtual: string;
 }) {
   const [conversas, setConversas] = useState(conversasIniciais);
   const [conversaId, setConversaId] = useState<string | null>(conversasIniciais[0]?.id ?? null);
   const [mensagens, setMensagens] = useState<MensagemLocal[]>([]);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [avisoConversas, setAvisoConversas] = useState<string | null>(null);
   const [uso, setUso] = useState(usoInicial);
   const [isPending, startTransition] = useTransition();
   const [isPendingHistorico, startHistoricoTransition] = useTransition();
+  const [isPendingExclusao, startExclusaoTransition] = useTransition();
+  const [conversaExcluindo, setConversaExcluindo] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,6 +114,50 @@ export function ChatApp({
     setConversaId(null);
     setMensagens([]);
     setErro(null);
+  }
+
+  function excluirConversa(id: string) {
+    if (!window.confirm("Excluir esta conversa? Essa ação não pode ser desfeita.")) return;
+
+    setAvisoConversas(null);
+    setConversaExcluindo(id);
+    startExclusaoTransition(async () => {
+      const resultado = await excluirConversaAction(id);
+      setConversaExcluindo(null);
+      if (!resultado.ok) {
+        setAvisoConversas(resultado.error);
+        return;
+      }
+
+      setConversas((prev) => prev.filter((c) => c.id !== id));
+      if (conversaId === id) novaConversa();
+      setAvisoConversas("Conversa excluída com sucesso.");
+    });
+  }
+
+  function excluirTodasConversas() {
+    const minhas = conversas.filter((c) => c.criado_por === perfilIdAtual);
+    if (minhas.length === 0) return;
+    if (
+      !window.confirm(
+        `Excluir TODAS as suas ${minhas.length} conversa(s)? Essa ação é IRREVERSÍVEL e não pode ser desfeita.`,
+      )
+    )
+      return;
+
+    setAvisoConversas(null);
+    startExclusaoTransition(async () => {
+      const resultado = await excluirTodasConversasAction();
+      if (!resultado.ok) {
+        setAvisoConversas(resultado.error);
+        return;
+      }
+
+      const idsRemovidos = new Set(minhas.map((c) => c.id));
+      setConversas((prev) => prev.filter((c) => !idsRemovidos.has(c.id)));
+      if (conversaId && idsRemovidos.has(conversaId)) novaConversa();
+      setAvisoConversas("Todas as suas conversas foram excluídas.");
+    });
   }
 
   function enviar(e: FormEvent) {
@@ -143,6 +194,7 @@ export function ChatApp({
             titulo: textoEnviado.slice(0, 60),
             iniciada_em: new Date().toISOString(),
             total_msgs: 2,
+            criado_por: perfilIdAtual,
           },
           ...prev,
         ]);
@@ -167,19 +219,52 @@ export function ChatApp({
             <p className="p-2 text-xs text-muted">Nenhuma conversa ainda.</p>
           )}
           {conversas.map((c) => (
-            <button
+            <div
               key={c.id}
-              type="button"
-              onClick={() => setConversaId(c.id)}
-              className={`block w-full truncate rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                c.id === conversaId ? "bg-silver/15 text-silver-2" : "text-muted hover:bg-white/5 hover:text-ice"
+              className={`group flex items-center gap-1 rounded-lg pr-1 transition-colors ${
+                c.id === conversaId ? "bg-silver/15" : "hover:bg-white/5"
               }`}
-              title={c.titulo ?? "Conversa sem título"}
             >
-              {c.titulo ?? "Nova conversa"}
-            </button>
+              <button
+                type="button"
+                onClick={() => setConversaId(c.id)}
+                className={`block min-w-0 flex-1 truncate px-3 py-2 text-left text-sm transition-colors ${
+                  c.id === conversaId ? "text-silver-2" : "text-muted group-hover:text-ice"
+                }`}
+                title={c.titulo ?? "Conversa sem título"}
+              >
+                {c.titulo ?? "Nova conversa"}
+              </button>
+              {c.criado_por === perfilIdAtual && (
+                <button
+                  type="button"
+                  onClick={() => excluirConversa(c.id)}
+                  disabled={isPendingExclusao && conversaExcluindo === c.id}
+                  title="Excluir conversa"
+                  aria-label="Excluir conversa"
+                  className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 disabled:opacity-50"
+                >
+                  {isPendingExclusao && conversaExcluindo === c.id ? "…" : "✕"}
+                </button>
+              )}
+            </div>
           ))}
         </div>
+        {conversas.some((c) => c.criado_por === perfilIdAtual) && (
+          <div className="border-t border-white/10 p-2">
+            <button
+              type="button"
+              onClick={excluirTodasConversas}
+              disabled={isPendingExclusao}
+              className="w-full rounded-lg px-3 py-2 text-left text-xs text-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+            >
+              Excluir todas as minhas conversas
+            </button>
+          </div>
+        )}
+        {avisoConversas && (
+          <div className="border-t border-white/10 px-3 py-2 text-xs text-muted">{avisoConversas}</div>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-white/10 bg-navy-2/40">

@@ -387,6 +387,29 @@ export type LembreteWhatsappEnviado = {
   criado_em: string;
 };
 
+/** Admin do SaaS (cross-tenant) — ver docs/adrs/0003-admin-plataforma.md. NÃO confundir com `Perfil.role`. */
+export type PlataformaAdmin = {
+  id: string;
+  auth_user_id: string;
+  nome: string;
+  email: string;
+  ativo: boolean;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+export type AdminLog = {
+  id: string;
+  admin_id: string | null;
+  admin_nome: string;
+  acao: string;
+  alvo_tipo: string | null;
+  alvo_id: string | null;
+  detalhes: Record<string, unknown> | null;
+  criado_em: string;
+};
+
 export const AREAS_DIREITO = [
   "Trabalhista",
   "Cível",
