@@ -21,7 +21,7 @@ export default async function ChatPage() {
             Converse com o copiloto jurídico. Peça análises, minutas de peças e pareceres.
           </p>
         </div>
-        <Link href="/app/base-conhecimento" className="text-sm text-gold-2 underline underline-offset-2">
+        <Link href="/app/base-conhecimento" className="text-sm text-silver-2 underline underline-offset-2">
           Gerenciar base de conhecimento
         </Link>
       </div>

@@ -15,7 +15,7 @@ const AREAS = [
 
 export function TrustStrip() {
   return (
-    <section className="relative border-y border-gold/10 bg-navy-2/25 py-14">
+    <section className="relative border-y border-silver/10 bg-navy-2/25 py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="max-w-xl font-display text-xl italic leading-snug text-ice-2 sm:text-2xl">
           Feito para escritórios que não têm tempo a perder — do advogado
@@ -33,7 +33,7 @@ export function TrustStrip() {
             {[...AREAS, ...AREAS].map((area, index) => (
               <span
                 key={`${area}-${index}`}
-                className="shrink-0 rounded-full border border-gold/20 bg-gold/5 px-3.5 py-1.5 text-xs text-ice-2/90"
+                className="shrink-0 rounded-full border border-silver/20 bg-silver/5 px-3.5 py-1.5 text-xs text-ice-2/90"
               >
                 {area}
               </span>

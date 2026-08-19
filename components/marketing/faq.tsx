@@ -48,7 +48,7 @@ export function Faq() {
     <section id="faq" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-5 sm:px-8">
         <div className="mb-14 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
             Dúvidas
           </p>
           <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
@@ -56,7 +56,7 @@ export function Faq() {
           </h2>
         </div>
 
-        <div className="divide-y divide-gold/10 overflow-hidden rounded-md border border-gold/10">
+        <div className="divide-y divide-silver/10 overflow-hidden rounded-md border border-silver/10">
           {FAQ_ENTRIES.map((entry, index) => {
             const isOpen = openIndex === index;
             return (
@@ -65,11 +65,11 @@ export function Faq() {
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-ice transition-colors hover:text-gold-2 sm:px-6 sm:text-base"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-ice transition-colors hover:text-silver-2 sm:px-6 sm:text-base"
                 >
                   {entry.question}
                   <IconPlus
-                    className={`h-4 w-4 shrink-0 text-gold transition-transform duration-300 ${
+                    className={`h-4 w-4 shrink-0 text-silver transition-transform duration-300 ${
                       isOpen ? "rotate-45" : ""
                     }`}
                   />

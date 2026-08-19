@@ -21,9 +21,9 @@ function diasAte(iso: string) {
   return Math.ceil((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function urgenciaTone(dias: number): "red" | "gold" | "green" {
+function urgenciaTone(dias: number): "red" | "silver" | "green" {
   if (dias <= 1) return "red";
-  if (dias <= 7) return "gold";
+  if (dias <= 7) return "silver";
   return "green";
 }
 
@@ -51,7 +51,7 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
               router.refresh();
             });
           }}
-          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-gold"
+          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-silver"
           aria-label={prazo.concluido ? "Marcar como pendente" : "Marcar como concluído"}
         />
         <div>
@@ -73,7 +73,21 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {prazo.origem === "djen" && <Badge tone="blue">Importado via DJEN</Badge>}
             {prazo.origem === "importado" && <Badge tone="muted">Importado</Badge>}
-            {prazo.prazo_em_dobro && <Badge tone="gold">Prazo em dobro</Badge>}
+            {prazo.prazo_em_dobro && (
+              <Badge tone="silver">
+                Prazo em dobro
+                {prazo.parte_contraria_tipo !== "particular"
+                  ? ` · ${
+                      {
+                        fazenda_publica: "Fazenda Pública",
+                        ministerio_publico: "Ministério Público",
+                        defensoria_publica: "Defensoria Pública",
+                      }[prazo.parte_contraria_tipo]
+                    }`
+                  : ""}
+              </Badge>
+            )}
+            {prazo.uf && <Badge tone="muted">UF: {prazo.uf}</Badge>}
           </div>
           {prazo.descricao && <p className="mt-1 text-xs text-muted">{prazo.descricao}</p>}
           {erro && <p className="mt-1 text-xs text-red-400">{erro}</p>}

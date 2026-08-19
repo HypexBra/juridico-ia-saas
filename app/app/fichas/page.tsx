@@ -15,13 +15,13 @@ function formatarDataHora(iso: string) {
 
 const URGENCIA_TONE = {
   alta: "red",
-  normal: "gold",
+  normal: "silver",
   baixa: "muted",
 } as const;
 
 const RISCO_TONE = {
   alto: "red",
-  medio: "gold",
+  medio: "silver",
   baixo: "green",
 } as const;
 
@@ -64,7 +64,7 @@ export default async function FichasPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lista.map((ficha) => (
             <Link key={ficha.id} href={`/app/fichas/${ficha.id}`}>
-              <Card className="h-full transition-colors hover:border-gold/30">
+              <Card className="h-full transition-colors hover:border-silver/30">
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <h3 className="font-display text-base font-semibold text-ice">
                     {ficha.nome_cliente ?? "Cliente sem nome"}

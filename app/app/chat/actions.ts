@@ -13,6 +13,27 @@ import type { Conversa, Mensagem } from "@/lib/types";
 
 const MAX_HISTORICO = 20;
 const MAX_TAMANHO_MENSAGEM = 8000;
+// Teto de caracteres por TURNO ANTIGO (tudo exceto a mensagem atual) ao
+// montar o histórico enviado ao Gemini. Uma peça/minuta gerada pela IA pode
+// ter até MAX_OUTPUT_TOKENS_PRO (8192 tokens, ~30-32k chars) — sem este
+// corte, cada turno subsequente da MESMA conversa reenvia essa peça inteira
+// de novo (custo de input token crescendo, sem limite, a cada mensagem nova
+// numa conversa longa). Isso é distinto do bug já corrigido do "thinking"
+// (ver erros-corrigidos.md) e do teto de SAÍDA: aqui o custo é de ENTRADA,
+// vindo do próprio histórico armazenado. O texto completo continua salvo no
+// banco e visível na UI — só o que é reenviado como contexto ao modelo é
+// truncado. ~900 chars (~220 tokens) é suficiente para o modelo saber "o que
+// já foi discutido/gerado" sem pagar o custo total de reenviar cada peça
+// anterior por inteiro a cada novo turno.
+const MAX_CHARS_TURNO_ANTIGO = 900;
+
+function truncarTurnoAntigo(turno: ChatTurno): ChatTurno {
+  if (turno.conteudo.length <= MAX_CHARS_TURNO_ANTIGO) return turno;
+  return {
+    ...turno,
+    conteudo: `${turno.conteudo.slice(0, MAX_CHARS_TURNO_ANTIGO)}\n[…turno anterior truncado para economizar tokens; o conteúdo completo continua salvo nesta conversa, só não é reenviado por inteiro ao modelo…]`,
+  };
+}
 
 function tituloDoTexto(texto: string) {
   const limpo = texto.trim().replace(/\s+/g, " ");
@@ -133,79 +154,85 @@ export async function enviarMensagemAction(
   }
   const conversaId: string = conversaIdResolvido;
 
-  // Guard de custo (item 5): reenvio idêntico da mesma pergunta em sequência
-  // rápida (ex: double-click, duplo submit de rede) não deve gastar uma nova
-  // chamada de embedding + Gemini — reaproveita a resposta já dada. Olha só
-  // a ÚLTIMA mensagem da conversa: se for do mesmo usuário, texto idêntico e
-  // dentro de uma janela curta, a resposta seguinte (se já existir) é
-  // devolvida sem chamar a IA de novo. Não é dedução por hash global (custo/
-  // complexidade desnecessários) — é o caso concreto reportado (reenvio sem
-  // mudar nada), tratado no ponto mais barato possível.
+  // Guard de custo (item 5) + histórico da conversa fundidos numa ÚNICA
+  // consulta (antes eram duas queries separadas na mesma tabela `mensagens`
+  // — uma p/ dedup, ordenada desc/limit 2, outra p/ histórico, ordenada
+  // asc/limit MAX_HISTORICO-1 — cada round trip extra ao Postgres soma
+  // latência percebida sem nenhum ganho). Um único SELECT desc/limit
+  // MAX_HISTORICO cobre as duas necessidades: os 2 primeiros itens (mais
+  // recentes) resolvem o dedup, e o array inteiro revertido vira o
+  // histórico cronológico.
+  //
+  // Bug real corrigido de quebra: a query antiga de histórico usava
+  // `ascending: true` + `limit(MAX_HISTORICO - 1)`, o que retorna as
+  // MENSAGENS MAIS ANTIGAS da conversa (não as mais recentes) assim que ela
+  // passa de ~19 mensagens — o Gemini passava a receber contexto
+  // desatualizado (início da conversa) em vez da troca recente, justamente
+  // quando o histórico mais importa. Corrigido buscando desc e revertendo.
   const JANELA_DEDUP_MS = 15_000;
-  {
-    const { data: ultimasDuas } = await supabase
-      .from("mensagens")
-      .select("*")
-      .eq("conversa_id", conversaId)
-      .order("criado_em", { ascending: false })
-      .limit(2);
+  const { data: recentesDesc, error: erroHistorico } = await supabase
+    .from("mensagens")
+    .select("*")
+    .eq("conversa_id", conversaId)
+    .order("criado_em", { ascending: false })
+    .limit(MAX_HISTORICO);
+  if (erroHistorico) return { ok: false, error: "Não foi possível carregar o histórico." };
 
-    const [maisRecente, penultima] = ultimasDuas ?? [];
-    if (
-      maisRecente &&
-      penultima &&
-      maisRecente.role === "assistant" &&
-      penultima.role === "user" &&
-      penultima.conteudo === parsed.data.texto &&
-      Date.now() - new Date(penultima.criado_em).getTime() < JANELA_DEDUP_MS
-    ) {
-      return {
-        ok: true,
-        conversaId,
-        assistente: maisRecente as Mensagem,
-        usoMes: usoAtual ?? 0,
-      };
-    }
+  const recentes = recentesDesc ?? [];
+  const [maisRecente, penultima] = recentes;
+  if (
+    maisRecente &&
+    penultima &&
+    maisRecente.role === "assistant" &&
+    penultima.role === "user" &&
+    penultima.conteudo === parsed.data.texto &&
+    Date.now() - new Date(penultima.criado_em).getTime() < JANELA_DEDUP_MS
+  ) {
+    return {
+      ok: true,
+      conversaId,
+      assistente: maisRecente as Mensagem,
+      usoMes: usoAtual ?? 0,
+    };
   }
 
   // Monta o histórico existente ANTES de persistir a mensagem do usuário, para
   // poder chamar a IA primeiro e só gravar algo no banco se a chamada tiver sucesso
   // (evita deixar a mensagem do usuário órfã, sem resposta, se o Gemini falhar).
-  const { data: historicoRows, error: erroHistorico } = await supabase
-    .from("mensagens")
-    .select("role, conteudo")
-    .eq("conversa_id", conversaId)
-    .order("criado_em", { ascending: true })
-    .limit(MAX_HISTORICO - 1);
-  if (erroHistorico) return { ok: false, error: "Não foi possível carregar o histórico." };
+  // `recentes` já vem em ordem desc (mais recente primeiro); reverte para
+  // cronológica e mantém só os MAX_HISTORICO - 1 turnos mais recentes (a
+  // mensagem atual do usuário ocupa a última posição, adicionada abaixo).
+  const historicoRows = [...recentes].reverse().slice(-(MAX_HISTORICO - 1));
 
   const historico: ChatTurno[] = [
-    ...(historicoRows ?? []).map((m) => ({ role: m.role, conteudo: m.conteudo }) as ChatTurno),
+    ...historicoRows.map((m) => truncarTurnoAntigo({ role: m.role, conteudo: m.conteudo } as ChatTurno)),
     { role: "user", conteudo: parsed.data.texto },
   ];
 
-  // Gate de segurança do agente: só habilita as ferramentas de ação
-  // (propose_*) se não houver nenhuma proposta pendente nesta conversa.
-  // Evita empilhar múltiplas ações de escrita não confirmadas — o usuário
-  // sempre resolve uma de cada vez antes do agente poder propor a próxima.
-  const { count: propostasPendentes } = await supabase
-    .from("propostas_acao")
-    .select("id", { count: "exact", head: true })
-    .eq("conversa_id", conversaId)
-    .eq("status", "pending");
+  // Gate de segurança do agente (query de propostas pendentes) e busca RAG
+  // são independentes entre si (não compartilham dado nenhum) e ambas
+  // precisam terminar antes de chamar o Gemini — antes rodavam em sequência
+  // (uma espera a outra à toa). Disparadas em paralelo: a latência total
+  // passa a ser o MAIOR dos dois tempos, não a SOMA. RAG usa `allSettled`
+  // (não `all`) porque falha na busca já é um caso esperado e tratado como
+  // "sem contexto", nunca deve derrubar o turno inteiro.
+  const [propostasPendentesResultado, ragResultado] = await Promise.all([
+    supabase
+      .from("propostas_acao")
+      .select("id", { count: "exact", head: true })
+      .eq("conversa_id", conversaId)
+      .eq("status", "pending"),
+    buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[]),
+  ]);
+
+  const propostasPendentes = propostasPendentesResultado.count;
 
   // RAG: busca por similaridade na base de conhecimento do escritório
   // (uploads + dados internos já indexados). Falha na busca não derruba o
   // chat — degrada para "sem contexto" e o modelo é instruído a não fingir
   // que consultou uma base (ver RAG_TOOLING_PROMPT).
-  let contextoRag: string | null = null;
-  let chunksRag: ChunkRecuperado[] = [];
-  try {
-    chunksRag = await buscarContextoRelevante(supabase, escritorioId, parsed.data.texto);
-    contextoRag = montarBlocoContexto(chunksRag);
-  } catch {
-    contextoRag = null;
-  }
+  const chunksRag: ChunkRecuperado[] = ragResultado;
+  const contextoRag: string | null = montarBlocoContexto(chunksRag);
 
   let respostaIa;
   try {

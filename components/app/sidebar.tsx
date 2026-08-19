@@ -140,7 +140,7 @@ export function Sidebar({
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
           <div className="min-w-0">
             <Link href="/app/dashboard" className="font-display text-xl font-bold text-ice">
-              Jurídico<span className="text-gold">IA</span>
+              Jurídico<span className="text-silver">IA</span>
             </Link>
             <p className="mt-2 truncate text-sm font-medium text-ice" title={nomeEscritorio}>
               {nomeEscritorio}
@@ -168,7 +168,7 @@ export function Sidebar({
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] ${
-                  isActive ? "bg-gold/15 text-gold-2" : "text-muted hover:bg-white/5 hover:text-ice active:bg-white/10"
+                  isActive ? "bg-silver/15 text-silver-2" : "text-muted hover:bg-white/5 hover:text-ice active:bg-white/10"
                 }`}
               >
                 <NavIcon name={item.icon} />

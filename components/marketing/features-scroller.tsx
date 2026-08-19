@@ -116,11 +116,11 @@ export function FeaturesScroller({ articles }: { articles: ScrollerArticle[] }) 
               className={`grid grid-cols-1 ${alignRight ? "justify-items-end" : "justify-items-start"}`}
             >
               {/* Oversized ghost numeral — the "clause number" as background
-                  type, not a boxed grid column. It's what the golden thread
+                  type, not a boxed grid column. It's what the silver thread
                   visually threads past. */}
               <span
                 aria-hidden
-                className={`relative z-0 select-none font-display text-[7rem] font-black leading-none text-gold/10 sm:text-[9rem] ${alignRight ? "pr-[6%]" : "pl-[2%]"}`}
+                className={`relative z-0 select-none font-display text-[7rem] font-black leading-none text-silver/10 sm:text-[9rem] ${alignRight ? "pr-[6%]" : "pl-[2%]"}`}
               >
                 {article.numeral}
               </span>
@@ -129,7 +129,7 @@ export function FeaturesScroller({ articles }: { articles: ScrollerArticle[] }) 
                   alignRight ? "items-end pr-[6%] text-right" : "items-start pl-[2%]"
                 }`}
               >
-                <span className="flex h-14 w-14 items-center justify-center rounded-sm border border-gold/25 bg-gold/8 text-gold">
+                <span className="flex h-14 w-14 items-center justify-center rounded-sm border border-silver/25 bg-silver/8 text-silver">
                   {article.icon}
                 </span>
                 <h3 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
@@ -144,7 +144,7 @@ export function FeaturesScroller({ articles }: { articles: ScrollerArticle[] }) 
         <span
           aria-hidden
           ref={counterRef}
-          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 font-display text-xs font-semibold tracking-[0.2em] text-gold/50"
+          className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 font-display text-xs font-semibold tracking-[0.2em] text-silver/50"
         >
           01 / {String(articles.length).padStart(2, "0")}
         </span>

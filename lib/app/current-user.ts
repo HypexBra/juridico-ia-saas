@@ -51,7 +51,12 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (primeiraTentativa.error) throw primeiraTentativa.error;
+  if (primeiraTentativa.error) {
+    console.error("[current-user/getUsuarioAtual] Falha ao buscar perfil:", primeiraTentativa.error, {
+      userId: user.id,
+    });
+    throw primeiraTentativa.error;
+  }
 
   let perfilComEscritorio = primeiraTentativa.data;
 
@@ -68,7 +73,21 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
     const nomeEscritorio = user.user_metadata?.nome_escritorio as string | undefined;
     if (!nomeUsuario || !nomeEscritorio) return null;
 
-    await criarEscritorioEPerfil(supabase, user.id, nomeUsuario, nomeEscritorio);
+    try {
+      await criarEscritorioEPerfil(supabase, user.id, nomeUsuario, nomeEscritorio);
+    } catch (erro) {
+      // Não deixa o onboarding adiado derrubar o layout inteiro com um erro
+      // não tratado (contrato documentado desta função é retornar `null`
+      // quando não é possível resolver/criar o perfil) — mas registra a
+      // causa real, senão o usuário fica preso num loop de redirect para
+      // /login sem nenhum rastro do motivo real no server.
+      console.error(
+        "[current-user/getUsuarioAtual] Falha ao concluir onboarding pós-confirmação de e-mail:",
+        erro,
+        { userId: user.id },
+      );
+      return null;
+    }
 
     const segundaTentativa = await supabase
       .from("perfis")
@@ -76,7 +95,15 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    if (segundaTentativa.error || !segundaTentativa.data) return null;
+    if (segundaTentativa.error) {
+      console.error(
+        "[current-user/getUsuarioAtual] Falha ao rebuscar perfil pós-onboarding:",
+        segundaTentativa.error,
+        { userId: user.id },
+      );
+      return null;
+    }
+    if (!segundaTentativa.data) return null;
     perfilComEscritorio = segundaTentativa.data;
   }
 

@@ -14,14 +14,14 @@ export function UsageRing({
   sublabel,
   size = 92,
   strokeWidth = 8,
-  tone = "gold",
+  tone = "silver",
 }: {
   percent: number;
   label: string;
   sublabel?: string;
   size?: number;
   strokeWidth?: number;
-  tone?: "gold" | "red";
+  tone?: "silver" | "red";
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -34,7 +34,7 @@ export function UsageRing({
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(100, Math.max(0, percent));
   const offset = circumference - (mounted ? clamped / 100 : 0) * circumference;
-  const color = tone === "red" ? "#f87171" : "#c9a84c";
+  const color = tone === "red" ? "#f87171" : "#c7d2e8";
 
   return (
     <div

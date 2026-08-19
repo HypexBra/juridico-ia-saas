@@ -25,7 +25,7 @@ export function LightBeam({ angle = 20, origin = "top-right", className = "" }: 
       aria-hidden
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
       style={{
-        background: `conic-gradient(from ${angle}deg at ${ORIGIN_POSITION[origin]}, transparent 0deg, rgba(232,201,106,.14) 6deg, transparent 17deg, transparent 206deg, rgba(201,168,76,.09) 217deg, transparent 228deg)`,
+        background: `conic-gradient(from ${angle}deg at ${ORIGIN_POSITION[origin]}, transparent 0deg, rgba(227,235,247,.14) 6deg, transparent 17deg, transparent 206deg, rgba(199,210,232,.09) 217deg, transparent 228deg)`,
       }}
     />
   );

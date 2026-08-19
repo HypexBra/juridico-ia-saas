@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
 import { NovoContratoHonorarioDialog } from "@/components/app/novo-contrato-honorario-dialog";
 import { ContratoHonorarioCard, type ContratoHonorarioComRelacoes } from "@/components/app/contrato-honorario-card";
 import { sincronizarParcelasAtrasadas } from "@/app/app/financeiro/actions";
@@ -16,11 +17,6 @@ const MESES_ABREV = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "se
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatarMoedaCompacta(valor: number) {
-  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".0", "")}k`;
-  return valor.toFixed(0);
 }
 
 /** Últimos `meses` mes_ref (YYYY-MM) terminando no mês atual, mais antigo primeiro. */
@@ -118,7 +114,15 @@ export default async function FinanceiroPage() {
             Contratos de honorário, parcelas e rateio entre sócios do escritório.
           </p>
         </div>
-        <NovoContratoHonorarioDialog fichas={fichas ?? []} perfis={perfis ?? []} />
+        <div className="flex flex-wrap items-center gap-2">
+          <LinkButton href="/app/financeiro/inadimplencia" variant="secondary" size="sm">
+            Inadimplência{parcelasAtrasadas.length > 0 ? ` (${parcelasAtrasadas.length})` : ""}
+          </LinkButton>
+          <LinkButton href="/api/financeiro/export?periodo=mes" variant="secondary" size="sm">
+            Exportar CSV (mês)
+          </LinkButton>
+          <NovoContratoHonorarioDialog fichas={fichas ?? []} perfis={perfis ?? []} />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -130,7 +134,7 @@ export default async function FinanceiroPage() {
 
         <Card className="transition-transform duration-150 ease-out active:scale-[0.98]">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">A receber no mês</p>
-          <p className="mt-2 font-display text-3xl font-bold text-gold-2">{formatarMoeda(aReceberNoMes)}</p>
+          <p className="mt-2 font-display text-3xl font-bold text-silver-2">{formatarMoeda(aReceberNoMes)}</p>
           <p className="mt-2 text-xs text-muted">Parcelas pendentes/atrasadas com vencimento neste mês.</p>
         </Card>
 
@@ -148,7 +152,7 @@ export default async function FinanceiroPage() {
       <Card>
         <CardTitle className="mb-1">Faturamento recebido — últimos 6 meses</CardTitle>
         <p className="mb-4 text-xs text-muted">Soma de parcelas pagas por mês de pagamento.</p>
-        <BarChart data={dadosFaturamento} formatValue={formatarMoedaCompacta} />
+        <BarChart data={dadosFaturamento} format="moeda-compacta" />
       </Card>
 
       <div>
@@ -174,13 +178,13 @@ export default async function FinanceiroPage() {
         borderRadius={12}
         glowRadius={30}
         glowIntensity={0.9}
-        colors={["#c9a84c", "#0f2040", "#e8c96a"]}
+        colors={["#c7d2e8", "#0f2040", "#e3ebf7"]}
       >
         <div className="flex flex-wrap items-center gap-5 p-5">
           <UsageRing
             percent={percentualUsoIa}
             label="Uso de IA no plano gratuito"
-            tone={percentualUsoIa >= 90 ? "red" : "gold"}
+            tone={percentualUsoIa >= 90 ? "red" : "silver"}
           />
           <div className="min-w-0">
             <CardTitle>Uso de IA no plano gratuito</CardTitle>

@@ -15,7 +15,7 @@ function MensagemErro({ titulo, descricao }: { titulo: string; descricao: string
       <div className="mx-auto max-w-md space-y-4 text-center">
         <h1 className="font-display text-xl font-semibold text-ice">{titulo}</h1>
         <p className="text-sm text-muted">{descricao}</p>
-        <Link href="/portal/login" className="inline-block text-sm font-medium text-gold hover:text-gold-2">
+        <Link href="/portal/login" className="inline-block text-sm font-medium text-silver hover:text-silver-2">
           Já tem uma conta? Entrar
         </Link>
       </div>

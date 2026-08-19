@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Meu processo — Portal do Cliente",
 };
 
-const URGENCIA_TONE = { alta: "red", normal: "gold", baixa: "muted" } as const;
+const URGENCIA_TONE = { alta: "red", normal: "silver", baixa: "muted" } as const;
 const URGENCIA_LABEL = { alta: "Alta", normal: "Normal", baixa: "Baixa" } as const;
 
 export default async function PortalDashboardPage() {
@@ -92,7 +92,7 @@ export default async function PortalDashboardPage() {
         <div className="mb-4 flex items-center gap-2">
           <CardTitle>Notificações</CardTitle>
           {naoLidas > 0 && (
-            <Badge tone="gold">
+            <Badge tone="silver">
               {naoLidas} nova{naoLidas > 1 ? "s" : ""}
             </Badge>
           )}

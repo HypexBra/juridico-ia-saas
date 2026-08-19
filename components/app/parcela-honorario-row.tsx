@@ -28,8 +28,8 @@ const STATUS_LABEL: Record<ParcelaHonorario["status"], string> = {
   atrasado: "Atrasado",
 };
 
-const STATUS_TONE: Record<ParcelaHonorario["status"], "gold" | "green" | "red"> = {
-  pendente: "gold",
+const STATUS_TONE: Record<ParcelaHonorario["status"], "silver" | "green" | "red"> = {
+  pendente: "silver",
   pago: "green",
   atrasado: "red",
 };

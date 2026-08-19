@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, LabelHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 const FIELD_BASE =
-  "w-full rounded-lg border border-white/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted/70 outline-none transition-colors focus:border-gold/60 focus:ring-1 focus:ring-gold/30 disabled:opacity-50";
+  "w-full rounded-lg border border-white/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted/70 outline-none transition-colors focus:border-silver/60 focus:ring-1 focus:ring-silver/30 disabled:opacity-50";
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;

@@ -15,12 +15,12 @@ export function Nav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-gold/15 bg-navy/85 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-silver/15 bg-navy/85 backdrop-blur-md">
       {/* Reading-progress bar: CSS scroll-driven (animation-timeline: scroll(root)),
           zero JS. Thematic nod to "progresso na leitura do artigo". */}
       <div
         aria-hidden
-        className="nav-progress absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-gradient-to-r from-gold to-gold-2"
+        className="nav-progress absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-gradient-to-r from-silver to-silver-2"
       />
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
         <Link
@@ -28,7 +28,7 @@ export function Nav() {
           className="flex items-center gap-2.5 font-display text-lg font-bold text-ice"
           onClick={() => setOpen(false)}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-gold/40 bg-gold/10 text-gold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-silver/40 bg-silver/10 text-silver">
             <IconScale className="h-4 w-4" strokeWidth={1.4} />
           </span>
           Jurídico IA
@@ -55,7 +55,7 @@ export function Nav() {
           </Link>
           <Link
             href="/cadastro"
-            className="rounded-sm bg-gradient-to-br from-gold to-gold-2 px-4 py-2 text-sm font-semibold text-navy transition-opacity hover:opacity-85"
+            className="rounded-sm bg-gradient-to-br from-silver to-silver-2 px-4 py-2 text-sm font-semibold text-navy transition-opacity hover:opacity-85"
           >
             Começar grátis
           </Link>
@@ -66,14 +66,14 @@ export function Nav() {
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-sm border border-gold/20 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-sm border border-silver/20 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5 md:hidden"
         >
           {open ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
         </button>
       </div>
 
       {open ? (
-        <div className="mobile-menu-enter border-t border-gold/15 bg-navy px-5 pb-6 pt-2 md:hidden">
+        <div className="mobile-menu-enter border-t border-silver/15 bg-navy px-5 pb-6 pt-2 md:hidden">
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
               <a
@@ -86,7 +86,7 @@ export function Nav() {
               </a>
             ))}
           </nav>
-          <div className="mt-3 flex flex-col gap-2 border-t border-gold/10 pt-4">
+          <div className="mt-3 flex flex-col gap-2 border-t border-silver/10 pt-4">
             <Link
               href="/login"
               onClick={() => setOpen(false)}
@@ -97,7 +97,7 @@ export function Nav() {
             <Link
               href="/cadastro"
               onClick={() => setOpen(false)}
-              className="rounded-sm bg-gradient-to-br from-gold to-gold-2 px-4 py-2.5 text-center text-sm font-semibold text-navy transition-transform duration-150 ease-out active:scale-[0.97]"
+              className="rounded-sm bg-gradient-to-br from-silver to-silver-2 px-4 py-2.5 text-center text-sm font-semibold text-navy transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               Começar grátis
             </Link>

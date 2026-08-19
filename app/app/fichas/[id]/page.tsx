@@ -10,17 +10,18 @@ import { FichaLidaToggle } from "@/components/app/ficha-lida-toggle";
 import { ExcluirFichaButton } from "@/components/app/excluir-ficha-button";
 import { MarkdownLite } from "@/components/app/markdown-lite";
 import { PortalClienteCard } from "@/components/app/portal-cliente-card";
+import { GerarPeticaoCard, type ModeloParaSelecao } from "@/components/app/gerar-peticao-card";
 import type { ClientePortal, FichaCaso } from "@/lib/types";
 
 const URGENCIA_TONE = {
   alta: "red",
-  normal: "gold",
+  normal: "silver",
   baixa: "muted",
 } as const;
 
 const RISCO_TONE = {
   alto: "red",
-  medio: "gold",
+  medio: "silver",
   baixo: "green",
 } as const;
 
@@ -50,12 +51,18 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
     .eq("ficha_caso_id", ficha.id)
     .maybeSingle<ClientePortal>();
 
+  const { data: modelosDisponiveis } = await supabase
+    .from("modelos")
+    .select("id, nome, tipo")
+    .order("nome", { ascending: true })
+    .returns<ModeloParaSelecao[]>();
+
   const temAnalise = Boolean(ficha.resumo_ia || ficha.questoes_ia || ficha.estrategia_ia);
 
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <Link href="/app/fichas" className="text-xs font-medium text-gold hover:text-gold-2">
+        <Link href="/app/fichas" className="text-xs font-medium text-silver hover:text-silver-2">
           ← Voltar para fichas
         </Link>
       </div>
@@ -152,6 +159,8 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
           </div>
         )}
       </Card>
+
+      <GerarPeticaoCard fichaId={ficha.id} modelos={modelosDisponiveis ?? []} />
 
       <Card>
         <CardTitle className="mb-4">Portal do cliente</CardTitle>

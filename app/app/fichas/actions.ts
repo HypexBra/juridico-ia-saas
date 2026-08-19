@@ -7,6 +7,11 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta } from "@/lib/ia/gemini";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
+import {
+  formatarDataHojeMailMerge,
+  formatarValorCausaMailMerge,
+  resolverMailMerge,
+} from "@/lib/peticoes/mail-merge";
 import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE } from "@/lib/types";
 
 const criarFichaSchema = z.object({
@@ -162,7 +167,8 @@ ${MARCADOR_ESTRATEGIA}
   let respostaIa;
   try {
     respostaIa = await gerarResposta([{ role: "user", conteudo: prompt }]);
-  } catch {
+  } catch (erro) {
+    console.error("[fichas/gerarAnaliseIaAction] Falha ao gerar análise da IA:", erro);
     return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
   }
 
@@ -229,4 +235,110 @@ export async function gerarRiscoAction(fichaId: string): Promise<GerarRiscoResul
   revalidatePath("/app/fichas");
 
   return { ok: true };
+}
+
+export type GerarPeticaoResultado =
+  | { ok: true; textoFinal: string; variaveisNaoResolvidas: string[] }
+  | { ok: false; error: string };
+
+/**
+ * Petição por modelo com variáveis (mail-merge jurídico, migration 0010): a
+ * partir da ficha aberta na tela, resolve `{{nome_cliente}}`,
+ * `{{numero_processo}}`, `{{area_direito}}`, `{{valor_causa}}` e
+ * `{{data_hoje}}` contra os dados reais do caso (ficha + prazo mais recente
+ * com número de processo + contrato de honorário mais recente) e roda o
+ * mail-merge puro (`resolverMailMerge`). Grava sempre uma linha em
+ * `peticoes_geradas` com o snapshot de `variaveis_usadas` (auditoria
+ * jurídica: "o que foi gerado, a partir de qual modelo, para qual caso, por
+ * quem"), mesmo quando alguma variável não foi resolvida — a petição ainda é
+ * retornada ao usuário com o aviso, nunca bloqueada silenciosamente.
+ */
+export async function gerarPeticaoDeModeloAction(
+  fichaId: string,
+  modeloId: string,
+): Promise<GerarPeticaoResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  if (!modeloId) return { ok: false, error: "Selecione um modelo para gerar a petição." };
+
+  const supabase = await createClient();
+
+  const { data: modelo, error: erroModelo } = await supabase
+    .from("modelos")
+    .select("id, conteudo")
+    .eq("id", modeloId)
+    .maybeSingle<{ id: string; conteudo: string }>();
+
+  if (erroModelo || !modelo) return { ok: false, error: "Modelo não encontrado." };
+
+  const { data: ficha, error: erroFicha } = await supabase
+    .from("fichas_caso")
+    .select("id, nome_cliente, area_direito, cliente_id")
+    .eq("id", fichaId)
+    .maybeSingle<{ id: string; nome_cliente: string | null; area_direito: string | null; cliente_id: string | null }>();
+
+  if (erroFicha || !ficha) return { ok: false, error: "Ficha não encontrada." };
+
+  // `fichas_caso.nome_cliente` é preenchido na triagem, mas nem toda ficha
+  // tem esse campo direto — quando ausente, busca o nome via `cliente_id`
+  // (contrato documentado na migration 0010, comentário do `{{nome_cliente}}`).
+  let nomeCliente = ficha.nome_cliente;
+  if (!nomeCliente && ficha.cliente_id) {
+    const { data: cliente } = await supabase
+      .from("clientes")
+      .select("nome")
+      .eq("id", ficha.cliente_id)
+      .maybeSingle<{ nome: string | null }>();
+    nomeCliente = cliente?.nome ?? null;
+  }
+
+  // Uma ficha pode ter vários prazos; usa o mais recente que já tenha número
+  // de processo CNJ preenchido (nem todo prazo tem, ex: prazos internos sem
+  // processo formal ainda distribuído).
+  const { data: prazoComProcesso } = await supabase
+    .from("prazos")
+    .select("numero_processo_cnj")
+    .eq("ficha_caso_id", fichaId)
+    .not("numero_processo_cnj", "is", null)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ numero_processo_cnj: string | null }>();
+
+  // Idem para contrato de honorário: pega o mais recente vinculado à ficha.
+  const { data: contrato } = await supabase
+    .from("contratos_honorario")
+    .select("valor_total")
+    .eq("ficha_caso_id", fichaId)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ valor_total: number | null }>();
+
+  const dadosResolvidos = {
+    nome_cliente: nomeCliente,
+    numero_processo: prazoComProcesso?.numero_processo_cnj ?? null,
+    area_direito: ficha.area_direito,
+    valor_causa: formatarValorCausaMailMerge(contrato?.valor_total ?? null),
+    data_hoje: formatarDataHojeMailMerge(),
+  };
+
+  const resultado = resolverMailMerge(modelo.conteudo, dadosResolvidos);
+
+  const { error: erroInsercao } = await supabase.from("peticoes_geradas").insert({
+    escritorio_id: usuario.perfil.escritorio_id,
+    modelo_id: modelo.id,
+    ficha_caso_id: fichaId,
+    gerado_por: usuario.perfil.id,
+    variaveis_usadas: resultado.variaveisUsadas,
+  });
+
+  if (erroInsercao) {
+    console.error("[fichas/gerarPeticaoDeModeloAction] Falha ao registrar petição gerada:", erroInsercao, {
+      fichaId,
+      modeloId,
+    });
+    return { ok: false, error: "A petição foi gerada, mas houve um erro ao registrar a auditoria. Tente novamente." };
+  }
+
+  return { ok: true, textoFinal: resultado.textoFinal, variaveisNaoResolvidas: resultado.variaveisNaoResolvidas };
 }

@@ -4,9 +4,15 @@
   --color-navy: #0a1628;
   --color-navy-2: #0f2040;
   --color-navy-3: #162a52;
-  --color-gold: #c9a84c;
-  --color-gold-2: #e8c96a;
-  --color-gold-3: #f5e0a0;
+  /* Accent trio: cool metallic silver-blue (replaced the original gold
+     accent). --color-silver was renamed from --color-gold — the old name
+     would lie about the hue, so the variable and every Tailwind class
+     (text-silver, bg-silver, border-silver, from-silver/to-silver,
+     stroke-silver, fill-silver, plus the "silver" tone token in
+     Badge/UsageRing) were renamed project-wide alongside the hex swap. */
+  --color-silver: #c7d2e8;
+  --color-silver-2: #e3ebf7;
+  --color-silver-3: #f5f8fc;
   --color-ice: #f0f4f8;
   --color-ice-2: #e2eaf4;
   --color-muted: #8a9ab5;
@@ -17,9 +23,9 @@
   --color-navy: var(--color-navy);
   --color-navy-2: var(--color-navy-2);
   --color-navy-3: var(--color-navy-3);
-  --color-gold: var(--color-gold);
-  --color-gold-2: var(--color-gold-2);
-  --color-gold-3: var(--color-gold-3);
+  --color-silver: var(--color-silver);
+  --color-silver-2: var(--color-silver-2);
+  --color-silver-3: var(--color-silver-3);
   --color-ice: var(--color-ice);
   --color-ice-2: var(--color-ice-2);
   --color-muted: var(--color-muted);

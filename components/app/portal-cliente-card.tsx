@@ -20,8 +20,8 @@ function CopiarLinkConvite({ path }: { path: string }) {
   const url = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
 
   return (
-    <div className="space-y-2 rounded-lg border border-gold/30 bg-gold/5 p-3.5">
-      <p className="text-xs font-medium text-gold-2">
+    <div className="space-y-2 rounded-lg border border-silver/30 bg-silver/5 p-3.5">
+      <p className="text-xs font-medium text-silver-2">
         Convite gerado. Copie o link abaixo e envie manualmente ao cliente (WhatsApp, e-mail, etc.) — o
         projeto ainda não tem um serviço de e-mail configurado para enviar automaticamente.
       </p>
@@ -117,7 +117,7 @@ export function PortalClienteCard({
           Dê ao cliente acesso somente-leitura ao andamento do caso, sem precisar ligar pro escritório.
         </p>
         {clientePortal?.auth_user_id && <Badge tone="green">Portal ativo</Badge>}
-        {clientePortal && !clientePortal.auth_user_id && <Badge tone="gold">Convite pendente</Badge>}
+        {clientePortal && !clientePortal.auth_user_id && <Badge tone="silver">Convite pendente</Badge>}
       </div>
 
       {!clientePortal?.auth_user_id && <ConvidarClienteForm fichaId={fichaId} />}

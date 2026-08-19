@@ -53,7 +53,7 @@ export function NotificacoesPanel({ notificacoes }: { notificacoes: NotificacaoC
           <li
             key={notificacao.id}
             className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border-b border-white/5 px-2 py-3 last:border-0 ${
-              notificacao.lida ? "" : "bg-gold/5"
+              notificacao.lida ? "" : "bg-silver/5"
             }`}
           >
             <div className="min-w-0">
@@ -73,7 +73,7 @@ export function NotificacoesPanel({ notificacoes }: { notificacoes: NotificacaoC
                     if (!resultado.ok) setErro(resultado.error);
                   });
                 }}
-                className="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs text-gold transition-colors hover:bg-gold/10 disabled:opacity-40"
+                className="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs text-silver transition-colors hover:bg-silver/10 disabled:opacity-40"
               >
                 Marcar como lida
               </button>

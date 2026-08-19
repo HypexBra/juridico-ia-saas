@@ -19,9 +19,9 @@ const RÓTULO_STATUS_DOC: Record<StatusDocumentoAssinatura, string> = {
   recusado: "Recusado",
 };
 
-const TONE_STATUS_DOC: Record<StatusDocumentoAssinatura, "muted" | "gold" | "green" | "red"> = {
+const TONE_STATUS_DOC: Record<StatusDocumentoAssinatura, "muted" | "silver" | "green" | "red"> = {
   rascunho: "muted",
-  aguardando_assinatura: "gold",
+  aguardando_assinatura: "silver",
   assinado: "green",
   recusado: "red",
 };

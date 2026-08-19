@@ -14,7 +14,7 @@ export function Hero() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at 15% 0%, rgba(201,168,76,.10) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 100% 30%, rgba(22,42,82,.9) 0%, transparent 65%)",
+            "radial-gradient(ellipse 60% 50% at 15% 0%, rgba(199,210,232,.10) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 100% 30%, rgba(22,42,82,.9) 0%, transparent 65%)",
         }}
       />
 
@@ -22,7 +22,7 @@ export function Hero() {
         {/* Coluna de texto — alinhada à esquerda, sem centralização de hero genérico */}
         <div>
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/8 px-3.5 py-1.5 text-xs font-medium text-gold-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-silver/30 bg-silver/8 px-3.5 py-1.5 text-xs font-medium text-silver-2">
               <span className="h-1.5 w-1.5 rounded-full bg-green" />
               Fundamentação legal verificável · CF, CC, CPC, STF, STJ
             </span>
@@ -48,7 +48,7 @@ export function Hero() {
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
                 href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-sm bg-gradient-to-br from-gold to-gold-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_8px_32px_rgba(201,168,76,.25)] transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0"
+                className="group inline-flex items-center gap-2 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_8px_32px_rgba(199,210,232,.25)] transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0"
               >
                 Criar conta grátis
                 <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -75,11 +75,11 @@ export function Hero() {
             <div
               aria-hidden
               className="absolute -inset-10 -z-10 rounded-full opacity-70 blur-3xl"
-              style={{ background: "radial-gradient(circle, rgba(201,168,76,.14), transparent 70%)" }}
+              style={{ background: "radial-gradient(circle, rgba(199,210,232,.14), transparent 70%)" }}
             />
 
-            <div className="overflow-hidden rounded-lg border border-gold/20 bg-navy-2/90 shadow-[0_40px_80px_rgba(0,0,0,.5)]">
-              <div className="flex items-center gap-2 border-b border-gold/10 bg-black/20 px-4 py-3">
+            <div className="overflow-hidden rounded-lg border border-silver/20 bg-navy-2/90 shadow-[0_40px_80px_rgba(0,0,0,.5)]">
+              <div className="flex items-center gap-2 border-b border-silver/10 bg-black/20 px-4 py-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
@@ -89,7 +89,7 @@ export function Hero() {
               </div>
 
               <div className="space-y-4 p-5">
-                <div className="ml-auto max-w-[85%] rounded-md rounded-tr-sm border border-gold/20 bg-gold/10 px-4 py-3 text-[13px] leading-relaxed text-gold-3">
+                <div className="ml-auto max-w-[85%] rounded-md rounded-tr-sm border border-silver/20 bg-silver/10 px-4 py-3 text-[13px] leading-relaxed text-silver-3">
                   Cliente dispensado sem justa causa após 3 anos, horas extras
                   não pagas e FGTS em atraso há 6 meses. Salário de R$ 4.200.
                 </div>
@@ -105,15 +105,15 @@ export function Hero() {
                   </ul>
                   <p className="mt-3 text-muted">
                     Gerando petição inicial com pedido de tutela de urgência
-                    <span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-gold align-middle" />
+                    <span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-silver align-middle" />
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Widget flutuante — prazos, mostra que o produto vai além do chat */}
-            <div className="absolute -bottom-6 -left-6 hidden w-56 rounded-md border border-gold/25 bg-navy-3/95 p-4 shadow-2xl sm:block">
-              <div className="mb-2 flex items-center gap-2 text-gold">
+            <div className="absolute -bottom-6 -left-6 hidden w-56 rounded-md border border-silver/25 bg-navy-3/95 p-4 shadow-2xl sm:block">
+              <div className="mb-2 flex items-center gap-2 text-silver">
                 <IconClock className="h-4 w-4" />
                 <span className="text-[11px] font-semibold uppercase tracking-wide">
                   Prazos
@@ -122,7 +122,7 @@ export function Hero() {
               <p className="text-xs leading-snug text-ice-2">
                 Contestação · Proc. 0004521-33
               </p>
-              <p className="mt-1 text-xs font-semibold text-gold-2">
+              <p className="mt-1 text-xs font-semibold text-silver-2">
                 Vence em 3 dias
               </p>
             </div>

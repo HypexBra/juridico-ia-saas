@@ -28,7 +28,7 @@ export default async function ConsultarStatusPage({ searchParams }: PageProps<"/
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <Link href="/" className="mb-8 block text-center font-display text-2xl font-bold text-ice">
-          Jurídico<span className="text-gold">IA</span>
+          Jurídico<span className="text-silver">IA</span>
         </Link>
 
         <div className="rounded-2xl border border-white/10 bg-navy-2/60 p-8 shadow-2xl shadow-black/30">
@@ -41,7 +41,7 @@ export default async function ConsultarStatusPage({ searchParams }: PageProps<"/
 
         <p className="mt-6 text-center text-xs text-muted">
           Já tem convite do portal?{" "}
-          <Link href="/portal/login" className="text-gold-2 hover:underline">
+          <Link href="/portal/login" className="text-silver-2 hover:underline">
             Entrar no portal
           </Link>
         </p>

@@ -69,7 +69,8 @@ export async function classificarRiscoFicha(
     if (!parsed.success) return null;
 
     return parsed.data;
-  } catch {
+  } catch (erro) {
+    console.error("[risco/classificarRiscoFicha] Falha ao classificar risco:", erro);
     return null;
   }
 }

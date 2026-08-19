@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
-type Tone = "gold" | "green" | "red" | "muted" | "blue";
+type Tone = "silver" | "green" | "red" | "muted" | "blue";
 
 const TONE_CLASSES: Record<Tone, string> = {
-  gold: "bg-gold/15 text-gold-2 border-gold/30",
+  silver: "bg-silver/15 text-silver-2 border-silver/30",
   green: "bg-green/15 text-green border-green/30",
   red: "bg-red-500/15 text-red-300 border-red-500/30",
   muted: "bg-white/5 text-muted border-white/10",

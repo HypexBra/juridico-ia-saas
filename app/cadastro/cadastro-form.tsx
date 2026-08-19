@@ -17,7 +17,7 @@ export function CadastroForm() {
         <p className="font-medium text-green">Quase lá! Confirme seu e-mail.</p>
         <p className="mt-1 text-muted">
           Enviamos um link de confirmação para o e-mail informado. Depois de confirmar, faça{" "}
-          <Link href="/login" className="font-medium text-gold hover:text-gold-2">
+          <Link href="/login" className="font-medium text-silver hover:text-silver-2">
             login
           </Link>{" "}
           para começar a usar o Jurídico IA.
@@ -74,7 +74,7 @@ export function CadastroForm() {
 
       <p className="text-center text-sm text-muted">
         Já tem conta?{" "}
-        <Link href="/login" className="font-medium text-gold hover:text-gold-2">
+        <Link href="/login" className="font-medium text-silver hover:text-silver-2">
           Entrar
         </Link>
       </p>

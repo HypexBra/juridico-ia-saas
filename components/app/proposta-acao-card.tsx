@@ -20,9 +20,9 @@ const RÓTULO_STATUS_DOC: Record<StatusDocumentoAssinatura, string> = {
   recusado: "Recusado",
 };
 
-const TONE_STATUS_DOC: Record<StatusDocumentoAssinatura, "muted" | "gold" | "green" | "red"> = {
+const TONE_STATUS_DOC: Record<StatusDocumentoAssinatura, "muted" | "silver" | "green" | "red"> = {
   rascunho: "muted",
-  aguardando_assinatura: "gold",
+  aguardando_assinatura: "silver",
   assinado: "green",
   recusado: "red",
 };
@@ -114,7 +114,7 @@ const RÓTULO_TIPO: Record<PropostaAcao["tipo"], string> = {
 };
 
 const TONE_POR_STATUS = {
-  pending: "gold",
+  pending: "silver",
   approved: "green",
   applied: "green",
   rejected: "red",
@@ -170,9 +170,9 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
   }
 
   return (
-    <div className="mt-2 max-w-[85%] rounded-xl border border-gold/25 bg-navy-3/70 p-3.5">
+    <div className="mt-2 max-w-[85%] rounded-xl border border-silver/25 bg-navy-3/70 p-3.5">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gold-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-silver-2">
           {RÓTULO_TIPO[proposta.tipo]}
         </span>
         <Badge tone={TONE_POR_STATUS[proposta.status]}>{RÓTULO_STATUS[proposta.status]}</Badge>
@@ -197,7 +197,7 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
         <>
           <a
             href={`/api/propostas/${proposta.id}/documento`}
-            className="mt-3 inline-block text-sm font-medium text-gold-2 underline underline-offset-2"
+            className="mt-3 inline-block text-sm font-medium text-silver-2 underline underline-offset-2"
           >
             Baixar {String(payload.formato ?? "docx").toUpperCase()}
           </a>

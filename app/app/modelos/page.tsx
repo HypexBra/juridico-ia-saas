@@ -40,14 +40,14 @@ export default async function ModelosPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lista.map((modelo) => (
             <Link key={modelo.id} href={`/app/modelos/${modelo.id}`}>
-              <Card className="h-full transition-colors hover:border-gold/30">
+              <Card className="h-full transition-colors hover:border-silver/30">
                 <h3 className="mb-1 font-display text-base font-semibold text-ice">{modelo.nome}</h3>
                 {modelo.tipo && <p className="mb-2 text-xs text-muted">{modelo.tipo}</p>}
                 {modelo.descricao && (
                   <p className="mb-3 line-clamp-2 text-sm text-ice-2">{modelo.descricao}</p>
                 )}
                 <div className="flex items-center justify-between">
-                  {modelo.area ? <Badge tone="gold">{modelo.area}</Badge> : <span />}
+                  {modelo.area ? <Badge tone="silver">{modelo.area}</Badge> : <span />}
                   <span className="text-xs text-muted">usado {modelo.uso_count}x</span>
                 </div>
               </Card>

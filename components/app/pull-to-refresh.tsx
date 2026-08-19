@@ -84,7 +84,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         style={{ height: pull, transition: dragging ? "none" : "height 250ms cubic-bezier(0.16,1,0.3,1)" }}
       >
         <div
-          className={`mt-3 flex h-7 w-7 items-center justify-center rounded-full border border-gold/40 bg-navy-2 text-gold-2 ${
+          className={`mt-3 flex h-7 w-7 items-center justify-center rounded-full border border-silver/40 bg-navy-2 text-silver-2 ${
             refreshing ? "animate-spin" : ""
           }`}
           style={{

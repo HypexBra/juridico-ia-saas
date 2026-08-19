@@ -16,9 +16,9 @@ function diasAte(iso: string) {
   return Math.ceil((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function urgenciaTone(dias: number): "red" | "gold" | "green" {
+function urgenciaTone(dias: number): "red" | "silver" | "green" {
   if (dias <= 1) return "red";
-  if (dias <= 7) return "gold";
+  if (dias <= 7) return "silver";
   return "green";
 }
 

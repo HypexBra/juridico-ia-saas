@@ -34,7 +34,7 @@ export function HowItWorks() {
       <LightBeam angle={198} origin="bottom-right" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
             Como funciona
           </p>
           <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
@@ -46,11 +46,11 @@ export function HowItWorks() {
           {STEPS.map((step, index) => (
             <Reveal key={step.number} delayMs={index * 80}>
               <div
-                className={`flex flex-col gap-6 border-b border-gold/10 py-10 last:border-b-0 sm:flex-row sm:items-center sm:gap-12 ${
+                className={`flex flex-col gap-6 border-b border-silver/10 py-10 last:border-b-0 sm:flex-row sm:items-center sm:gap-12 ${
                   index % 2 === 1 ? "sm:flex-row-reverse sm:text-right" : ""
                 }`}
               >
-                <span className="font-display text-6xl font-black leading-none text-gold/25 sm:text-7xl">
+                <span className="font-display text-6xl font-black leading-none text-silver/25 sm:text-7xl">
                   {step.number}
                 </span>
                 <div className="max-w-md">

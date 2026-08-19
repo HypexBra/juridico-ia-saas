@@ -7,23 +7,38 @@ export interface BarDatum {
   value: number;
 }
 
+function formatarMoedaCompacta(valor: number) {
+  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".0", "")}k`;
+  return valor.toFixed(0);
+}
+
+const FORMATADORES = {
+  numero: (v: number) => String(v),
+  "moeda-compacta": formatarMoedaCompacta,
+} as const;
+
 /**
  * Barras verticais simples (ex: faturamento por mês) — SVG puro, legível em
  * telas pequenas (rótulos curtos embaixo, valor formatado só na barra em
  * destaque). Cresce em `transform: scaleY` a partir da base (GPU-only),
  * nunca anima `height` diretamente.
+ *
+ * `format` (em vez de receber a função pronta) porque este componente é
+ * "use client" — uma função definida num Server Component (as páginas que o
+ * usam) não pode ser passada como prop sem virar Server Action.
  */
 export function BarChart({
   data,
   height = 120,
-  formatValue = (v: number) => String(v),
-  color = "#c9a84c",
+  format = "numero",
+  color = "#c7d2e8",
 }: {
   data: BarDatum[];
   height?: number;
-  formatValue?: (value: number) => string;
+  format?: keyof typeof FORMATADORES;
   color?: string;
 }) {
+  const formatValue = FORMATADORES[format];
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -49,7 +64,7 @@ export function BarChart({
                   className="w-full origin-bottom rounded-t-sm"
                   style={{
                     height: "100%",
-                    background: isLast ? color : "rgba(201,168,76,0.35)",
+                    background: isLast ? color : "rgba(199,210,232,0.35)",
                     transform: `scaleY(${mounted ? Math.max(ratio, 0.02) : 0})`,
                     transformOrigin: "bottom",
                     transition: `transform 600ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms`,

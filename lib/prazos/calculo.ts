@@ -24,7 +24,11 @@
  * escopo futuro; documentado como limitação conhecida, não bug.
  */
 
-function ehFimDeSemana(data: Date): boolean {
+/**
+ * Exportado (além de usado internamente aqui) porque `lib/prazos/calculadora.ts`
+ * reaproveita esta mesma checagem de fim de semana em vez de duplicá-la.
+ */
+export function ehFimDeSemana(data: Date): boolean {
   const dia = data.getUTCDay();
   return dia === 0 || dia === 6;
 }
@@ -48,7 +52,8 @@ function calcularPascoa(ano: number): Date {
   return new Date(Date.UTC(ano, mes - 1, dia));
 }
 
-function adicionarDias(data: Date, dias: number): Date {
+/** Exportado — reaproveitado por `lib/prazos/calculadora.ts` (mesmo motivo acima). */
+export function adicionarDias(data: Date, dias: number): Date {
   const copia = new Date(data);
   copia.setUTCDate(copia.getUTCDate() + dias);
   return copia;
@@ -119,7 +124,8 @@ export type ParametrosCalculoPrazo = {
   prazoEmDobro?: boolean;
 };
 
-function paraDataUtc(valor: string | Date): Date {
+/** Exportado — reaproveitado por `lib/prazos/calculadora.ts` (mesmo motivo acima). */
+export function paraDataUtc(valor: string | Date): Date {
   if (valor instanceof Date) {
     return new Date(Date.UTC(valor.getUTCFullYear(), valor.getUTCMonth(), valor.getUTCDate()));
   }

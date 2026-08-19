@@ -143,6 +143,19 @@ export type LeadTriagemPublica = {
 
 export type OrigemPrazo = "manual" | "djen" | "importado";
 
+/**
+ * Causa da dobra de prazo do CPC (migration 0010): art. 180 (Ministério
+ * Público), 183 (Fazenda Pública) e 186 (Defensoria Pública) — dobro de
+ * prazo. `prazo_em_dobro` (0003) guarda o RESULTADO já calculado; este campo
+ * guarda a CAUSA, usada por `lib/prazos/calculadora.ts` para decidir sozinha
+ * se dobra e explicar o motivo na tela.
+ */
+export type ParteContrariaTipo =
+  | "particular"
+  | "fazenda_publica"
+  | "ministerio_publico"
+  | "defensoria_publica";
+
 export type Prazo = {
   id: string;
   escritorio_id: string;
@@ -159,6 +172,9 @@ export type Prazo = {
   tribunal: string | null;
   data_intimacao: string | null;
   prazo_em_dobro: boolean;
+  /** UF da comarca/tribunal (migration 0010) — casa com `feriados_forenses.uf`. */
+  uf: string | null;
+  parte_contraria_tipo: ParteContrariaTipo;
   criado_em: string;
 };
 
@@ -269,6 +285,16 @@ export type Modelo = {
   uso_count: number;
   criado_em: string;
   atualizado_em: string;
+};
+
+export type PeticaoGerada = {
+  id: string;
+  escritorio_id: string;
+  modelo_id: string;
+  ficha_caso_id: string | null;
+  gerado_por: string | null;
+  variaveis_usadas: Record<string, string>;
+  criado_em: string;
 };
 
 export type CanalWhatsappEscritorio = {

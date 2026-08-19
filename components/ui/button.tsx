@@ -6,7 +6,7 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
-    "bg-gold text-navy hover:bg-gold-2 disabled:bg-gold/40 disabled:text-navy/60 shadow-[0_0_0_1px_rgba(201,168,76,0.35)]",
+    "bg-silver text-navy hover:bg-silver-2 disabled:bg-silver/40 disabled:text-navy/60 shadow-[0_0_0_1px_rgba(199,210,232,0.35)]",
   secondary:
     "bg-navy-3 text-ice border border-white/10 hover:bg-navy-3/70 disabled:opacity-50",
   ghost: "bg-transparent text-muted hover:text-ice hover:bg-white/5 disabled:opacity-40",
@@ -20,7 +20,7 @@ const SIZE_CLASSES: Record<Size, string> = {
 };
 
 const BASE =
-  "inline-flex items-center justify-center font-medium transition-colors duration-150 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-navy";
+  "inline-flex items-center justify-center font-medium transition-colors duration-150 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-silver focus-visible:ring-offset-2 focus-visible:ring-offset-navy";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;

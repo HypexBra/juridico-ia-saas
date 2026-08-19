@@ -37,7 +37,16 @@ export async function criarEscritorioEPerfil(
     .insert({ nome: nomeEscritorio, slug: slugify(nomeEscritorio) })
     .select()
     .single();
-  if (erroEscritorio) throw erroEscritorio;
+  if (erroEscritorio) {
+    // Loga a causa real (ex: RLS negando o insert porque o usuário já tem
+    // perfil, colisão de slug, coluna NOT NULL faltando) — sem isso, o
+    // usuário só vê "erro ao configurar o escritório" e o time não tem
+    // nenhum rastro pra diagnosticar em produção.
+    console.error("[onboarding/criarEscritorioEPerfil] Falha ao criar escritório:", erroEscritorio, {
+      authUserId,
+    });
+    throw erroEscritorio;
+  }
 
   const { error: erroPerfil } = await supabase.from("perfis").insert({
     auth_user_id: authUserId,
@@ -45,12 +54,24 @@ export async function criarEscritorioEPerfil(
     nome: nomeUsuario,
     role: "owner",
   });
-  if (erroPerfil) throw erroPerfil;
+  if (erroPerfil) {
+    console.error("[onboarding/criarEscritorioEPerfil] Falha ao criar perfil:", erroPerfil, {
+      authUserId,
+      escritorioId: escritorio.id,
+    });
+    throw erroPerfil;
+  }
 
   const { error: erroTags } = await supabase
     .from("tags")
     .insert(TAGS_PADRAO.map((tag) => ({ ...tag, escritorio_id: escritorio.id })));
-  if (erroTags) throw erroTags;
+  if (erroTags) {
+    console.error("[onboarding/criarEscritorioEPerfil] Falha ao criar tags padrão:", erroTags, {
+      authUserId,
+      escritorioId: escritorio.id,
+    });
+    throw erroTags;
+  }
 
   return escritorio;
 }

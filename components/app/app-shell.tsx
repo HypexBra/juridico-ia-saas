@@ -72,7 +72,7 @@ export function AppShell({
             {tituloDaRota(pathname)}
           </span>
           <Link href="/app/dashboard" className="ml-auto shrink-0 font-display text-sm font-bold text-ice">
-            Jurídico<span className="text-gold">IA</span>
+            Jurídico<span className="text-silver">IA</span>
           </Link>
         </header>
 

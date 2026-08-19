@@ -28,11 +28,11 @@ function diasAte(iso: string) {
   return Math.ceil((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function urgenciaPrazo(dias: number): { label: string; tone: "red" | "gold" | "green" | "muted" } {
+function urgenciaPrazo(dias: number): { label: string; tone: "red" | "silver" | "green" | "muted" } {
   if (dias < 0) return { label: "Vencido", tone: "red" };
   if (dias <= 1) return { label: "Urgente", tone: "red" };
-  if (dias <= 3) return { label: `Em ${dias} dias`, tone: "gold" };
-  if (dias <= 7) return { label: `Em ${dias} dias`, tone: "gold" };
+  if (dias <= 3) return { label: `Em ${dias} dias`, tone: "silver" };
+  if (dias <= 7) return { label: `Em ${dias} dias`, tone: "silver" };
   return { label: `Em ${dias} dias`, tone: "green" };
 }
 
@@ -96,8 +96,8 @@ export default async function DashboardPage() {
   }
   const segmentosPrazos = [
     { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#f87171" },
-    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#e8c96a" },
-    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#c9a84c" },
+    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#e3ebf7" },
+    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#c7d2e8" },
     { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#22c55e" },
   ];
 
@@ -154,7 +154,7 @@ export default async function DashboardPage() {
           <Card className="h-full">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Prazos em aberto</p>
             <p className="mt-2 font-display text-3xl font-bold text-ice">{prazos.length}</p>
-            <span className="mt-3 inline-block text-xs font-medium text-gold">Ver todos →</span>
+            <span className="mt-3 inline-block text-xs font-medium text-silver">Ver todos →</span>
           </Card>
         </Link>
         <Link
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
           <Card className="h-full">
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Fichas não lidas</p>
             <p className="mt-2 font-display text-3xl font-bold text-ice">{fichas.length}</p>
-            <span className="mt-3 inline-block text-xs font-medium text-gold">Ver todas →</span>
+            <span className="mt-3 inline-block text-xs font-medium text-silver">Ver todas →</span>
           </Card>
         </Link>
 
@@ -175,10 +175,10 @@ export default async function DashboardPage() {
           borderRadius={12}
           glowRadius={26}
           glowIntensity={0.9}
-          colors={["#c9a84c", "#0f2040", "#e8c96a"]}
+          colors={["#c7d2e8", "#0f2040", "#e3ebf7"]}
         >
           <div className="flex h-full items-center gap-4 p-5">
-            <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "gold"} size={72} strokeWidth={7} />
+            <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "silver"} size={72} strokeWidth={7} />
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Uso de IA no mês</p>
               <p className="mt-1 font-display text-lg font-bold text-ice">
@@ -249,7 +249,7 @@ export default async function DashboardPage() {
                       </p>
                       <p className="truncate text-xs text-muted">{ficha.area_direito ?? "Área não informada"}</p>
                     </div>
-                    <Badge tone={ficha.urgencia === "alta" ? "red" : ficha.urgencia === "normal" ? "gold" : "muted"}>
+                    <Badge tone={ficha.urgencia === "alta" ? "red" : ficha.urgencia === "normal" ? "silver" : "muted"}>
                       {ficha.urgencia}
                     </Badge>
                   </Link>

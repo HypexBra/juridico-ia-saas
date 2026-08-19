@@ -24,11 +24,6 @@ function formatarMoeda(valor: number) {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function formatarMoedaCompacta(valor: number) {
-  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".0", "")}k`;
-  return valor.toFixed(0);
-}
-
 /**
  * Relatório de produtividade por advogado — leitura agregada, sem schema
  * novo (ver nota "3." em `supabase/migrations/0008_triagem_produtividade_risco.sql`).
@@ -186,7 +181,7 @@ export default async function RelatoriosPage() {
         <Card>
           <CardTitle className="mb-1">Honorários recebidos por advogado</CardTitle>
           <p className="mb-4 text-xs text-muted">Parcela do rateio sobre parcelas já pagas.</p>
-          <BarChart data={dadosHonorariosPorAdvogado} formatValue={formatarMoedaCompacta} />
+          <BarChart data={dadosHonorariosPorAdvogado} format="moeda-compacta" />
         </Card>
       )}
 
@@ -201,7 +196,7 @@ export default async function RelatoriosPage() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>{linha.nome}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge tone={linha.role === "owner" ? "gold" : linha.role === "admin" ? "blue" : "muted"}>
+                  <Badge tone={linha.role === "owner" ? "silver" : linha.role === "admin" ? "blue" : "muted"}>
                     {linha.role === "owner" ? "Titular" : linha.role === "admin" ? "Administrador(a)" : "Advogado(a)"}
                   </Badge>
                   {!linha.ativo && <Badge tone="red">Inativo</Badge>}
@@ -230,7 +225,7 @@ export default async function RelatoriosPage() {
               <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Honorários gerados</p>
-                  <p className="mt-1 font-display text-lg font-semibold text-gold-2">
+                  <p className="mt-1 font-display text-lg font-semibold text-silver-2">
                     {formatarMoeda(linha.honorariosGerados)}
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted">Parcela do rateio sobre o valor total dos contratos.</p>

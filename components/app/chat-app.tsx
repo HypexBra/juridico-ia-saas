@@ -47,7 +47,7 @@ function FontesCitadas({ fontes }: { fontes: Mensagem["fontes"] | undefined }) {
             href={fonte.href}
             target={externo ? "_blank" : undefined}
             rel={externo ? "noopener noreferrer" : undefined}
-            className={`${classe} hover:border-gold/40 hover:text-gold-2`}
+            className={`${classe} hover:border-silver/40 hover:text-silver-2`}
             title={fonte.label}
           >
             {conteudo}
@@ -172,7 +172,7 @@ export function ChatApp({
               type="button"
               onClick={() => setConversaId(c.id)}
               className={`block w-full truncate rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                c.id === conversaId ? "bg-gold/15 text-gold-2" : "text-muted hover:bg-white/5 hover:text-ice"
+                c.id === conversaId ? "bg-silver/15 text-silver-2" : "text-muted hover:bg-white/5 hover:text-ice"
               }`}
               title={c.titulo ?? "Conversa sem título"}
             >
@@ -204,7 +204,7 @@ export function ChatApp({
               <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    m.role === "user" ? "bg-gold/15 text-ice" : "bg-navy-3/80 text-ice"
+                    m.role === "user" ? "bg-silver/15 text-ice" : "bg-navy-3/80 text-ice"
                   }`}
                 >
                   {m.role === "assistant" ? (

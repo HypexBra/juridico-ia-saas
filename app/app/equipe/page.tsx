@@ -14,8 +14,8 @@ const ROLE_LABEL: Record<Role, string> = {
   advogado: "Advogado(a)",
 };
 
-const ROLE_TONE: Record<Role, "gold" | "blue" | "muted"> = {
-  owner: "gold",
+const ROLE_TONE: Record<Role, "silver" | "blue" | "muted"> = {
+  owner: "silver",
   admin: "blue",
   advogado: "muted",
 };

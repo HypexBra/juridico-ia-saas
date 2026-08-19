@@ -39,8 +39,8 @@ export function ProgressLine({ className = "" }: { className?: string }) {
   }, []);
 
   return (
-    <div ref={trackRef} aria-hidden className={`absolute w-px bg-gold/10 ${className}`}>
-      <div ref={fillRef} className="h-full w-full origin-top bg-gradient-to-b from-gold to-gold-2" />
+    <div ref={trackRef} aria-hidden className={`absolute w-px bg-silver/10 ${className}`}>
+      <div ref={fillRef} className="h-full w-full origin-top bg-gradient-to-b from-silver to-silver-2" />
     </div>
   );
 }

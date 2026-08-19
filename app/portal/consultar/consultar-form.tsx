@@ -62,7 +62,7 @@ export function ConsultarStatusForm({ slugInicial }: { slugInicial: string | nul
             <Card key={indice}>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <CardTitle>{resultado.nomeCliente}</CardTitle>
-                <Badge tone="gold">{resultado.statusResumido}</Badge>
+                <Badge tone="silver">{resultado.statusResumido}</Badge>
               </div>
               <p className="text-sm text-muted">{resultado.areaDireito ?? "Área não informada"}</p>
               <p className="mt-1 text-xs text-muted">

@@ -49,7 +49,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-muted">
         Ainda não tem conta?{" "}
-        <Link href="/cadastro" className="font-medium text-gold hover:text-gold-2">
+        <Link href="/cadastro" className="font-medium text-silver hover:text-silver-2">
           Criar conta grátis
         </Link>
       </p>

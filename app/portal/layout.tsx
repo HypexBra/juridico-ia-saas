@@ -27,7 +27,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/portal">)
             href={clientePortalAtual ? "/portal" : "/portal/login"}
             className="flex items-center gap-2 font-display text-lg font-bold text-ice"
           >
-            Jurídico<span className="text-gold">IA</span>
+            Jurídico<span className="text-silver">IA</span>
             <span className="hidden rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted sm:inline">
               Portal do Cliente
             </span>

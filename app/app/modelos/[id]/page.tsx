@@ -30,7 +30,7 @@ export default async function ModeloDetalhePage({ params }: PageProps<"/app/mode
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/app/modelos" className="text-xs font-medium text-gold hover:text-gold-2">
+        <Link href="/app/modelos" className="text-xs font-medium text-silver hover:text-silver-2">
           ← Voltar para modelos
         </Link>
         <ExcluirModeloButton modeloId={modelo.id} />

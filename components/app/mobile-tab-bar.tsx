@@ -72,11 +72,11 @@ export function MobileTabBar({ onMore }: { onMore: () => void }) {
             href={tab.href}
             aria-current={isActive ? "page" : undefined}
             className={`relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10.5px] font-medium transition-colors duration-150 ease-out active:scale-95 active:bg-white/[.06] ${
-              isActive ? "text-gold-2" : "text-muted"
+              isActive ? "text-silver-2" : "text-muted"
             }`}
           >
             {isActive && (
-              <span aria-hidden className="absolute top-0 h-0.5 w-9 rounded-full bg-gradient-to-r from-gold to-gold-2" />
+              <span aria-hidden className="absolute top-0 h-0.5 w-9 rounded-full bg-gradient-to-r from-silver to-silver-2" />
             )}
             <TabIcon name={tab.icon} />
             {tab.label}

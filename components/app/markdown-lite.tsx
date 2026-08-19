@@ -49,19 +49,19 @@ export function MarkdownLite({ texto }: { texto: string }) {
 
     if (/^###\s+/.test(linha)) {
       blocos.push(
-        <h4 key={key} className="mt-3 font-display text-sm font-semibold text-gold-2">
+        <h4 key={key} className="mt-3 font-display text-sm font-semibold text-silver-2">
           {renderInline(linha.replace(/^###\s+/, ""), key)}
         </h4>,
       );
     } else if (/^##\s+/.test(linha)) {
       blocos.push(
-        <h3 key={key} className="mt-4 font-display text-base font-semibold text-gold-2">
+        <h3 key={key} className="mt-4 font-display text-base font-semibold text-silver-2">
           {renderInline(linha.replace(/^##\s+/, ""), key)}
         </h3>,
       );
     } else if (/^#\s+/.test(linha)) {
       blocos.push(
-        <h2 key={key} className="mt-4 font-display text-lg font-semibold text-gold-2">
+        <h2 key={key} className="mt-4 font-display text-lg font-semibold text-silver-2">
           {renderInline(linha.replace(/^#\s+/, ""), key)}
         </h2>,
       );

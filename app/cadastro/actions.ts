@@ -54,11 +54,18 @@ export async function cadastroAction(
     if (signUpError.message.toLowerCase().includes("already registered")) {
       return { error: "Já existe uma conta com este e-mail.", precisaConfirmarEmail: false };
     }
+    // Loga a causa real (ex: senha fraca rejeitada pelo provider, rate limit,
+    // projeto Supabase mal configurado) — sem isso a mensagem genérica pro
+    // usuário não deixa nenhum rastro no server para diagnóstico.
+    console.error("[cadastro/cadastroAction] Falha no signUp:", signUpError);
     return { error: "Não foi possível criar a conta. Tente novamente.", precisaConfirmarEmail: false };
   }
 
   const authUser = signUpData.user;
   if (!authUser) {
+    console.error("[cadastro/cadastroAction] signUp sem erro mas sem usuário retornado.", {
+      signUpData,
+    });
     return { error: "Não foi possível criar a conta. Tente novamente.", precisaConfirmarEmail: false };
   }
 
@@ -71,7 +78,10 @@ export async function cadastroAction(
 
   try {
     await criarEscritorioEPerfil(supabase, authUser.id, nomeUsuario, nomeEscritorio);
-  } catch {
+  } catch (erro) {
+    console.error("[cadastro/cadastroAction] Falha ao concluir onboarding pós-signUp:", erro, {
+      authUserId: authUser.id,
+    });
     return {
       error: "Conta criada, mas houve um erro ao configurar o escritório. Contate o suporte.",
       precisaConfirmarEmail: false,

@@ -37,7 +37,7 @@ export default async function TriagemPublicaPage({ params }: PageProps<"/triagem
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg space-y-6">
         <div className="text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-gold">{escritorio.nome}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-silver">{escritorio.nome}</p>
           <h1 className="mt-1 font-display text-2xl font-semibold text-ice">Conte seu caso</h1>
           <p className="mt-2 text-sm text-muted">
             Preencha o formulário abaixo e a equipe do escritório vai analisar sua situação o quanto antes.

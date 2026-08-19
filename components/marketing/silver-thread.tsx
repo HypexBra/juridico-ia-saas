@@ -51,7 +51,7 @@ function buildPathD(knots: Knot[], width: number, height: number): string {
 }
 
 /**
- * The "golden thread": one continuous organic SVG path running the full
+ * The "silver thread": one continuous organic SVG path running the full
  * height of the marketing page (hero -> cta-final), physically stitching
  * every section together instead of leaving them as disconnected stacked
  * blocks. It draws itself progressively as the user scrolls (a
@@ -68,7 +68,7 @@ function buildPathD(knots: Knot[], width: number, height: number): string {
  * progress bar and cta glow (already CSS-only in this codebase), not for a
  * geometry that must be regenerated responsively.
  */
-export function GoldenThread() {
+export function SilverThread() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const pathRef = useRef<SVGPathElement | null>(null);
@@ -159,7 +159,7 @@ export function GoldenThread() {
         className="absolute inset-x-0 top-0 h-[60vh]"
         style={{
           background:
-            "radial-gradient(ellipse 70% 55% at 20% 0%, rgba(201,168,76,.07), transparent 70%)",
+            "radial-gradient(ellipse 70% 55% at 20% 0%, rgba(199,210,232,.07), transparent 70%)",
         }}
       />
       <div
@@ -173,22 +173,22 @@ export function GoldenThread() {
         className="absolute inset-x-0 top-[78%] h-[50vh]"
         style={{
           background:
-            "radial-gradient(ellipse 65% 55% at 12% 50%, rgba(201,168,76,.05), transparent 70%)",
+            "radial-gradient(ellipse 65% 55% at 12% 50%, rgba(199,210,232,.05), transparent 70%)",
         }}
       />
 
       <svg ref={svgRef} className="h-full w-full" preserveAspectRatio="none">
         <defs>
           <linearGradient id="thread-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c9a84c" stopOpacity="0.85" />
-            <stop offset="45%" stopColor="#e8c96a" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#c9a84c" stopOpacity="0.85" />
+            <stop offset="0%" stopColor="#c7d2e8" stopOpacity="0.85" />
+            <stop offset="45%" stopColor="#e3ebf7" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#c7d2e8" stopOpacity="0.85" />
           </linearGradient>
         </defs>
         <path
           ref={glowRef}
           fill="none"
-          stroke="#e8c96a"
+          stroke="#e3ebf7"
           strokeWidth={10}
           strokeLinecap="round"
           opacity={0.1}

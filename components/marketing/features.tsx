@@ -85,7 +85,7 @@ export function Features() {
       <LightBeam angle={-16} origin="top-left" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
             Funcionalidades
           </p>
           <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
@@ -103,7 +103,7 @@ export function Features() {
       {/* Mobile/tablet + no-JS + reduced-motion fallback: lista estática empilhada,
           com leve alternância esquerda/direita (>=sm) para não ler como grid rígida. */}
       <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:hidden">
-        <div className="divide-y divide-gold/10 border-y border-gold/10">
+        <div className="divide-y divide-silver/10 border-y border-silver/10">
           {ARTICLES.map((article, index) => {
             const Icon = article.icon;
             const alignRight = index % 2 === 1;
@@ -114,10 +114,10 @@ export function Features() {
                     alignRight ? "sm:flex-row-reverse sm:text-right" : ""
                   }`}
                 >
-                  <span className="font-display text-sm font-bold tracking-wide text-gold-2 sm:w-[90px] sm:shrink-0 sm:pt-1">
+                  <span className="font-display text-sm font-bold tracking-wide text-silver-2 sm:w-[90px] sm:shrink-0 sm:pt-1">
                     {article.numeral}
                   </span>
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-gold/20 bg-gold/5 text-gold">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-silver/20 bg-silver/5 text-silver">
                     <Icon className="h-5 w-5" strokeWidth={1.4} />
                   </span>
                   <div>

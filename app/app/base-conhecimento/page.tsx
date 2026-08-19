@@ -21,7 +21,7 @@ export default async function BaseConhecimentoPage() {
         <h1 className="font-display text-2xl font-semibold text-ice">Base de Conhecimento</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted">
           Alimenta o RAG do copiloto (
-          <Link href="/app/chat" className="text-gold-2 underline underline-offset-2">
+          <Link href="/app/chat" className="text-silver-2 underline underline-offset-2">
             Chat IA
           </Link>
           ). Suba legislação, jurisprudência ou doutrina em PDF/texto — o conteúdo é dividido em trechos,

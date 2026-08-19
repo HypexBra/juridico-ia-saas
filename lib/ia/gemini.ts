@@ -21,6 +21,14 @@ import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
 const MODELO_FLASH = "gemini-flash-latest";
 const MODELO_PRO = "gemini-flash-latest";
 
+// Quando o modelo principal estoura RPM (429 de quota) mesmo após as
+// retentativas com backoff, cai pra um modelo de FAMÍLIA DIFERENTE — que tem
+// pool de quota separado do "-latest" (mesma quota base, só alias distinto)
+// — em vez de derrubar a feature inteira. "gemini-flash-lite-latest" é mais
+// barato/rápido (custo/qualidade um degrau abaixo do Flash normal), mas
+// melhor responder algo mais simples do que "IA indisponível" pro usuário.
+const MODELO_FALLBACK_QUOTA = "gemini-flash-lite-latest";
+
 const PALAVRAS_TAREFA_COMPLEXA =
   /\b(peti[cç][aã]o|minuta|contesta[cç][aã]o|recurso|apela[cç][aã]o|agravo|parecer|contrato completo|embargos)\b/i;
 
@@ -128,54 +136,74 @@ export async function gerarResposta(
   const modeloEscolhido = escolherModelo(ultima.conteudo);
   const usaSchema = Boolean(opcoes.responseSchema);
 
-  const chat = genAI.chats.create({
-    model: modeloEscolhido,
-    history: anteriores.map((turno) => ({
-      role: turno.role === "assistant" ? "model" : "user",
-      parts: [{ text: turno.conteudo }],
-    })),
-    config: {
-      systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
-      tools:
-        !usaSchema && opcoes.habilitarFerramentas
-          ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
-          : undefined,
-      maxOutputTokens: maxOutputTokensPara(modeloEscolhido),
-      thinkingConfig: { thinkingBudget: thinkingBudgetPara(modeloEscolhido) },
-      ...(usaSchema
-        ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
-        : {}),
-    },
-  });
-
   const mensagemFinal = opcoes.contextoRag
     ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
     : ultima.conteudo;
 
-  let ultimoErro: unknown;
-  for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
-    try {
-      const resposta = await chat.sendMessage({ message: mensagemFinal });
-      const uso = resposta.usageMetadata;
+  // Cadeia de modelos a tentar: o escolhido por complexidade primeiro; se
+  // ESSE estourar quota (RPM) mesmo após as retentativas de rede/5xx, cai
+  // pro fallback de família diferente em vez de derrubar a feature. Sem
+  // duplicar o mesmo nome de modelo (ex: fallback já é o próprio escolhido).
+  const cadeiaModelos = [modeloEscolhido, MODELO_FALLBACK_QUOTA].filter(
+    (modelo, indice, lista) => lista.indexOf(modelo) === indice,
+  );
 
-      return {
-        texto: resposta.text ?? "",
-        tokensIn: uso?.promptTokenCount ?? 0,
-        tokensOut: uso?.candidatesTokenCount ?? 0,
-        functionCalls: resposta.functionCalls ?? [],
-      };
-    } catch (erro) {
-      ultimoErro = erro;
-      const deQuota = isErroDeQuota(erro);
-      // 429 de quota: no máximo UMA retentativa (a chamada seguinte já
-      // esgotada de novo em <1s não ajuda em nada) e com backoff longo, pra
-      // dar chance da janela de rate-limit da API resetar. Demais erros
-      // transientes (rede/5xx) mantêm o backoff exponencial curto original.
-      if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
-        throw erro;
+  let ultimoErro: unknown;
+  for (const modelo of cadeiaModelos) {
+    const chat = genAI.chats.create({
+      model: modelo,
+      history: anteriores.map((turno) => ({
+        role: turno.role === "assistant" ? "model" : "user",
+        parts: [{ text: turno.conteudo }],
+      })),
+      config: {
+        systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
+        tools:
+          !usaSchema && opcoes.habilitarFerramentas
+            ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }]
+            : undefined,
+        maxOutputTokens: maxOutputTokensPara(modelo),
+        thinkingConfig: { thinkingBudget: thinkingBudgetPara(modelo) },
+        ...(usaSchema
+          ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
+          : {}),
+      },
+    });
+
+    let erroDeQuotaEsgotouRetentativas = false;
+
+    for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
+      try {
+        const resposta = await chat.sendMessage({ message: mensagemFinal });
+        const uso = resposta.usageMetadata;
+
+        return {
+          texto: resposta.text ?? "",
+          tokensIn: uso?.promptTokenCount ?? 0,
+          tokensOut: uso?.candidatesTokenCount ?? 0,
+          functionCalls: resposta.functionCalls ?? [],
+        };
+      } catch (erro) {
+        ultimoErro = erro;
+        const deQuota = isErroDeQuota(erro);
+        // 429 de quota: no máximo UMA retentativa (a chamada seguinte já
+        // esgotada de novo em <1s não ajuda em nada) e com backoff longo, pra
+        // dar chance da janela de rate-limit da API resetar. Demais erros
+        // transientes (rede/5xx) mantêm o backoff exponencial curto original.
+        if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
+          erroDeQuotaEsgotouRetentativas = deQuota;
+          break;
+        }
+        await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
       }
-      await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
     }
+
+    // Erro não-transiente ou transiente-não-quota (rede/5xx já esgotado):
+    // trocar de modelo não ajuda (não é problema de RPM), propaga direto.
+    if (!erroDeQuotaEsgotouRetentativas) throw ultimoErro;
+    console.error(
+      `[gemini/gerarResposta] Quota esgotada em "${modelo}", tentando próximo modelo da cadeia (se houver).`,
+    );
   }
   throw ultimoErro;
 }

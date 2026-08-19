@@ -35,7 +35,7 @@ export function Pricing() {
       <LightBeam angle={16} origin="top-right" className="-z-10" />
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mb-16 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-gold">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
             Planos
           </p>
           <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
@@ -72,7 +72,7 @@ export function Pricing() {
                     }`}
                   >
                     {feature.included ? (
-                      <IconCheck className="h-4 w-4 shrink-0 text-gold" />
+                      <IconCheck className="h-4 w-4 shrink-0 text-silver" />
                     ) : (
                       <IconDash className="h-4 w-4 shrink-0 text-muted/60" />
                     )}
@@ -98,15 +98,15 @@ export function Pricing() {
               glowRadius={44}
               glowIntensity={1.1}
               coneSpread={30}
-              colors={["#c9a84c", "#162a52", "#f5e0a0"]}
+              colors={["#c7d2e8", "#162a52", "#f5f8fc"]}
               fillOpacity={0.35}
             >
               <div className="relative flex h-full flex-col overflow-hidden p-8">
                 <span
                   aria-hidden
-                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold to-gold-2"
+                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-silver to-silver-2"
                 />
-              <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-gold to-gold-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
+              <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-silver to-silver-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
                 Em breve
               </span>
               <h3 className="font-display text-lg font-bold text-ice">Pro</h3>
@@ -115,21 +115,21 @@ export function Pricing() {
                 peças por mês.
               </p>
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-2xl font-black text-gold-2">
+                <span className="font-display text-2xl font-black text-silver-2">
                   Lista de espera
                 </span>
               </div>
               <ul className="mt-7 flex flex-1 flex-col gap-3">
                 {PRO_FEATURES.map((feature) => (
                   <li key={feature.label} className="flex items-center gap-2.5 text-sm text-ice-2">
-                    <IconCheck className="h-4 w-4 shrink-0 text-gold" />
+                    <IconCheck className="h-4 w-4 shrink-0 text-silver" />
                     {feature.label}
                   </li>
                 ))}
               </ul>
               <Link
                 href="/cadastro"
-                className="mt-8 rounded-sm bg-gradient-to-br from-gold to-gold-2 px-5 py-3 text-center text-sm font-semibold text-navy transition-transform hover:-translate-y-0.5"
+                className="mt-8 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-5 py-3 text-center text-sm font-semibold text-navy transition-transform hover:-translate-y-0.5"
               >
                 Entrar na lista de espera
               </Link>
