@@ -23,16 +23,21 @@ const RÓTULO_VARIAVEL: Record<string, string> = {
 /**
  * Seção "Gerar petição a partir de modelo" na tela da ficha do caso: fluxo
  * de mail-merge jurídico (migration 0010) — o advogado escolhe um modelo já
- * cadastrado, a action resolve as variáveis contra os dados reais da ficha
- * aberta e devolve o texto pronto para copiar ou baixar. Fica na tela da
- * FICHA (não na tela do modelo) porque é o caso concreto que fornece os
- * dados de substituição; o modelo sozinho não tem cliente, processo nem
- * valor de causa para preencher `{{variavel}}`.
+ * cadastrado e, em um único clique, baixa o .docx já preenchido com os
+ * dados reais do caso (nome do cliente, número de processo, área do
+ * direito, valor da causa, data de hoje), sem precisar copiar/colar
+ * variável por variável. "Ver texto antes" é a opção secundária para quem
+ * quer revisar/copiar o texto puro (ou baixar em .txt) antes de gerar o
+ * arquivo final. Fica na tela da FICHA (não na tela do modelo) porque é o
+ * caso concreto que fornece os dados de substituição; o modelo sozinho não
+ * tem cliente, processo nem valor de causa para preencher `{{variavel}}`.
  */
 export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelos: ModeloParaSelecao[] }) {
   const [modeloSelecionadoId, setModeloSelecionadoId] = useState(modelos[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
+  const [isPendingDocx, startTransitionDocx] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
+  const [avisoDocx, setAvisoDocx] = useState<string | null>(null);
   const [textoGerado, setTextoGerado] = useState<string | null>(null);
   const [variaveisNaoResolvidas, setVariaveisNaoResolvidas] = useState<string[]>([]);
   const [copiado, setCopiado] = useState(false);
@@ -53,6 +58,59 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
       }
       setTextoGerado(resultado.textoFinal);
       setVariaveisNaoResolvidas(resultado.variaveisNaoResolvidas);
+    });
+  }
+
+  /**
+   * Gera e baixa o .docx já preenchido em um clique: chama a Route Handler
+   * que reaproveita a MESMA orquestração de mail-merge do preview em texto
+   * (`gerarDocumentoDaFicha`) e devolve o binário pronto — sem exigir que o
+   * advogado gere o preview primeiro. Usa `fetch` (não navegação direta por
+   * `<a href>`) para poder ler o header `X-Variaveis-Nao-Resolvidas` antes de
+   * disparar o download e avisar sobre lacunas sem bloquear o clique.
+   */
+  function baixarDocumentoDocx() {
+    if (!modeloSelecionadoId) {
+      setErro("Selecione um modelo para gerar o documento.");
+      return;
+    }
+    setErro(null);
+    setAvisoDocx(null);
+    startTransitionDocx(async () => {
+      try {
+        const resposta = await fetch(`/api/fichas/${fichaId}/documento?modeloId=${modeloSelecionadoId}`);
+
+        if (!resposta.ok) {
+          const corpo = (await resposta.json().catch(() => null)) as { error?: string } | null;
+          setErro(corpo?.error ?? "Não foi possível gerar o documento. Tente novamente.");
+          return;
+        }
+
+        const pendentes = (resposta.headers.get("X-Variaveis-Nao-Resolvidas") ?? "")
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        if (pendentes.length > 0) {
+          setAvisoDocx(
+            `Documento gerado com lacunas: revise ${pendentes.map((v) => RÓTULO_VARIAVEL[v] ?? v).join(", ")} antes de protocolar.`,
+          );
+        }
+
+        const disposicao = resposta.headers.get("Content-Disposition") ?? "";
+        const nomeArquivo = /filename="([^"]+)"/.exec(disposicao)?.[1] ?? "documento.docx";
+
+        const blob = await resposta.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = nomeArquivo;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch {
+        setErro("Falha de rede ao gerar o documento. Tente novamente.");
+      }
     });
   }
 
@@ -109,12 +167,21 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
                 ))}
               </Select>
             </div>
-            <Button onClick={gerar} disabled={isPending} size="sm">
-              {isPending ? "Gerando…" : "Gerar petição"}
+            <Button onClick={baixarDocumentoDocx} disabled={isPendingDocx} size="sm">
+              {isPendingDocx ? "Gerando documento…" : "Gerar documento (.docx)"}
+            </Button>
+            <Button onClick={gerar} disabled={isPending} variant="secondary" size="sm">
+              {isPending ? "Gerando…" : "Ver texto antes"}
             </Button>
           </div>
 
           <FieldError>{erro}</FieldError>
+
+          {avisoDocx && (
+            <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+              {avisoDocx}
+            </p>
+          )}
 
           {textoGerado && (
             <div className="space-y-3">

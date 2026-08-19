@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { OabForm } from "@/components/app/oab-form";
 import { WhatsappCanalForm } from "@/components/app/whatsapp-canal-form";
+import { LIMIAR_HORAS_ALERTA_FICHA_URGENTE } from "@/lib/whatsapp/lembretes";
 
 export const metadata = { title: "Meu perfil — Jurídico IA" };
 
@@ -17,17 +18,27 @@ export default async function PerfilPage() {
   // a owner/admin do próprio escritório — para `advogado` a query volta
   // vazia por política, então nem tentamos buscar (evita um round-trip
   // que sempre retornaria nulo para esse papel).
-  let canalExistente: { phoneNumberId: string; numeroExibicao: string | null; ativo: boolean } | null = null;
+  let canalExistente: {
+    phoneNumberId: string;
+    numeroExibicao: string | null;
+    telefoneAlertaUrgencia: string | null;
+    ativo: boolean;
+  } | null = null;
   if (podeGerenciarWhatsapp) {
     const supabase = await createClient();
     const { data } = await supabase
       .from("canais_whatsapp_escritorio")
-      .select("phone_number_id, numero_exibicao, ativo")
+      .select("phone_number_id, numero_exibicao, telefone_alerta_urgencia, ativo")
       .eq("escritorio_id", usuario.perfil.escritorio_id)
       .maybeSingle();
 
     canalExistente = data
-      ? { phoneNumberId: data.phone_number_id, numeroExibicao: data.numero_exibicao, ativo: data.ativo }
+      ? {
+          phoneNumberId: data.phone_number_id,
+          numeroExibicao: data.numero_exibicao,
+          telefoneAlertaUrgencia: data.telefone_alerta_urgencia,
+          ativo: data.ativo,
+        }
       : null;
   }
 
@@ -54,10 +65,14 @@ export default async function PerfilPage() {
           <p className="mb-4 text-sm text-muted">
             Conecte o número do WhatsApp Business do escritório (Meta Cloud API) para enviar lembretes
             automáticos aos clientes 3 dias antes, 1 dia antes e no dia do vencimento de prazos e parcelas de
-            honorários — e um aviso caso passem do vencimento. Só titular e administradores veem e configuram
-            esta credencial.
+            honorários — e um aviso caso passem do vencimento. Opcionalmente, cadastre também um número interno
+            para receber um alerta quando uma ficha de urgência alta ficar sem contato do advogado. Só titular e
+            administradores veem e configuram esta credencial.
           </p>
-          <WhatsappCanalForm canalExistente={canalExistente} />
+          <WhatsappCanalForm
+            canalExistente={canalExistente}
+            limiarHorasAlertaUrgente={LIMIAR_HORAS_ALERTA_FICHA_URGENTE}
+          />
         </Card>
       )}
     </div>

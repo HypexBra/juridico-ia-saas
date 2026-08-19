@@ -5,6 +5,14 @@ export type Escritorio = {
   nome: string;
   slug: string;
   plano: "free" | "pro";
+  /**
+   * Overrides pontuais de feature premium por escritório (migration 0012),
+   * ex: `{ "analise_risco_contratual": true }` libera 1 feature pro num
+   * escritório free sem mudar `plano`. Tipo solto aqui (evita import de
+   * `FeaturePremium` em `lib/types.ts`, que é importado por praticamente
+   * todo o app); `lib/planos/gating.ts` é quem interpreta as chaves.
+   */
+  features_overrides: Record<string, boolean> | null;
   criado_em: string;
 };
 
@@ -103,6 +111,16 @@ export type DocumentoConhecimento = {
   processado_em: string | null;
 };
 
+/**
+ * Andamento/resultado do processo judicial em si (distinto de
+ * `conversas.status`, que é o status do CHAT de triagem, e de `lida`, que é
+ * só inbox). Ver `supabase/migrations/0011_status_processual_caso.sql` para
+ * o porquê desta coluna existir. `em_andamento` é o estado inicial de toda
+ * ficha nova; `ganho`/`acordo` confirmam o direito ao êxito (ainda que o
+ * valor não esteja parcelado); `perdido`/`arquivado` encerram sem êxito.
+ */
+export type StatusProcessualFicha = "em_andamento" | "ganho" | "acordo" | "perdido" | "arquivado";
+
 export type FichaCaso = {
   id: string;
   escritorio_id: string;
@@ -119,6 +137,8 @@ export type FichaCaso = {
   lida: boolean;
   nivel_risco: "baixo" | "medio" | "alto" | null;
   risco_calculado_em: string | null;
+  status_processual: StatusProcessualFicha;
+  status_processual_atualizado_em: string | null;
   criado_em: string;
 };
 
@@ -297,19 +317,61 @@ export type PeticaoGerada = {
   criado_em: string;
 };
 
+/**
+ * Status Stripe da assinatura (migration 0012). `inexistente` é o valor
+ * inicial (nunca fez checkout) — não confundir com `canceled` (já foi
+ * assinante e cancelou). Espelha o campo `status` de uma Subscription do
+ * Stripe 1:1, exceto `inexistente` que é local.
+ */
+export type StatusAssinaturaStripe =
+  | "inexistente"
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete"
+  | "incomplete_expired";
+
+/**
+ * Espelho local da subscription no Stripe (migration 0012) — usada para
+ * auditoria/tela "minha assinatura". NÃO é a fonte de verdade do gating de
+ * feature: isso é `escritorios.plano`, atualizado pelo webhook Stripe
+ * (`app/api/webhooks/stripe/route.ts`) sempre que este registro muda de
+ * status. Ver `lib/planos/gating.ts`.
+ */
+export type Assinatura = {
+  id: string;
+  escritorio_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  status: StatusAssinaturaStripe;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  criado_em: string;
+  atualizado_em: string;
+};
+
 export type CanalWhatsappEscritorio = {
   id: string;
   escritorio_id: string;
   phone_number_id: string;
   token_acesso: string;
   numero_exibicao: string | null;
+  /**
+   * Número interno (equipe/advogado do escritório) que recebe o alerta
+   * proativo de ficha com urgência alta sem contato (migration 0012).
+   * `null` = feature desativada para este escritório (opt-in).
+   */
+  telefone_alerta_urgencia: string | null;
   ativo: boolean;
   criado_em: string;
   atualizado_em: string;
 };
 
-export type TipoReferenciaLembrete = "prazo" | "parcela_honorario";
-export type MarcoLembrete = "d3" | "d1" | "d0" | "atraso";
+export type TipoReferenciaLembrete = "prazo" | "parcela_honorario" | "ficha_urgente";
+export type MarcoLembrete = "d3" | "d1" | "d0" | "atraso" | "sem_resposta";
 export type StatusLembreteWhatsapp = "enviado" | "falhou";
 
 export type LembreteWhatsappEnviado = {
@@ -338,4 +400,4 @@ export const AREAS_DIREITO = [
   "LGPD",
 ] as const;
 
-export const LIMITE_MENSAGENS_FREE = 60; // uso mensal de IA no plano free (heurística p/ caber na free tier do Gemini)
+export const LIMITE_MENSAGENS_FREE = 25; // uso mensal de IA no plano free — baixado de 60 pra empurrar upgrade pro Pro

@@ -14,8 +14,21 @@ const INITIAL_STATE: CanalWhatsappState = { error: null, sucesso: null };
 
 export function WhatsappCanalForm({
   canalExistente,
+  limiarHorasAlertaUrgente,
 }: {
-  canalExistente: { phoneNumberId: string; numeroExibicao: string | null; ativo: boolean } | null;
+  canalExistente: {
+    phoneNumberId: string;
+    numeroExibicao: string | null;
+    telefoneAlertaUrgencia: string | null;
+    ativo: boolean;
+  } | null;
+  /**
+   * Recebido via prop (não importado direto de `lib/whatsapp/lembretes.ts`,
+   * que tem `import "server-only"` e quebraria este Client Component) —
+   * `app/app/perfil/page.tsx` (Server Component) lê a constante e passa o
+   * valor já resolvido para cá.
+   */
+  limiarHorasAlertaUrgente: number;
 }) {
   const [state, formAction, isPending] = useActionState(salvarCanalWhatsappAction, INITIAL_STATE);
   const [toggleState, toggleAction, isTogglePending] = useActionState(
@@ -82,6 +95,23 @@ export function WhatsappCanalForm({
           <p className="mt-1.5 text-xs text-muted">
             Gerado no WhatsApp Manager da Meta, com token de sistema de longa duração. Fica criptografado no
             banco e nunca é exibido de volta na tela.
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="telefoneAlertaUrgencia">Telefone interno para alerta de ficha urgente (opcional)</Label>
+          <Input
+            id="telefoneAlertaUrgencia"
+            name="telefoneAlertaUrgencia"
+            defaultValue={canalExistente?.telefoneAlertaUrgencia ?? ""}
+            placeholder="(11) 99999-8888"
+            maxLength={20}
+          />
+          <p className="mt-1.5 text-xs text-muted">
+            Quando preenchido, este número recebe um aviso via WhatsApp se uma ficha de urgência alta ficar
+            {" "}
+            {limiarHorasAlertaUrgente}h ou mais sem ser aberta/contatada por um advogado. Deixe em branco
+            para não usar este alerta.
           </p>
         </div>
 

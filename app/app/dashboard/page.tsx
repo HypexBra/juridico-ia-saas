@@ -2,14 +2,24 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { sincronizarParcelasAtrasadas } from "@/app/app/financeiro/actions";
+import { calcularResumoFinanceiro, type ParcelaResumoInput } from "@/lib/financeiro/resumo";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 import { DonutChart } from "@/components/app/charts/donut-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
+import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
 import type { FichaCaso, Prazo } from "@/lib/types";
+
+/** Quantas propostas pendentes renderizar direto no dashboard antes de "e mais N". */
+const LIMITE_PROPOSTAS_INBOX = 5;
+
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
 export const metadata = { title: "Dashboard — Jurídico IA" };
 
@@ -48,7 +58,20 @@ export default async function DashboardPage() {
   limiteAlerta.setDate(limiteAlerta.getDate() + 3);
   const dataLimiteAlerta = limiteAlerta.toISOString().slice(0, 10);
 
-  const [prazosRes, alertasPrazoRes, fichasRes, usoRes, todosPrazosRes] = await Promise.all([
+  // Recalcula pendente -> atrasado antes de agregar o card financeiro (mesma
+  // garantia usada em app/app/financeiro/page.tsx antes de qualquer leitura).
+  await sincronizarParcelasAtrasadas(usuario.perfil.escritorio_id);
+
+  const [
+    prazosRes,
+    alertasPrazoRes,
+    fichasRes,
+    usoRes,
+    todosPrazosRes,
+    propostasPendentesRes,
+    totalPropostasPendentesRes,
+    parcelasRes,
+  ] = await Promise.all([
     supabase
       .from("prazos")
       .select("*")
@@ -78,6 +101,26 @@ export default async function DashboardPage() {
     // alimenta o donut do dashboard mobile (leitura à parte da lista curta
     // acima, que só traz os 6 mais próximos).
     supabase.from("prazos").select("data_prazo").eq("concluido", false).returns<{ data_prazo: string }[]>(),
+    // Inbox de propostas pendentes (ex: prazos sugeridos pela sincronização
+    // do DJEN) — mais antigas primeiro, pra não deixar nada vencer os 24h de
+    // expiração sem o advogado ver. Aprovar/rejeitar reusa exatamente o mesmo
+    // fluxo do chat (PropostaAcaoCard + propostas-actions.ts).
+    supabase
+      .from("propostas_acao")
+      .select("id")
+      .eq("status", "pending")
+      .order("criado_em", { ascending: true })
+      .limit(LIMITE_PROPOSTAS_INBOX)
+      .returns<{ id: string }[]>(),
+    // Contador total (independente do limite acima) pro badge do topo.
+    supabase.from("propostas_acao").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    // Parcelas de honorário do escritório — mesma fonte de dados usada em
+    // app/app/financeiro/page.tsx, agregada por lib/financeiro/resumo.ts pra
+    // não duplicar a lógica de soma por mês/status.
+    supabase
+      .from("parcelas_honorario")
+      .select("valor, vencimento, status, pago_em")
+      .returns<ParcelaResumoInput[]>(),
   ]);
 
   const prazos = prazosRes.data ?? [];
@@ -85,6 +128,12 @@ export default async function DashboardPage() {
   const fichas = fichasRes.data ?? [];
   const usoMes = usoRes.data?.length ?? 0;
   const percentualUso = Math.min(100, Math.round((usoMes / LIMITE_MENSAGENS_FREE) * 100));
+
+  const propostasPendentes = propostasPendentesRes.data ?? [];
+  const totalPropostasPendentes = totalPropostasPendentesRes.count ?? propostasPendentes.length;
+  const propostasExtras = Math.max(0, totalPropostasPendentes - propostasPendentes.length);
+
+  const resumoFinanceiro = calcularResumoFinanceiro(parcelasRes.data ?? [], mesRef);
 
   const distribuicaoPrazos = { vencidos: 0, urgentes: 0, semana: 0, futuros: 0 };
   for (const prazo of todosPrazosRes.data ?? []) {
@@ -146,7 +195,31 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      {propostasPendentes.length > 0 && (
+        <Card id="propostas-djen" className="border-silver/25 bg-navy-3/30">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-ice">Propostas pendentes de aprovação</CardTitle>
+              <Badge tone="silver">{totalPropostasPendentes}</Badge>
+            </div>
+          </div>
+          <p className="mb-1 text-xs text-muted">
+            Sugestões automáticas (ex.: prazos importados do DJEN) esperando sua revisão antes de entrar no sistema.
+          </p>
+          <div className="mt-3 space-y-2">
+            {propostasPendentes.map((proposta) => (
+              <PropostaAcaoCard key={proposta.id} propostaId={proposta.id} />
+            ))}
+          </div>
+          {propostasExtras > 0 && (
+            <p className="mt-3 text-xs text-muted">
+              +{propostasExtras} proposta(s) adicional(is) aguardando — aprove ou rejeite as de cima para ver as próximas.
+            </p>
+          )}
+        </Card>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/app/prazos"
           className="block rounded-xl transition-transform duration-150 ease-out active:scale-[0.97]"
@@ -165,6 +238,18 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Fichas não lidas</p>
             <p className="mt-2 font-display text-3xl font-bold text-ice">{fichas.length}</p>
             <span className="mt-3 inline-block text-xs font-medium text-silver">Ver todas →</span>
+          </Card>
+        </Link>
+        <Link
+          href={totalPropostasPendentes > 0 ? "#propostas-djen" : "/app/prazos"}
+          className="block rounded-xl transition-transform duration-150 ease-out active:scale-[0.97]"
+        >
+          <Card className={`h-full ${totalPropostasPendentes > 0 ? "border-silver/30" : ""}`}>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Propostas do DJEN</p>
+            <p className="mt-2 font-display text-3xl font-bold text-ice">{totalPropostasPendentes}</p>
+            <span className="mt-3 inline-block text-xs font-medium text-silver">
+              {totalPropostasPendentes > 0 ? "Revisar agora →" : "Nenhuma pendente"}
+            </span>
           </Card>
         </Link>
 
@@ -193,6 +278,40 @@ export default async function DashboardPage() {
       <Card>
         <CardTitle className="mb-4">Prazos por urgência</CardTitle>
         <DonutChart segments={segmentosPrazos} />
+      </Card>
+
+      <Card>
+        <div className="mb-4 flex items-center justify-between">
+          <CardTitle>Financeiro</CardTitle>
+          <LinkButton href="/app/financeiro" variant="ghost" size="sm">
+            Ver financeiro →
+          </LinkButton>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Recebido no mês</p>
+            <p className="mt-2 font-display text-2xl font-bold text-ice">
+              {formatarMoeda(resumoFinanceiro.recebidoNoMes)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">A receber no mês</p>
+            <p className="mt-2 font-display text-2xl font-bold text-silver-2">
+              {formatarMoeda(resumoFinanceiro.aReceberNoMes)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">Em atraso</p>
+            <p className="mt-2 font-display text-2xl font-bold text-red-400">
+              {formatarMoeda(resumoFinanceiro.totalAtrasado)}
+            </p>
+            {resumoFinanceiro.parcelasAtrasadasCount > 0 && (
+              <p className="mt-1 text-xs text-muted">
+                {resumoFinanceiro.parcelasAtrasadasCount} parcela(s) vencida(s) sem pagamento.
+              </p>
+            )}
+          </div>
+        </div>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">

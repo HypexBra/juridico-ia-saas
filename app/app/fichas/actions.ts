@@ -7,11 +7,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
-import {
-  formatarDataHojeMailMerge,
-  formatarValorCausaMailMerge,
-  resolverMailMerge,
-} from "@/lib/peticoes/mail-merge";
+import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
 import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE } from "@/lib/types";
 
 const criarFichaSchema = z.object({
@@ -85,6 +81,42 @@ export async function marcarFichaLidaAction(
   revalidatePath("/app/fichas");
   revalidatePath(`/app/fichas/${fichaId}`);
   revalidatePath("/app/dashboard");
+  return { ok: true };
+}
+
+const STATUS_PROCESSUAL_VALIDOS = ["em_andamento", "ganho", "acordo", "perdido", "arquivado"] as const;
+
+/**
+ * Atualiza o andamento/resultado do processo (`status_processual`, migration
+ * 0011) — usado pela ficha de caso e consumido pela projeção de recebíveis
+ * de êxito em `/app/financeiro/projecao-exito` (um caso "ganho"/"acordo"
+ * confirma a expectativa de honorário de êxito mesmo antes de as parcelas
+ * serem geradas; "perdido"/"arquivado" a zera).
+ */
+export async function atualizarStatusProcessualAction(
+  fichaId: string,
+  statusProcessual: string,
+): Promise<AcaoFichaResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  if (!STATUS_PROCESSUAL_VALIDOS.includes(statusProcessual as (typeof STATUS_PROCESSUAL_VALIDOS)[number])) {
+    return { ok: false, error: "Status processual inválido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("fichas_caso")
+    .update({ status_processual: statusProcessual, status_processual_atualizado_em: new Date().toISOString() })
+    .eq("id", fichaId);
+
+  if (error) {
+    return { ok: false, error: "Não foi possível atualizar o status do caso. Tente novamente." };
+  }
+
+  revalidatePath("/app/fichas");
+  revalidatePath(`/app/fichas/${fichaId}`);
+  revalidatePath("/app/financeiro/projecao-exito");
   return { ok: true };
 }
 
@@ -260,85 +292,19 @@ export async function gerarPeticaoDeModeloAction(
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
 
-  if (!modeloId) return { ok: false, error: "Selecione um modelo para gerar a petição." };
-
   const supabase = await createClient();
-
-  const { data: modelo, error: erroModelo } = await supabase
-    .from("modelos")
-    .select("id, conteudo")
-    .eq("id", modeloId)
-    .maybeSingle<{ id: string; conteudo: string }>();
-
-  if (erroModelo || !modelo) return { ok: false, error: "Modelo não encontrado." };
-
-  const { data: ficha, error: erroFicha } = await supabase
-    .from("fichas_caso")
-    .select("id, nome_cliente, area_direito, cliente_id")
-    .eq("id", fichaId)
-    .maybeSingle<{ id: string; nome_cliente: string | null; area_direito: string | null; cliente_id: string | null }>();
-
-  if (erroFicha || !ficha) return { ok: false, error: "Ficha não encontrada." };
-
-  // `fichas_caso.nome_cliente` é preenchido na triagem, mas nem toda ficha
-  // tem esse campo direto — quando ausente, busca o nome via `cliente_id`
-  // (contrato documentado na migration 0010, comentário do `{{nome_cliente}}`).
-  let nomeCliente = ficha.nome_cliente;
-  if (!nomeCliente && ficha.cliente_id) {
-    const { data: cliente } = await supabase
-      .from("clientes")
-      .select("nome")
-      .eq("id", ficha.cliente_id)
-      .maybeSingle<{ nome: string | null }>();
-    nomeCliente = cliente?.nome ?? null;
-  }
-
-  // Uma ficha pode ter vários prazos; usa o mais recente que já tenha número
-  // de processo CNJ preenchido (nem todo prazo tem, ex: prazos internos sem
-  // processo formal ainda distribuído).
-  const { data: prazoComProcesso } = await supabase
-    .from("prazos")
-    .select("numero_processo_cnj")
-    .eq("ficha_caso_id", fichaId)
-    .not("numero_processo_cnj", "is", null)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ numero_processo_cnj: string | null }>();
-
-  // Idem para contrato de honorário: pega o mais recente vinculado à ficha.
-  const { data: contrato } = await supabase
-    .from("contratos_honorario")
-    .select("valor_total")
-    .eq("ficha_caso_id", fichaId)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ valor_total: number | null }>();
-
-  const dadosResolvidos = {
-    nome_cliente: nomeCliente,
-    numero_processo: prazoComProcesso?.numero_processo_cnj ?? null,
-    area_direito: ficha.area_direito,
-    valor_causa: formatarValorCausaMailMerge(contrato?.valor_total ?? null),
-    data_hoje: formatarDataHojeMailMerge(),
-  };
-
-  const resultado = resolverMailMerge(modelo.conteudo, dadosResolvidos);
-
-  const { error: erroInsercao } = await supabase.from("peticoes_geradas").insert({
-    escritorio_id: usuario.perfil.escritorio_id,
-    modelo_id: modelo.id,
-    ficha_caso_id: fichaId,
-    gerado_por: usuario.perfil.id,
-    variaveis_usadas: resultado.variaveisUsadas,
+  const resultado = await gerarDocumentoDaFicha(supabase, {
+    fichaId,
+    modeloId,
+    escritorioId: usuario.perfil.escritorio_id,
+    perfilId: usuario.perfil.id,
   });
 
-  if (erroInsercao) {
-    console.error("[fichas/gerarPeticaoDeModeloAction] Falha ao registrar petição gerada:", erroInsercao, {
-      fichaId,
-      modeloId,
-    });
-    return { ok: false, error: "A petição foi gerada, mas houve um erro ao registrar a auditoria. Tente novamente." };
-  }
+  if (!resultado.ok) return resultado;
 
-  return { ok: true, textoFinal: resultado.textoFinal, variaveisNaoResolvidas: resultado.variaveisNaoResolvidas };
+  return {
+    ok: true,
+    textoFinal: resultado.resultado.textoFinal,
+    variaveisNaoResolvidas: resultado.resultado.variaveisNaoResolvidas,
+  };
 }

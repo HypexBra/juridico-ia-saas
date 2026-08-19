@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { GerarAnaliseButton } from "@/components/app/gerar-analise-button";
 import { GerarRiscoButton } from "@/components/app/gerar-risco-button";
 import { FichaLidaToggle } from "@/components/app/ficha-lida-toggle";
+import { StatusProcessualSelect } from "@/components/app/status-processual-select";
 import { ExcluirFichaButton } from "@/components/app/excluir-ficha-button";
 import { MarkdownLite } from "@/components/app/markdown-lite";
 import { PortalClienteCard } from "@/components/app/portal-cliente-card";
@@ -29,6 +30,22 @@ const RISCO_LABEL = {
   alto: "Alto",
   medio: "Médio",
   baixo: "Baixo",
+} as const;
+
+const STATUS_PROCESSUAL_TONE = {
+  em_andamento: "silver",
+  ganho: "green",
+  acordo: "green",
+  perdido: "red",
+  arquivado: "muted",
+} as const;
+
+const STATUS_PROCESSUAL_LABEL = {
+  em_andamento: "Em andamento",
+  ganho: "Ganho",
+  acordo: "Acordo homologado",
+  perdido: "Perdido",
+  arquivado: "Arquivado",
 } as const;
 
 export default async function FichaDetalhePage({ params }: PageProps<"/app/fichas/[id]">) {
@@ -83,6 +100,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
             {ficha.nivel_risco && (
               <Badge tone={RISCO_TONE[ficha.nivel_risco]}>Risco {RISCO_LABEL[ficha.nivel_risco]}</Badge>
             )}
+            <Badge tone={STATUS_PROCESSUAL_TONE[ficha.status_processual]}>
+              {STATUS_PROCESSUAL_LABEL[ficha.status_processual]}
+            </Badge>
             {!ficha.lida && <Badge tone="blue">Não lida</Badge>}
           </div>
         </div>
@@ -90,6 +110,10 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
         <div className="mb-4">
           <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Resumo dos fatos</h2>
           <p className="whitespace-pre-wrap text-sm text-ice-2">{ficha.resumo_fatos}</p>
+        </div>
+
+        <div className="mb-4">
+          <StatusProcessualSelect fichaId={ficha.id} statusProcessual={ficha.status_processual} />
         </div>
 
         <div className="flex flex-wrap gap-3">
