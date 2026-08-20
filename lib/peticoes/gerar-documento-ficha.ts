@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolverMailMerge, type ResultadoMailMerge } from "./mail-merge";
 import { montarDadosMailMergeDaFicha } from "./montar-dados-mail-merge";
+import { registrarEventoCaso } from "@/lib/casos/timeline";
 
 export type ModeloMailMerge = { id: string; nome: string; conteudo: string };
 
@@ -113,15 +114,19 @@ export async function gerarDocumentoDaFicha(
 
   const resultado = resolverMailMerge(modelo.conteudo, dadosResolvidos);
 
-  const { error: erroInsercao } = await supabase.from("peticoes_geradas").insert({
-    escritorio_id: params.escritorioId,
-    modelo_id: modelo.id,
-    ficha_caso_id: params.fichaId,
-    gerado_por: params.perfilId,
-    variaveis_usadas: resultado.variaveisUsadas,
-  });
+  const { data: peticaoInserida, error: erroInsercao } = await supabase
+    .from("peticoes_geradas")
+    .insert({
+      escritorio_id: params.escritorioId,
+      modelo_id: modelo.id,
+      ficha_caso_id: params.fichaId,
+      gerado_por: params.perfilId,
+      variaveis_usadas: resultado.variaveisUsadas,
+    })
+    .select("id")
+    .single<{ id: string }>();
 
-  if (erroInsercao) {
+  if (erroInsercao || !peticaoInserida) {
     console.error("[peticoes/gerarDocumentoDaFicha] Falha ao registrar documento gerado:", erroInsercao, {
       fichaId: params.fichaId,
       modeloId: params.modeloId,
@@ -130,6 +135,26 @@ export async function gerarDocumentoDaFicha(
       ok: false,
       error: "O documento foi gerado, mas houve um erro ao registrar a auditoria. Tente novamente.",
     };
+  }
+
+  // Hook de auditoria da linha do tempo do caso (Fase 1 "Caso Inteligente") —
+  // a geração do documento já teve sucesso acima; uma falha ao registrar o
+  // evento nunca deve impedir a devolução do resultado ao chamador.
+  try {
+    await registrarEventoCaso(supabase, {
+      escritorioId: params.escritorioId,
+      fichaCasoId: params.fichaId,
+      tipoEvento: "documento_gerado",
+      descricao: `Documento gerado a partir do modelo "${modelo.nome}".`,
+      origem: "documento",
+      referenciaId: peticaoInserida.id,
+      criadoPor: params.perfilId,
+    });
+  } catch (erroTimeline) {
+    console.error("[peticoes/gerarDocumentoDaFicha] Falha ao registrar evento na linha do tempo do caso:", erroTimeline, {
+      fichaId: params.fichaId,
+      peticaoId: peticaoInserida.id,
+    });
   }
 
   return {

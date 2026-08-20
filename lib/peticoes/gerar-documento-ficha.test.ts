@@ -35,12 +35,17 @@ function criarSupabaseFake(
       const resposta = respostasPorTabela[tabela] ?? { data: null, error: null };
       return {
         ...criarBuilder(resposta),
-        insert: async (valores: unknown) => {
+        insert: (valores: unknown) => {
           inserts.push({ tabela, valores });
-          if (tabela === "peticoes_geradas" && opts.erroInsertPeticoesGeradas) {
-            return { error: opts.erroInsertPeticoesGeradas };
-          }
-          return { error: null };
+          const erro = tabela === "peticoes_geradas" ? opts.erroInsertPeticoesGeradas ?? null : null;
+          // Encadeia `.select("id").single()` (usado por
+          // `gerarDocumentoDaFicha` para capturar o id inserido para o hook
+          // de linha do tempo do caso) — sem erro, devolve um id fake.
+          const insertBuilder = {
+            select: () => insertBuilder,
+            single: async () => (erro ? { data: null, error: erro } : { data: { id: "peticao-fake-1" }, error: null }),
+          };
+          return insertBuilder;
         },
       };
     },

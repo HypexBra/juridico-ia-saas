@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { interpretarEventoWebhookAutentique, validarAssinaturaWebhookAutentique } from "@/lib/assinatura/autentique";
+import { registrarEventoCaso } from "@/lib/casos/timeline";
 import type { DocumentoParaAssinatura, SignatarioDocumento } from "@/lib/types";
 
 /**
@@ -78,6 +79,32 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: "Falha ao persistir atualização de status." }, { status: 500 });
+  }
+
+  // Hook de auditoria da linha do tempo do caso (Fase 1 "Caso Inteligente") —
+  // só registra na transição para "assinado" (evita evento duplicado em
+  // retries do provedor com o mesmo status) e só quando o documento está
+  // vinculado a uma ficha (nem todo `documentos_para_assinatura` está: ver
+  // `DocumentoParaAssinatura.ficha_caso_id`). A atualização de status já teve
+  // sucesso acima; uma falha aqui nunca deve fazer a rota responder erro ao
+  // provedor, senão ele reenviaria o mesmo webhook indefinidamente.
+  if (novoStatusDocumento === "assinado" && documento.status !== "assinado" && documento.ficha_caso_id) {
+    try {
+      await registrarEventoCaso(supabase, {
+        escritorioId: documento.escritorio_id,
+        fichaCasoId: documento.ficha_caso_id,
+        tipoEvento: "documento_assinado",
+        descricao: `Documento "${documento.nome_documento}" foi assinado por todos os signatários.`,
+        origem: "documento",
+        referenciaId: documento.id,
+        criadoPor: null,
+      });
+    } catch (erroTimeline) {
+      console.error("[webhooks/assinatura] Falha ao registrar evento na linha do tempo do caso:", erroTimeline, {
+        documentoId: documento.id,
+        fichaCasoId: documento.ficha_caso_id,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });
