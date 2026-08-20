@@ -139,6 +139,106 @@ export type FichaCaso = {
   risco_calculado_em: string | null;
   status_processual: StatusProcessualFicha;
   status_processual_atualizado_em: string | null;
+  /**
+   * Soft delete (migration 0022) — `excluirFichaAction` passa a marcar esta
+   * coluna em vez de fazer DELETE físico. `null` = ficha ativa. A policy
+   * RLS de select já filtra `deletado_em is null` por padrão, então uma
+   * ficha carregada do client normalmente vem com este campo `null`; só
+   * aparece preenchido em rotas administrativas que leiam via service_role.
+   */
+  deletado_em: string | null;
+  criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0023) — pessoa envolvida no caso além do cliente principal. */
+export type TipoPessoaCaso = "parte" | "adverso" | "testemunha" | "terceiro";
+
+export type PessoaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo: TipoPessoaCaso;
+  nome: string;
+  documento: string | null;
+  contato: string | null;
+  papel_processual: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0024) — linha do tempo do caso (append-only). */
+export type OrigemEventoCaso = "manual" | "ia" | "djen" | "documento";
+
+export type EventoCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo_evento: string;
+  descricao: string;
+  data_evento: string;
+  origem: OrigemEventoCaso;
+  referencia_id: string | null;
+  criado_por: string | null;
+  criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0025) — tese jurídica avaliada para o caso. */
+export type StatusTeseCaso = "em_avaliacao" | "adotada" | "descartada";
+
+export type EntradaHistoricoTeseCaso = {
+  em: string;
+  status_anterior: StatusTeseCaso | null;
+  status_novo: StatusTeseCaso;
+  nota: string | null;
+};
+
+export type TeseCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tese: string;
+  fundamentacao: string | null;
+  status: StatusTeseCaso;
+  historico: EntradaHistoricoTeseCaso[];
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0026) — jurisprudência (tabela pública `jurisprudencias`) citada num caso. */
+export type CasoJurisprudenciaCitada = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  jurisprudencia_id: string;
+  nota_advogado: string | null;
+  criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0027) — tarefa operacional do caso (distinta de `Prazo`, que é processual/legal). */
+export type StatusTarefaCaso = "pendente" | "em_andamento" | "concluida";
+
+export type TarefaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  titulo: string;
+  responsavel_perfil_id: string | null;
+  status: StatusTarefaCaso;
+  prazo_opcional: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0028) — memória incremental de IA por caso (append-only). */
+export type TipoMemoriaIaCaso = "resumo_acumulado" | "decisao" | "fato_novo";
+
+export type MemoriaIaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo_memoria: TipoMemoriaIaCaso;
+  conteudo: string;
   criado_em: string;
 };
 
