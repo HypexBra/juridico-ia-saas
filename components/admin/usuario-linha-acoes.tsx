@@ -47,7 +47,16 @@ export function UsuarioLinhaAcoes({
   }
 
   function promoverAdmin() {
-    if (!window.confirm("Promover este usuário a ADMINISTRADOR DA PLATAFORMA? Ele passará a ter acesso total ao painel /admin.")) return;
+    if (
+      !window.confirm(
+        "Promover este usuário a ADMINISTRADOR DA PLATAFORMA (nós, operadores do SaaS)? " +
+          "Isso é DIFERENTE do campo \"Tipo\" acima (que é o papel dele dentro do PRÓPRIO escritório). " +
+          "Um admin da plataforma passa a ver e gerenciar TODOS os escritórios pelo painel /admin — " +
+          "não use isto para tornar alguém \"admin do escritório dele\": para isso, altere o campo \"Tipo\" para " +
+          "Administrador(a) ou peça para o titular do escritório fazer isso em Equipe.",
+      )
+    )
+      return;
     setMensagem(null);
     startTransition(async () => {
       const resultado = await promoverAdminPlataformaAction(perfilId);
@@ -75,6 +84,9 @@ export function UsuarioLinhaAcoes({
         <Link href={`/admin/usuarios/${perfilId}`} className="rounded-md border border-white/10 px-2 py-1 text-xs text-muted hover:text-ice">
           Ver
         </Link>
+        <span className="flex items-center gap-1 text-[11px] text-muted" title="Papel do usuário dentro do PRÓPRIO escritório (owner/admin/advogado) — não confundir com admin da plataforma.">
+          Tipo (escritório):
+        </span>
         <select
           value={role}
           disabled={isPending}
@@ -102,9 +114,10 @@ export function UsuarioLinhaAcoes({
             type="button"
             disabled={isPending}
             onClick={promoverAdmin}
+            title="Dá acesso cross-tenant ao painel /admin (todos os escritórios) — diferente do campo Tipo."
             className="rounded-md border border-amber-500/30 px-2 py-1 text-xs text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
           >
-            Promover a admin
+            Promover a admin da PLATAFORMA
           </button>
         )}
         <button
