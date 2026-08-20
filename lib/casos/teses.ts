@@ -1,4 +1,5 @@
 import type { EntradaHistoricoTeseCaso, StatusTeseCaso } from "@/lib/types";
+import type { TesePossivelAnaliseProcesso } from "@/lib/analise-processo/tipos";
 
 export type NovaTeseCasoInput = {
   escritorioId: string;
@@ -79,6 +80,20 @@ export function montarTeseCasoDaAnaliseIa(
     tese,
     fundamentacao: dados.questoesIa?.trim() || null,
   };
+}
+
+export type PayloadTeseCasoDaAnalise = { tese: string; fundamentacao: string | null };
+
+/**
+ * Monta `tese`/`fundamentacao` a partir de um item de `tesesPossiveis` (análise
+ * inteligente de processo, `lib/analise-processo/writeback.ts`) já filtrado
+ * por `certeza`. Vive ao lado de `montarTeseCasoDaAnaliseIa` (mesmo tipo de
+ * origem — IA — para uma tese em `teses_caso`), conforme ADR 0004.
+ */
+export function montarTeseCasoDaAnaliseProcesso(item: TesePossivelAnaliseProcesso): PayloadTeseCasoDaAnalise | null {
+  const tese = item.tese.trim();
+  if (!tese) return null;
+  return { tese, fundamentacao: item.fundamentacao.trim() || null };
 }
 
 export type AtualizarStatusTeseInput = {

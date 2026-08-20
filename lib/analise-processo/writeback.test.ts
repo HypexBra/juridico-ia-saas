@@ -5,10 +5,10 @@ import {
   montarPessoaCasoDaAnaliseProcesso,
   montarPropostaPrazoDaAnaliseProcesso,
   montarResumoPropostaPrazoAnaliseProcesso,
-  montarTeseCasoDaAnaliseProcesso,
   resolverDataEventoAnaliseProcesso,
   verificarPodeAplicarWriteback,
 } from "./writeback";
+import { montarTeseCasoDaAnaliseProcesso } from "@/lib/casos/teses";
 import type {
   EventoAnaliseProcesso,
   PessoaAnaliseProcesso,
@@ -109,12 +109,13 @@ describe("montarPropostaPrazoDaAnaliseProcesso", () => {
       data: "2026-09-01",
       descricao: "15 dias a partir da citação",
     });
-    const proposta = montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf");
+    const proposta = montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf", "ficha-1");
     expect(proposta).not.toBeNull();
     expect(proposta?.dados).toEqual({
       titulo: "Prazo para contestação",
       descricao: "15 dias a partir da citação",
       data_prazo: "2026-09-01",
+      ficha_caso_id: "ficha-1",
     });
     expect(proposta?.motivo).toContain("peticao.pdf");
   });
@@ -125,7 +126,7 @@ describe("montarPropostaPrazoDaAnaliseProcesso", () => {
       data: null,
       descricao: "sem data explícita no documento",
     });
-    expect(montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf")).toBeNull();
+    expect(montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf", "ficha-1")).toBeNull();
   });
 
   it("devolve null quando a data não está em formato ISO", () => {
@@ -134,14 +135,14 @@ describe("montarPropostaPrazoDaAnaliseProcesso", () => {
       data: "01/09/2026",
       descricao: "formato inválido",
     });
-    expect(montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf")).toBeNull();
+    expect(montarPropostaPrazoDaAnaliseProcesso(item, "peticao.pdf", "ficha-1")).toBeNull();
   });
 });
 
 describe("montarResumoPropostaPrazoAnaliseProcesso", () => {
   it("monta um resumo humano determinístico", () => {
     const resumo = montarResumoPropostaPrazoAnaliseProcesso({
-      dados: { titulo: "Prazo X", descricao: "desc", data_prazo: "2026-09-01" },
+      dados: { titulo: "Prazo X", descricao: "desc", data_prazo: "2026-09-01", ficha_caso_id: "ficha-1" },
       motivo: "Prazo identificado pela análise inteligente do documento \"peticao.pdf\".",
     });
     expect(resumo).toBe(

@@ -11,14 +11,13 @@ import {
 } from "@/lib/analise-processo/analisar";
 import { montarPayloadPessoaCaso } from "@/lib/casos/pessoas";
 import { registrarEventoCaso } from "@/lib/casos/timeline";
-import { montarNovaTeseCaso } from "@/lib/casos/teses";
+import { montarNovaTeseCaso, montarTeseCasoDaAnaliseProcesso } from "@/lib/casos/teses";
 import {
   contagemWritebackVazia,
   filtrarItensConfiaveis,
   montarPessoaCasoDaAnaliseProcesso,
   montarPropostaPrazoDaAnaliseProcesso,
   montarResumoPropostaPrazoAnaliseProcesso,
-  montarTeseCasoDaAnaliseProcesso,
   resolverDataEventoAnaliseProcesso,
   verificarPodeAplicarWriteback,
   type ContagemWritebackAnaliseProcesso,
@@ -311,7 +310,7 @@ export async function aplicarWriteBackAnaliseProcessoAction(analiseId: string): 
   }
 
   for (const item of filtrarItensConfiaveis(resultado.prazosIdentificados)) {
-    const proposta = montarPropostaPrazoDaAnaliseProcesso(item, analise.nome_arquivo);
+    const proposta = montarPropostaPrazoDaAnaliseProcesso(item, analise.nome_arquivo, fichaCasoId);
     if (!proposta) {
       contagem.prazosIgnoradosSemData += 1;
       continue;

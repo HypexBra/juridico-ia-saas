@@ -7,12 +7,7 @@
  * `lib/casos/teses.ts` — toda regra testável sem banco fica aqui.
  */
 import type { TipoPessoaCaso } from "@/lib/types";
-import type {
-  EventoAnaliseProcesso,
-  PessoaAnaliseProcesso,
-  PrazoIdentificadoAnaliseProcesso,
-  TesePossivelAnaliseProcesso,
-} from "./tipos";
+import type { EventoAnaliseProcesso, PessoaAnaliseProcesso, PrazoIdentificadoAnaliseProcesso } from "./tipos";
 
 export type StatusAnaliseProcessoParaWriteback = "processando" | "pronto" | "erro";
 
@@ -110,6 +105,7 @@ export type PropostaPrazoAnaliseProcesso = {
     titulo: string;
     descricao: string;
     data_prazo: string;
+    ficha_caso_id: string;
   };
   motivo: string;
 };
@@ -121,11 +117,15 @@ export type PropostaPrazoAnaliseProcesso = {
  * confiável NUNCA gera proposta (evita propor um prazo real com data
  * inventada/ambígua); nesse caso o item continua visível na aba de análise,
  * só não vira proposta automática (o advogado pode criar manualmente se
- * quiser).
+ * quiser). `fichaCasoId` é sempre gravado no payload (mesmo sendo
+ * `prazos.ficha_caso_id` uma coluna nullable no schema): sem ele o prazo
+ * criado por `aprovarPropostaAction` fica órfão, sem aparecer na ficha que
+ * originou a análise (achado de segurança/integridade pós-revisão, ADR 0004).
  */
 export function montarPropostaPrazoDaAnaliseProcesso(
   item: PrazoIdentificadoAnaliseProcesso,
   nomeArquivoOrigem: string,
+  fichaCasoId: string,
 ): PropostaPrazoAnaliseProcesso | null {
   const titulo = item.titulo.trim();
   const data = item.data?.trim();
@@ -136,6 +136,7 @@ export function montarPropostaPrazoDaAnaliseProcesso(
       titulo,
       descricao: item.descricao.trim(),
       data_prazo: data,
+      ficha_caso_id: fichaCasoId,
     },
     motivo: `Prazo identificado pela análise inteligente do documento "${nomeArquivoOrigem}".`,
   };
@@ -144,15 +145,6 @@ export function montarPropostaPrazoDaAnaliseProcesso(
 /** Resumo humano exibido no card de aprovação da proposta — nunca usa texto livre não estruturado. */
 export function montarResumoPropostaPrazoAnaliseProcesso(proposta: PropostaPrazoAnaliseProcesso): string {
   return `Criar prazo "${proposta.dados.titulo}" para ${proposta.dados.data_prazo} (${proposta.motivo})`;
-}
-
-export type PayloadTeseCasoDaAnalise = { tese: string; fundamentacao: string | null };
-
-/** Monta `tese`/`fundamentacao` a partir de um item de `tesesPossiveis` já filtrado por `certeza`. */
-export function montarTeseCasoDaAnaliseProcesso(item: TesePossivelAnaliseProcesso): PayloadTeseCasoDaAnalise | null {
-  const tese = item.tese.trim();
-  if (!tese) return null;
-  return { tese, fundamentacao: item.fundamentacao.trim() || null };
 }
 
 export type ContagemWritebackAnaliseProcesso = {
