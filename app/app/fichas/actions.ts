@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
 import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
-import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { montarNovaTeseCaso, montarAtualizacaoStatusTese, montarTeseCasoDaAnaliseIa } from "@/lib/casos/teses";
+import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE, type StatusTeseCaso, type TeseCaso } from "@/lib/types";
 
 const criarFichaSchema = z.object({
   nomeCliente: z.string().trim().min(1, "Informe o nome do cliente."),
@@ -120,12 +121,23 @@ export async function atualizarStatusProcessualAction(
   return { ok: true };
 }
 
+/**
+ * Soft-delete (migration 0022): marca `deletado_em` em vez de fazer DELETE
+ * físico. Um DELETE cascateava para `contratos_honorario` e todo o resto do
+ * histórico financeiro/jurídico do caso — risco de perda de dado real que o
+ * soft-delete elimina, já que a policy RLS de SELECT filtra
+ * `deletado_em is null` por padrão (a ficha simplesmente some das listagens
+ * normais, sem apagar nada).
+ */
 export async function excluirFichaAction(fichaId: string): Promise<AcaoFichaResultado> {
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("fichas_caso").delete().eq("id", fichaId);
+  const { error } = await supabase
+    .from("fichas_caso")
+    .update({ deletado_em: new Date().toISOString() })
+    .eq("id", fichaId);
 
   if (error) {
     return { ok: false, error: "Não foi possível excluir a ficha. Tente novamente." };
@@ -214,6 +226,32 @@ ${MARCADOR_ESTRATEGIA}
     .eq("id", fichaId);
 
   if (erroUpdate) return { ok: false, error: "A IA respondeu, mas houve um erro ao salvar a análise." };
+
+  // Além de manter `resumo_ia`/`questoes_ia`/`estrategia_ia` na própria
+  // ficha (compatibilidade com o restante do app: página da ficha,
+  // classificação de risco, indexação RAG), cada geração também grava uma
+  // linha nova em `teses_caso` — nenhuma tese anterior é sobrescrita, o
+  // histórico de teses avaliadas para o caso fica completo e auditável.
+  const novaTese = montarTeseCasoDaAnaliseIa({
+    areaDireito: ficha.area_direito,
+    estrategiaIa,
+    questoesIa,
+  });
+  if (novaTese) {
+    const { error: erroInsertTese } = await supabase.from("teses_caso").insert(
+      montarNovaTeseCaso({
+        escritorioId: usuario.perfil.escritorio_id,
+        fichaCasoId: fichaId,
+        tese: novaTese.tese,
+        fundamentacao: novaTese.fundamentacao,
+      }),
+    );
+    if (erroInsertTese) {
+      console.error("[fichas/gerarAnaliseIaAction] Falha ao registrar nova tese do caso:", erroInsertTese, {
+        fichaId,
+      });
+    }
+  }
 
   await supabase.from("uso_ia").insert({
     escritorio_id: usuario.perfil.escritorio_id,
@@ -307,4 +345,92 @@ export async function gerarPeticaoDeModeloAction(
     textoFinal: resultado.resultado.textoFinal,
     variaveisNaoResolvidas: resultado.resultado.variaveisNaoResolvidas,
   };
+}
+
+export type ListarTesesCasoResultado = { ok: true; teses: TeseCaso[] } | { ok: false; error: string };
+
+/**
+ * Lista todas as teses jurídicas já registradas para o caso (`teses_caso`,
+ * migration 0025), mais recentes primeiro — inclui as adotadas, descartadas
+ * e em avaliação, já que o histórico completo (não só a tese "vigente") é o
+ * ponto do "Caso Inteligente". A policy RLS de `teses_caso` já restringe ao
+ * escritório do usuário autenticado.
+ */
+export async function listarTesesCasoAction(fichaCasoId: string): Promise<ListarTesesCasoResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("teses_caso")
+    .select("*")
+    .eq("ficha_caso_id", fichaCasoId)
+    .order("criado_em", { ascending: false });
+
+  if (error) {
+    return { ok: false, error: "Não foi possível carregar as teses do caso. Tente novamente." };
+  }
+
+  return { ok: true, teses: (data ?? []) as TeseCaso[] };
+}
+
+const STATUS_TESE_VALIDOS: readonly StatusTeseCaso[] = ["em_avaliacao", "adotada", "descartada"];
+
+export type AtualizarStatusTeseResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * "Adota"/"descarta" (ou devolve para avaliação) uma tese já existente.
+ * Nunca sobrescreve `tese`/`fundamentacao` — busca o estado atual, monta o
+ * novo `status` + o append de `historico` via `montarAtualizacaoStatusTese`
+ * (lógica pura testada em `lib/casos/teses.test.ts`) e grava só essas duas
+ * colunas, preservando a trilha completa de decisão do caso.
+ */
+export async function atualizarStatusTeseAction(
+  teseId: string,
+  novoStatus: string,
+): Promise<AtualizarStatusTeseResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  if (!STATUS_TESE_VALIDOS.includes(novoStatus as StatusTeseCaso)) {
+    return { ok: false, error: "Status de tese inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data: teseAtual, error: erroBusca } = await supabase
+    .from("teses_caso")
+    .select("id, ficha_caso_id, status, historico")
+    .eq("id", teseId)
+    .single();
+
+  if (erroBusca || !teseAtual) {
+    return { ok: false, error: "Tese não encontrada." };
+  }
+
+  let atualizacao;
+  try {
+    atualizacao = montarAtualizacaoStatusTese({
+      statusAtual: teseAtual.status as StatusTeseCaso,
+      historicoAtual: teseAtual.historico ?? [],
+      novoStatus: novoStatus as StatusTeseCaso,
+    });
+  } catch (erro) {
+    return { ok: false, error: erro instanceof Error ? erro.message : "Não foi possível atualizar a tese." };
+  }
+
+  const { error: erroUpdate } = await supabase
+    .from("teses_caso")
+    .update({
+      status: atualizacao.status,
+      historico: atualizacao.historico,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq("id", teseId);
+
+  if (erroUpdate) {
+    return { ok: false, error: "Não foi possível atualizar o status da tese. Tente novamente." };
+  }
+
+  revalidatePath(`/app/fichas/${teseAtual.ficha_caso_id}`);
+  return { ok: true };
 }
