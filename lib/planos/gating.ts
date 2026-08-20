@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Escritorio } from "@/lib/types";
 
 /**
- * As 6 features premium do plano Pro (rodada separada de implementação —
+ * As 7 features premium do plano Pro (rodada separada de implementação —
  * ver CLAUDE.md deste projeto). Chave estável usada em
  * `escritorios.features_overrides` e em todo `exigirAcessoPremium(...)` /
  * `escritorioTemAcesso(...)` chamado pelo app: NUNCA renomear uma chave já
@@ -23,6 +23,12 @@ export const FEATURES_PREMIUM = [
   "api_integracoes",
   /** (6) Portal do cliente rico (chat bidirecional + notificação em tempo real). */
   "portal_cliente_rico",
+  /**
+   * (7) Análise inteligente de documento do processo — "Caso Inteligente"
+   * Fase 2 (migration 0030, `analises_processo`). Ver
+   * docs/adrs/0004-analise-inteligente-processos.md.
+   */
+  "analise_inteligente_processo",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];

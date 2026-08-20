@@ -1,3 +1,5 @@
+import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
+
 export type Role = "owner" | "admin" | "advogado";
 
 export type Escritorio = {
@@ -240,6 +242,35 @@ export type MemoriaIaCaso = {
   tipo_memoria: TipoMemoriaIaCaso;
   conteudo: string;
   criado_em: string;
+};
+
+/**
+ * "Caso Inteligente" (Fase 2, migration 0030) — análise inteligente de um
+ * documento do processo (PDF/DOCX/imagem) vinculado a uma `FichaCaso`. As 12
+ * seções da análise (`resultado_analise`) são tipadas em
+ * `ResultadoAnaliseProcesso` (`lib/analise-processo/tipos.ts`), não aqui —
+ * mesmo padrão de `ResultadoAnaliseRisco` (`lib/redline/tipos.ts`) para
+ * `analises_risco_contratual` (migration 0017). Ver
+ * `docs/adrs/0004-analise-inteligente-processos.md`.
+ */
+export type TipoArquivoAnaliseProcesso = "pdf" | "docx" | "imagem";
+export type StatusAnaliseProcesso = "processando" | "pronto" | "erro";
+
+export type AnaliseProcesso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  nome_arquivo: string;
+  tipo_arquivo: TipoArquivoAnaliseProcesso;
+  tamanho_bytes: number;
+  status: StatusAnaliseProcesso;
+  /** Estrutura `ResultadoAnaliseProcesso` — `null` enquanto `status = "processando"`. */
+  resultado_analise: ResultadoAnaliseProcesso | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
 };
 
 export type StatusLeadTriagem = "novo" | "em_analise" | "convertido" | "descartado";
