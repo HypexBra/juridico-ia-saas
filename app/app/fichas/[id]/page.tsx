@@ -22,11 +22,23 @@ import { listarPessoasCasoAction } from "./pessoas-actions";
 import { listarTarefasCasoAction } from "./tarefas-actions";
 import { listarEventosCasoAction } from "@/lib/casos/timeline";
 import { listarTesesCasoAction } from "../actions";
+import { listarAnalisesProcessoAction } from "./analise-processo-actions";
 import { PessoasCasoSection } from "./pessoas-caso-section";
 import { TarefasCasoSection } from "./tarefas-caso-section";
 import { TimelineCasoList } from "./timeline-caso-list";
 import { TesesCasoSection } from "./teses-caso-section";
+import { AnaliseProcessoSection } from "./analise-processo-section";
 import type { ClientePortal, FichaCaso, MensagemPortalCliente } from "@/lib/types";
+
+/**
+ * Análise inteligente de processo (ADR 0004) roda de forma síncrona dentro
+ * da própria Server Action, chamada pelo formulário de upload desta página —
+ * mesmo mecanismo de `app/api/cron/sincronizar-djen/route.ts` (`maxDuration =
+ * 60`), com teto maior (120s) porque a chamada de IA aqui processa um
+ * documento inteiro em uma única chamada (sem chunking/fila — ver ADR seção
+ * 6).
+ */
+export const maxDuration = 120;
 
 const URGENCIA_TONE = {
   alta: "red",
@@ -103,16 +115,19 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
   // aqui só reduzimos para listas vazias em caso de falha, sem derrubar a
   // página nem propagar o erro para a UI (estado esperado até as migrations
   // rodarem).
-  const [pessoasResultado, eventosResultado, tesesResultado, tarefasResultado] = await Promise.all([
-    listarPessoasCasoAction(ficha.id),
-    listarEventosCasoAction(ficha.id),
-    listarTesesCasoAction(ficha.id),
-    listarTarefasCasoAction(ficha.id),
-  ]);
+  const [pessoasResultado, eventosResultado, tesesResultado, tarefasResultado, analisesProcessoResultado] =
+    await Promise.all([
+      listarPessoasCasoAction(ficha.id),
+      listarEventosCasoAction(ficha.id),
+      listarTesesCasoAction(ficha.id),
+      listarTarefasCasoAction(ficha.id),
+      listarAnalisesProcessoAction(ficha.id),
+    ]);
   const pessoas = pessoasResultado.ok ? pessoasResultado.pessoas : [];
   const eventos = eventosResultado.ok ? eventosResultado.eventos : [];
   const teses = tesesResultado.ok ? tesesResultado.teses : [];
   const tarefas = tarefasResultado.ok ? tarefasResultado.tarefas : [];
+  const analisesProcesso = analisesProcessoResultado.ok ? analisesProcessoResultado.analises : [];
 
   const temAcessoChat = planoTemAcesso(usuario.perfil.escritorio, "portal_cliente_rico");
   const clientePortalAtivo = clientePortal?.auth_user_id ? clientePortal : null;
@@ -329,6 +344,21 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
             content: (
               <Card>
                 <TesesCasoSection tesesIniciais={teses} />
+              </Card>
+            ),
+          },
+          {
+            id: "analise-processo",
+            label: "Análise de Processo",
+            contador: analisesProcesso.length,
+            content: (
+              <Card>
+                <CardTitle className="mb-4">Análise inteligente de processo</CardTitle>
+                <AnaliseProcessoSection
+                  fichaCasoId={ficha.id}
+                  analisesIniciais={analisesProcesso}
+                  temAcesso={planoTemAcesso(usuario.perfil.escritorio, "analise_inteligente_processo")}
+                />
               </Card>
             ),
           },

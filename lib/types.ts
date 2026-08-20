@@ -271,6 +271,12 @@ export type AnaliseProcesso = {
   criado_por: string | null;
   criado_em: string;
   processado_em: string | null;
+  /**
+   * Migration 0031 — momento em que o write-back automático (pessoas/
+   * timeline/teses + propostas de prazo) foi aplicado. `null` = ainda não
+   * aplicado (botão "Aplicar ao caso" disponível). Ver `lib/analise-processo/writeback.ts`.
+   */
+  writeback_aplicado_em: string | null;
 };
 
 export type StatusLeadTriagem = "novo" | "em_analise" | "convertido" | "descartado";
