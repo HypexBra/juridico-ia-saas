@@ -60,6 +60,7 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", user.id);
+    if (user.email) requestHeaders.set("x-user-email", user.email);
     const finalResponse = NextResponse.next({ request: { headers: requestHeaders } });
     response.cookies.getAll().forEach((cookie) => finalResponse.cookies.set(cookie));
     return finalResponse;

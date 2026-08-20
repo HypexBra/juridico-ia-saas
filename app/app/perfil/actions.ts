@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { criarCheckoutSession, criarPortalSessionUrl, StripeNaoConfiguradoError } from "@/lib/billing/stripe-client";
+import {
+  criarCheckoutSession,
+  criarPortalSessionUrl,
+  obterAppUrl,
+  StripeNaoConfiguradoError,
+} from "@/lib/billing/stripe-client";
 import type { Assinatura } from "@/lib/types";
 
 // Formato NÚMERO/UF (ex: "123456/SP") — é o que a API do DJEN espera como
@@ -80,15 +85,24 @@ export async function iniciarCheckoutAction(
   const priceId = process.env.STRIPE_PRICE_ID_PRO_MENSAL;
   if (!priceId) return { error: "Billing ainda não configurado neste ambiente." };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = obterAppUrl();
   let url: string;
   try {
     const supabase = await createClient();
-    const { data: assinaturaExistente } = await supabase
+    const { data: assinaturaExistente, error: erroAssinaturaExistente } = await supabase
       .from("assinaturas")
       .select("stripe_customer_id")
       .eq("escritorio_id", usuario.perfil.escritorio_id)
       .maybeSingle<Pick<Assinatura, "stripe_customer_id">>();
+    if (erroAssinaturaExistente) {
+      // Não é fatal para o checkout (segue sem reaproveitar `stripe_customer_id`,
+      // Stripe cria um customer novo), mas engolir sem logar escondia
+      // problemas reais de schema/RLS na tabela `assinaturas`.
+      console.error(
+        "[perfil/iniciarCheckoutAction] Falha ao buscar assinatura existente:",
+        erroAssinaturaExistente,
+      );
+    }
 
     ({ url } = await criarCheckoutSession({
       escritorioId: usuario.perfil.escritorio_id,
@@ -118,7 +132,7 @@ export async function abrirPortalAction(
     return { error: "Só o titular (owner) do escritório pode gerenciar a assinatura." };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = obterAppUrl();
   let url: string;
   try {
     const supabase = await createClient();

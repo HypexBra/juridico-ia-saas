@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { criarPortalSessionUrl, StripeNaoConfiguradoError } from "@/lib/billing/stripe-client";
+import { criarPortalSessionUrl, obterAppUrl, StripeNaoConfiguradoError } from "@/lib/billing/stripe-client";
 import type { Assinatura } from "@/lib/types";
 
 /**
@@ -21,7 +21,7 @@ export async function POST() {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = obterAppUrl();
 
   try {
     const supabase = await createClient();

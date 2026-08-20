@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { criarCheckoutSession, StripeNaoConfiguradoError } from "@/lib/billing/stripe-client";
+import { criarCheckoutSession, obterAppUrl, StripeNaoConfiguradoError } from "@/lib/billing/stripe-client";
 import type { Assinatura } from "@/lib/types";
 
 /**
@@ -41,15 +41,21 @@ export async function POST() {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = obterAppUrl();
 
   try {
     const supabase = await createClient();
-    const { data: assinaturaExistente } = await supabase
+    const { data: assinaturaExistente, error: erroAssinaturaExistente } = await supabase
       .from("assinaturas")
       .select("stripe_customer_id")
       .eq("escritorio_id", usuario.perfil.escritorio_id)
       .maybeSingle<Pick<Assinatura, "stripe_customer_id">>();
+    if (erroAssinaturaExistente) {
+      console.error(
+        "[api/billing/checkout] Falha ao buscar assinatura existente:",
+        erroAssinaturaExistente,
+      );
+    }
 
     const { url } = await criarCheckoutSession({
       escritorioId: usuario.perfil.escritorio_id,

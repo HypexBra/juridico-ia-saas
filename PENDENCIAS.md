@@ -20,6 +20,7 @@ Branch de trabalho atual: **`staging`** (não é a `main`/prod — Vercel deploy
 - [ ] `CRON_SECRET` — protege `app/api/cron/sincronizar-djen/route.ts`.
 - [ ] `AUTENTIQUE_API_TOKEN` + `AUTENTIQUE_WEBHOOK_SECRET` — conta grátis em autentique.com.br.
 - [ ] `DJEN_API_BASE_URL` (opcional, tem default no código).
+- [ ] **`STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID_PRO_MENSAL` / `STRIPE_WEBHOOK_SECRET`** — causa raiz mais provável do bug "não leva pro checkout" (2026-08-20, ver `.agents/memoria/erros-corrigidos.md`). `.env.local` local não tem nenhuma delas preenchida; sem `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID_PRO_MENSAL`, `iniciarCheckoutAction` (`app/app/perfil/actions.ts`) responde com erro explícito em vez de redirecionar — se estiverem vazias também na Vercel, é por isso. Confirmar no dashboard da Vercel; se realmente vazias, criar a conta Stripe, o Product/Price recorrente mensal e o endpoint de webhook (passo a passo em `.env.example`), preencher e fazer redeploy manual.
 - [ ] Rodar migrations `0004`, `0006`, `0007` no Supabase — usuário confirmou que já rodou (2026-08-18), mas revalidar se a branch `staging` ainda não foi mergeada e novas migrations forem criadas depois.
 - [ ] Depois de preencher env vars na Vercel: sempre fazer **redeploy manual** (Vercel não aplica retroativamente).
 
