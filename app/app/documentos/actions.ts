@@ -7,6 +7,10 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import {
+  existeProcessamentoIaEmAndamento,
+  MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO,
+} from "@/lib/ia/limite-concorrencia";
+import {
   analisarDocumento,
   MAX_ARQUIVOS_LOTE_DOCUMENTO,
   TIPOS_ARQUIVO_ANALISE_DOCUMENTO,
@@ -98,47 +102,6 @@ async function analiseDocumentoExisteEVisivel(supabase: SupabaseServerClient, an
   return data !== null;
 }
 
-/**
- * Janela de tolerância para considerar um lote "em processamento" (achado de
- * segurança da revisão da Fase 3): sem isso, nada impede um escritório de
- * disparar vários lotes em paralelo (múltiplas abas, duplo-clique, script),
- * saturando o pool de chaves de IA compartilhado entre todos os tenants
- * (`lib/ia/chaves/pool.ts`). 10 minutos cobre timeout de rede/loop sequencial
- * sem travar o usuário indefinidamente caso uma linha antiga fique presa
- * (ex: processo do servidor derrubado no meio do loop). Sem lock
- * distribuído/Redis — checagem simples por `count`, suficiente para este
- * volume (mesmo racional de "sem fila" já usado no ADR 0011, seção 8).
- */
-const JANELA_LOTE_EM_PROCESSAMENTO_MINUTOS = 10;
-
-/** Confirma se já existe alguma análise `status = 'processando'` para este
- * escritório criada dentro da janela de tolerância — usado para rejeitar um
- * novo lote enquanto o anterior ainda está rodando. */
-async function existeLoteEmProcessamento(supabase: SupabaseServerClient, escritorioId: string): Promise<boolean> {
-  const limite = new Date(Date.now() - JANELA_LOTE_EM_PROCESSAMENTO_MINUTOS * 60_000).toISOString();
-  const { count, error } = await supabase
-    .from("analises_documento")
-    .select("id", { count: "exact", head: true })
-    .eq("escritorio_id", escritorioId)
-    .eq("status", "processando")
-    .gt("criado_em", limite);
-
-  if (error) {
-    console.error("[documentos/actions/existeLoteEmProcessamento] Falha ao verificar lote em processamento:", error, {
-      escritorioId,
-    });
-    // Fail-closed em relação ao pool compartilhado seria bloquear tudo em
-    // caso de erro de leitura — mas isso travaria a feature inteira por uma
-    // falha transitória de rede/infra do Supabase. Preferimos não bloquear
-    // (mesmo racional de outros guards best-effort deste arquivo) e deixar o
-    // rate-limit real (índice + política do provedor de IA) como última
-    // linha de defesa.
-    return false;
-  }
-
-  return (count ?? 0) > 0;
-}
-
 /** Lê e valida `fichaCasoId` opcional de um `FormData` — string vazia/ausente vira `null`. */
 async function resolverFichaCasoIdOpcional(
   supabase: SupabaseServerClient,
@@ -193,6 +156,10 @@ export async function analisarDocumentoAction(formData: FormData): Promise<Anali
   const { fichaCasoId } = fichaResolvida;
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
+
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
+  }
 
   const { data: registro, error: erroInsert } = await supabase
     .from("analises_documento")
@@ -300,8 +267,8 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
 
-  if (await existeLoteEmProcessamento(supabase, escritorioId)) {
-    return { ok: false, error: "Já há um lote em processamento, aguarde terminar." };
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
   }
 
   type ItemLote = { arquivo: File; tipoArquivo: TipoArquivoAnaliseDocumento | null; erroValidacao: string | null };
@@ -459,6 +426,10 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
   if (!analiseDocumentoBId.ok) return { ok: false, error: analiseDocumentoBId.error };
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
+
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
+  }
 
   const { data: registro, error: erroInsert } = await supabase
     .from("comparacoes_documento")

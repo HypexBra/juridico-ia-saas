@@ -5,6 +5,10 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import {
+  existeProcessamentoIaEmAndamento,
+  MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO,
+} from "@/lib/ia/limite-concorrencia";
+import {
   analisarDocumentoProcesso,
   TIPOS_ARQUIVO_ANALISE_PROCESSO,
   type TipoArquivoAnaliseProcesso,
@@ -117,6 +121,10 @@ export async function uploadEAnalisarProcessoAction(
   }
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
+
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
+  }
 
   const { data: analise, error: erroInsert } = await supabase
     .from("analises_processo")

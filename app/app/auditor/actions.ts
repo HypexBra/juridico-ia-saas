@@ -7,6 +7,10 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import {
+  existeProcessamentoIaEmAndamento,
+  MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO,
+} from "@/lib/ia/limite-concorrencia";
+import {
   auditarPeca,
   TAMANHO_MAXIMO_PECA_AUDITORIA,
   TIPOS_ARQUIVO_AUDITORIA_PECA,
@@ -132,6 +136,10 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
 
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
+  }
+
   const { data: registro, error: erroInsert } = await supabase
     .from("auditorias_peca")
     .insert({
@@ -230,6 +238,10 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
   const { fichaCasoId } = fichaResolvida;
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
+
+  if (await existeProcessamentoIaEmAndamento(escritorioId)) {
+    return { ok: false, error: MENSAGEM_PROCESSAMENTO_IA_EM_ANDAMENTO };
+  }
 
   const { data: registro, error: erroInsert } = await supabase
     .from("auditorias_peca")
