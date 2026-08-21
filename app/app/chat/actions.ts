@@ -8,7 +8,7 @@ import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from 
 import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
-import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { limiteMensagensIaPara } from "@/lib/types";
 import type { Conversa, Mensagem } from "@/lib/types";
 
 const MAX_HISTORICO = 20;
@@ -182,7 +182,7 @@ export async function contarUsoIaMesAction(): Promise<{ usados: number; limite: 
     .eq("mes_ref", await mesRefAtual());
 
   if (error) throw error;
-  return { usados: count ?? 0, limite: LIMITE_MENSAGENS_FREE };
+  return { usados: count ?? 0, limite: limiteMensagensIaPara(usuario.perfil.escritorio.plano) };
 }
 
 const enviarMensagemSchema = z.object({
@@ -219,10 +219,12 @@ export async function enviarMensagemAction(
     .eq("mes_ref", mesRef);
   if (erroUso) return { ok: false, error: "Erro ao verificar uso de IA." };
 
-  if ((usoAtual ?? 0) >= LIMITE_MENSAGENS_FREE) {
+  const planoEscritorio = usuario.perfil.escritorio.plano;
+  const limiteMensagens = limiteMensagensIaPara(planoEscritorio);
+  if ((usoAtual ?? 0) >= limiteMensagens) {
     return {
       ok: false,
-      error: `Limite mensal de ${LIMITE_MENSAGENS_FREE} mensagens de IA do plano free atingido. Tente novamente no próximo mês.`,
+      error: `Limite mensal de ${limiteMensagens} mensagens de IA do plano ${planoEscritorio} atingido. Tente novamente no próximo mês.`,
     };
   }
 
