@@ -24,59 +24,59 @@ const MEMORY_PILLARS = [
 
 export function SectionFirmMemory() {
   return (
-    <section className="relative overflow-hidden border-t border-silver/10 bg-[#090f1a] py-24 sm:py-32">
+    <section className="relative overflow-hidden border-t border-white/[0.08] bg-[#0c0c0f] py-28 sm:py-36">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           <Reveal>
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
               12 · Memória Institucional
             </span>
           </Reveal>
           <Reveal delayMs={100}>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-[#fafaf9] sm:text-5xl lg:text-6xl">
               Quanto mais você usa, mais o sistema <br />
-              <span className="font-normal italic text-silver-2">
+              <span className="font-normal italic text-[#d4af37]">
                 entende como seu escritório trabalha.
               </span>
             </h2>
           </Reveal>
           <Reveal delayMs={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-6 text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
               Sem declarações vagas de &ldquo;aprendizado genérico&rdquo;.
-              O Jurídico IA constrói um repositório isolado de conhecimento proprietário da sua banca, preservando a identidade jurídica que você construiu ao longo dos anos.
+              O Jurídico OS constrói um repositório isolado de conhecimento proprietário da sua banca, preservando a identidade jurídica que você construiu ao longo dos anos.
             </p>
           </Reveal>
         </div>
 
         {/* Memory Grid */}
-        <div className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2">
           {MEMORY_PILLARS.map((pillar, idx) => (
             <div
               key={pillar.title}
-              className="rounded-md border border-silver/15 bg-[#0b1322] p-6 sm:p-8 hover:border-silver/30 transition-colors"
+              className="rounded-xl border border-white/[0.08] bg-[#121216] p-6 sm:p-8 hover:border-[#d4af37]/40 transition-all hover:bg-[#18181f]"
             >
-              <div className="flex items-center justify-between border-b border-silver/10 pb-4">
-                <span className="font-mono text-xs text-silver">
-                  VAULT 0{idx + 1}
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+                <span className="font-mono text-xs text-[#d4af37] font-semibold">
+                  VAULT DA BANCA 0{idx + 1}
                 </span>
-                <IconMemory className="h-4 w-4 text-silver/60" />
+                <IconMemory className="h-4 w-4 text-[#d4af37]" />
               </div>
-              <h3 className="mt-4 font-display text-base sm:text-lg font-bold text-ice">
+              <h3 className="mt-5 font-display text-lg sm:text-xl font-bold text-[#fafaf9]">
                 {pillar.title}
               </h3>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted">
+              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[#a1a1aa]">
                 {pillar.desc}
               </p>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 rounded-sm border border-silver/10 bg-black/25 p-4 text-xs text-muted flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <IconLockSecure className="h-4 w-4 text-emerald-400" />
+        <div className="mt-10 rounded-lg border border-white/[0.08] bg-[#121216] p-5 text-xs text-[#a1a1aa] flex flex-wrap items-center justify-between gap-3">
+          <span className="flex items-center gap-2.5">
+            <IconLockSecure className="h-4 w-4 text-[#10b981]" />
             <span>Memória 100% segregada por escritório: seus modelos nunca treinam IAs de terceiros.</span>
           </span>
-          <span className="font-mono text-[10px] text-emerald-400 uppercase hidden sm:inline-block">
+          <span className="font-mono text-[10px] text-[#10b981] uppercase">
             ISOLAMENTO MULTI-TENANT
           </span>
         </div>

@@ -1,108 +1,128 @@
 "use client";
 
+import { useState } from "react";
 import { Reveal } from "./reveal";
 import { IconAdversarial, IconCheck, IconScale, IconShield } from "./icons";
 
+const SCENARIOS = [
+  {
+    id: "dano-moral",
+    title: "1. Tese de Dano Moral In Re Ipsa",
+    opponentAttack: "A contraparte alegará que o mero atraso na entrega das chaves não gera dano moral presumido, invocando o AgInt no AREsp 1.782.910/SP.",
+    defenseShield: "Juntada antecipada dos comprovantes de aluguel emergencial e notificação de cancelamento de casamento para demonstrar abalo psíquico extraordinário além do mero dissabor.",
+    result: "Precedente hostil neutralizado com prova documental nos autos.",
+  },
+  {
+    id: "incompetencia",
+    title: "2. Preliminar de Incompetência Territorial",
+    opponentAttack: "A ré suscitará a validade da cláusula de eleição de foro na comarca da sede da incorporadora (São Paulo/SP).",
+    defenseShield: "Arguição da nulidade de pleno direito da cláusula por ofensa ao art. 101, I, do CDC c/c Súmula 335 do STF, fixando o foro no domicílio do consumidor.",
+    result: "Fixação da competência mantida na comarca do seu cliente.",
+  },
+  {
+    id: "fortuito",
+    title: "3. Alegação de Caso Fortuito / Chuvas",
+    opponentAttack: "A construtora tentará justificar 190 dias de atraso por escassez de insumos e índices pluviométricos acima da média.",
+    defenseShield: "Aplicação da Súmula 161 do TJSP: escassez de mão de obra e chuvas configuram fortuito interno inerente ao risco da atividade empresarial.",
+    result: "Excludente de responsabilidade sumariamente afastada.",
+  },
+];
+
 export function SectionAdversarialAnalysis() {
+  const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0]);
+
   return (
-    <section className="relative overflow-hidden border-t border-silver/10 bg-[#090f1b] py-24 sm:py-32">
+    <section id="war-room" className="relative overflow-hidden border-t border-white/[0.08] bg-[#0c0c0f] py-28 sm:py-36">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           <Reveal>
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
-              06 · Simulação Adversarial
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
+              06 · War Room Adversarial
             </span>
           </Reveal>
           <Reveal delayMs={100}>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-[#fafaf9] sm:text-5xl lg:text-6xl">
               &ldquo;E se a outra parte <br />
-              <span className="font-normal italic text-silver-2">
+              <span className="font-normal italic text-[#d4af37]">
                 atacasse por aqui?&rdquo;
               </span>
             </h2>
           </Reveal>
           <Reveal delayMs={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-              Antes da réplica ou da contestação, o sistema assume a perspectiva do advogado contrário,
-              identifica vulnerabilidades na sua tese e sugere o reforço probatório necessário.
+            <p className="mt-6 text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
+              Antes de protocolar, o sistema assume a perspectiva do advogado contrário,
+              identifica pontos de vulnerabilidade na sua tese e sugere o reforço probatório preventivo.
             </p>
           </Reveal>
         </div>
 
-        {/* Dual Adversarial Comparison Board */}
-        <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
-          {/* Column 1: Sua Tese Principal */}
-          <div className="rounded-md border border-silver/20 bg-[#0b1424] p-6 sm:p-8 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between border-b border-silver/10 pb-4">
-                <span className="font-mono text-xs text-silver uppercase font-semibold">
-                  Sua Tese Proposta
-                </span>
-                <span className="font-mono text-[10px] text-emerald-400 bg-emerald-400/10 px-2.5 py-0.5 rounded border border-emerald-400/20">
-                  AUTOR
-                </span>
-              </div>
-
-              <div className="mt-6 space-y-4 text-xs sm:text-sm">
-                <div>
-                  <span className="font-mono text-[10px] text-muted uppercase block">Argumento Base</span>
-                  <p className="font-semibold text-ice mt-1">
-                    Pleito de Dano Moral Presumido (in re ipsa) em virtude do atraso de 190 dias na entrega do imóvel.
-                  </p>
-                </div>
-                <div>
-                  <span className="font-mono text-[10px] text-muted uppercase block">Fundamentação</span>
-                  <p className="text-muted leading-relaxed mt-1">
-                    Artigo 6º, VI do CDC c/c violação ao direito constitucional à moradia digna.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-sm border border-silver/10 bg-black/30 p-4 text-xs text-muted">
-              <span className="font-mono text-[10px] uppercase text-silver block mb-1">
-                STATUS DA ARGUMENTAÇÃO:
-              </span>
-              Estrutura fática clara, porém sujeita à pacificação jurisprudencial restritiva do STJ.
-            </div>
+        {/* War Room Interactive Simulator */}
+        <div className="mt-16 overflow-hidden rounded-xl border border-white/[0.1] bg-[#121216] shadow-[0_24px_70px_rgba(0,0,0,0.75)]">
+          {/* Scenario Tabs */}
+          <div className="flex flex-wrap border-b border-white/[0.08] bg-[#09090b]">
+            {SCENARIOS.map((sc) => {
+              const isSelected = selectedScenario.id === sc.id;
+              return (
+                <button
+                  key={sc.id}
+                  type="button"
+                  onClick={() => setSelectedScenario(sc)}
+                  className={`flex-1 min-w-[200px] p-4 text-xs font-semibold text-left transition-all border-r border-white/[0.06] ${
+                    isSelected
+                      ? "bg-[#18181f] text-[#d4af37] border-b-2 border-b-[#d4af37]"
+                      : "text-[#a1a1aa] hover:text-[#fafaf9]"
+                  }`}
+                >
+                  {sc.title}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Column 2: O Ataque Antecipado pela IA */}
-          <div className="rounded-md border border-amber-400/30 bg-[#121927] p-6 sm:p-8 flex flex-col justify-between shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
-            <div>
-              <div className="flex items-center justify-between border-b border-amber-400/20 pb-4">
-                <span className="font-mono text-xs text-amber-300 uppercase font-semibold flex items-center gap-2">
-                  <IconAdversarial className="h-4 w-4" />
-                  Ataque Antecipado da Contraparte
-                </span>
-                <span className="font-mono text-[10px] text-amber-300 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20">
-                  RÉU PREVISTO
-                </span>
+          {/* Dual Adversarial Comparison Board */}
+          <div className="p-6 sm:p-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Opponent Attack */}
+            <div className="rounded-xl border border-red-500/30 bg-[#170e12] p-6 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-red-500/20 pb-3">
+                  <span className="font-mono text-xs text-red-300 uppercase font-semibold flex items-center gap-2">
+                    <IconAdversarial className="h-4 w-4" />
+                    Ataque Antecipado da Contraparte
+                  </span>
+                  <span className="font-mono text-[10px] text-red-300 bg-red-500/20 px-2 py-0.5 rounded">
+                    RISCO IDENTIFICADO
+                  </span>
+                </div>
+                <p className="mt-4 text-xs sm:text-sm leading-relaxed text-red-100">
+                  {selectedScenario.opponentAttack}
+                </p>
               </div>
-
-              <div className="mt-6 space-y-4 text-xs sm:text-sm">
-                <div>
-                  <span className="font-mono text-[10px] text-amber-300/80 uppercase block">Fragilidade Identificada</span>
-                  <p className="font-semibold text-amber-100 mt-1">
-                    O mero descumprimento contratual, por si só, não gera dano moral in re ipsa (AgInt no AREsp 1.782.910/SP).
-                  </p>
-                </div>
-
-                <div>
-                  <span className="font-mono text-[10px] text-amber-300/80 uppercase block">Recomendação Preventiva da IA</span>
-                  <div className="mt-1.5 rounded-sm border border-emerald-400/30 bg-emerald-400/5 p-3 text-xs text-ice-2">
-                    <p className="font-medium text-emerald-300 mb-1">Ação de Reforço Probatório:</p>
-                    <p className="text-muted leading-relaxed">
-                      Juntar os comprovantes de aluguel pago no período e o contrato de locação emergencial para caracterizar dano reflexo extraordinário antes que o réu apresente a contestação.
-                    </p>
-                  </div>
-                </div>
+              <div className="pt-3 border-t border-red-500/20 text-[11px] font-mono text-red-300/80">
+                Ação detectada antes da réplica forense.
               </div>
             </div>
 
-            <div className="mt-8 flex items-center gap-2 text-xs font-mono text-emerald-400 pt-3 border-t border-silver/10">
-              <IconCheck className="h-4 w-4" />
-              <span>Blindagem probatória sugerida e integrada à minuta</span>
+            {/* Defense Shield Counter-Measure */}
+            <div className="rounded-xl border border-[#10b981]/30 bg-[#0d1a15] p-6 space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between border-b border-[#10b981]/20 pb-3">
+                  <span className="font-mono text-xs text-[#10b981] uppercase font-semibold flex items-center gap-2">
+                    <IconShield className="h-4 w-4" />
+                    Blindagem Preventiva da IA
+                  </span>
+                  <span className="font-mono text-[10px] text-[#10b981] bg-[#10b981]/20 px-2 py-0.5 rounded">
+                    CONTRA-MEDIDA
+                  </span>
+                </div>
+                <p className="mt-4 text-xs sm:text-sm leading-relaxed text-[#fafaf9]">
+                  {selectedScenario.defenseShield}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-[#10b981]/20 flex items-center gap-2 text-xs font-mono text-[#10b981]">
+                <IconCheck className="h-4 w-4" />
+                <span>{selectedScenario.result}</span>
+              </div>
             </div>
           </div>
         </div>

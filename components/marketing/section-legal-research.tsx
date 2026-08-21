@@ -45,49 +45,49 @@ export function SectionLegalResearch() {
   const current = RESEARCH_CATEGORIES.find((c) => c.id === selectedCat) ?? RESEARCH_CATEGORIES[0];
 
   return (
-    <section className="relative overflow-hidden border-t border-silver/10 bg-[#080e18] py-24 sm:py-32">
+    <section className="relative overflow-hidden border-t border-white/[0.08] bg-[#09090b] py-28 sm:py-36">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="max-w-2xl">
+        <div className="max-w-3xl">
           <Reveal>
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
               09 · Pesquisa Jurídica Verificável
             </span>
           </Reveal>
           <Reveal delayMs={100}>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-[#fafaf9] sm:text-5xl lg:text-6xl">
               Pesquisa com fonte, acórdão e <br />
-              <span className="font-normal italic text-silver-2">
+              <span className="font-normal italic text-[#d4af37]">
                 tribunal verificáveis.
               </span>
             </h2>
           </Reveal>
           <Reveal delayMs={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-6 text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
               Nada de citações fantasmas ou jurisprudência inventada.
-              Cada precedente é auditado diretamente nas bases dos tribunais com número de processo, relator e data de julgamento.
+              Cada precedente é auditado diretamente nas bases oficiais com número de processo, relator e data de julgamento.
             </p>
           </Reveal>
         </div>
 
-        {/* Search Engine Mockup */}
-        <div className="mt-14 overflow-hidden rounded-md border border-silver/20 bg-[#0b1322] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        {/* Search Engine Console */}
+        <div className="mt-16 overflow-hidden rounded-xl border border-white/[0.1] bg-[#121216] shadow-[0_24px_70px_rgba(0,0,0,0.75)]">
           {/* Query Bar */}
-          <div className="border-b border-silver/10 bg-black/40 p-4 sm:p-5">
-            <div className="flex items-center gap-3 rounded-sm border border-silver/20 bg-black/40 px-4 py-3 text-xs sm:text-sm">
-              <IconSearchFilter className="h-4 w-4 text-silver shrink-0" />
-              <span className="font-mono text-ice-2 truncate">
+          <div className="border-b border-white/[0.08] bg-[#0c0c0f] p-5">
+            <div className="flex items-center gap-3.5 rounded-lg border border-white/[0.1] bg-[#09090b] px-4 py-3 text-xs sm:text-sm">
+              <IconSearchFilter className="h-4 w-4 text-[#d4af37] shrink-0" />
+              <span className="font-mono text-[#fafaf9] truncate">
                 &ldquo;responsabilidade civil por cobrança indevida e repetição em dobro&rdquo;
               </span>
-              <span className="ml-auto font-mono text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 hidden sm:inline-block">
+              <span className="ml-auto font-mono text-[10px] text-[#10b981] bg-[#10b981]/10 px-2.5 py-0.5 rounded border border-[#10b981]/30 hidden sm:inline-block">
                 FONTE STJ AUDITADA
               </span>
             </div>
           </div>
 
           {/* Results Area */}
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] border-b border-silver/10">
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr]">
             {/* Filter Column */}
-            <div className="flex flex-row overflow-x-auto lg:flex-col border-b lg:border-b-0 lg:border-r border-silver/10 bg-black/20 p-2 gap-1">
+            <div className="flex flex-row overflow-x-auto lg:flex-col border-b lg:border-b-0 lg:border-r border-white/[0.08] bg-[#0a0a0d] p-3 gap-1.5">
               {RESEARCH_CATEGORIES.map((cat) => {
                 const isSelected = selectedCat === cat.id;
                 return (
@@ -95,10 +95,10 @@ export function SectionLegalResearch() {
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCat(cat.id)}
-                    className={`rounded-sm p-3 text-left text-xs font-medium transition-colors whitespace-nowrap lg:whitespace-normal ${
+                    className={`rounded-md p-3.5 text-left text-xs font-semibold transition-all whitespace-nowrap lg:whitespace-normal ${
                       isSelected
-                        ? "bg-silver/15 text-ice border border-silver/30"
-                        : "text-muted hover:text-ice-2 hover:bg-white/[0.02]"
+                        ? "bg-[#18181f] text-[#d4af37] border border-[#d4af37]/40 shadow-[0_0_12px_rgba(212,175,55,0.1)]"
+                        : "text-[#a1a1aa] hover:text-[#fafaf9] hover:bg-white/[0.02]"
                     }`}
                   >
                     {cat.label}
@@ -108,21 +108,21 @@ export function SectionLegalResearch() {
             </div>
 
             {/* Precedent Inspection View */}
-            <div className="p-6 sm:p-8 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-silver/10 pb-3">
-                <span className="font-mono text-xs font-bold text-silver uppercase">
+            <div className="p-6 sm:p-8 space-y-5 bg-[#121216]">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-4">
+                <span className="font-mono text-xs font-bold text-[#d4af37] uppercase">
                   {current.result.tribunal}
                 </span>
-                <span className="font-mono text-[11px] text-silver-2">
+                <span className="font-mono text-[11px] text-[#fafaf9]/80">
                   {current.result.acordao}
                 </span>
               </div>
 
-              <div className="rounded-sm border border-silver/15 bg-black/30 p-4 font-serif text-xs sm:text-sm leading-relaxed text-ice-2/90 italic">
+              <div className="rounded-lg border border-white/[0.08] bg-[#0c0c0f] p-5 font-serif text-xs sm:text-sm leading-relaxed text-[#fafaf9] italic">
                 &ldquo;{current.result.ementa}&rdquo;
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 pt-2">
+              <div className="flex items-center gap-2.5 text-xs font-mono text-[#10b981] pt-2">
                 <IconCheck className="h-4 w-4" />
                 <span>{current.result.aplicabilidade}</span>
               </div>

@@ -1,3 +1,4 @@
+import { AmbientCanvas } from "@/components/marketing/ambient-canvas";
 import { CaseTimelineSpine } from "@/components/marketing/case-timeline-spine";
 import { CtaFinal } from "@/components/marketing/cta-final";
 import { Faq } from "@/components/marketing/faq";
@@ -23,10 +24,11 @@ import { TrustStrip } from "@/components/marketing/trust-strip";
 
 export default function Home() {
   return (
-    <div className="flex min-h-full flex-1 flex-col overflow-x-hidden bg-[#070c16] text-ice selection:bg-silver/20 selection:text-ice">
+    <div className="flex min-h-full flex-1 flex-col overflow-x-hidden bg-[#09090b] text-[#fafaf9] selection:bg-[#d4af37]/30 selection:text-[#fafaf9]">
+      <AmbientCanvas />
       <Nav />
       <CaseTimelineSpine />
-      <main className="relative flex-1">
+      <main className="relative flex-1 z-10">
         <Hero />
         <TrustStrip />
         <SectionProblem />

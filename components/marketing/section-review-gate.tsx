@@ -1,7 +1,7 @@
 "use client";
 
 import { Reveal } from "./reveal";
-import { IconCheck, IconFileAudit, IconScale, IconShield } from "./icons";
+import { IconCheck, IconShield } from "./icons";
 
 const AUDIT_CHECKLIST = [
   {
@@ -38,24 +38,24 @@ const AUDIT_CHECKLIST = [
 
 export function SectionReviewGate() {
   return (
-    <section className="relative overflow-hidden border-t border-silver/10 bg-[#080d17] py-24 sm:py-32">
-      <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <div className="max-w-2xl">
+    <section className="relative overflow-hidden border-t border-white/[0.08] bg-[#09090b] py-28 sm:py-36">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="max-w-3xl">
           <Reveal>
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
               05 · A Auditoria Pré-Assinatura
             </span>
           </Reveal>
           <Reveal delayMs={100}>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-[#fafaf9] sm:text-5xl lg:text-6xl">
               Antes de você assinar, <br />
-              <span className="font-normal italic text-silver-2">
+              <span className="font-normal italic text-[#d4af37]">
                 ela lê de novo.
               </span>
             </h2>
           </Reveal>
           <Reveal delayMs={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-6 text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
               Um erro em um artigo ou em uma soma pode custar a admissibilidade do recurso.
               O sistema atua como uma segunda camada de revisão técnica para blindar sua peça.
             </p>
@@ -63,42 +63,42 @@ export function SectionReviewGate() {
         </div>
 
         {/* Audit Gate Card */}
-        <div className="mt-14 overflow-hidden rounded-md border border-silver/20 bg-[#0c1424] shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-          <div className="flex flex-wrap items-center justify-between border-b border-silver/10 bg-black/40 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-sm border border-emerald-400/40 bg-emerald-400/10 text-emerald-400">
+        <div className="mt-16 overflow-hidden rounded-xl border border-white/[0.1] bg-[#121216] shadow-[0_24px_70px_rgba(0,0,0,0.75)]">
+          <div className="flex flex-wrap items-center justify-between border-b border-white/[0.08] bg-[#0c0c0f] px-6 py-5">
+            <div className="flex items-center gap-3.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-[#10b981]/40 bg-[#10b981]/10 text-[#10b981]">
                 <IconCheck className="h-4 w-4" />
               </span>
               <div>
-                <h3 className="font-display text-sm font-bold text-ice">
+                <h3 className="font-display text-base font-bold text-[#fafaf9]">
                   Relatório de Auditoria de Peça Processual
                 </h3>
-                <p className="font-mono text-[10px] text-muted">PETIÇÃO_INICIAL_RESCISAO_vFINAL.DOCX</p>
+                <p className="font-mono text-[10px] text-[#a1a1aa]">PETIÇÃO_INICIAL_RESCISAO_vFINAL.DOCX</p>
               </div>
             </div>
-            <span className="font-mono text-xs text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded border border-emerald-400/20">
+            <span className="font-mono text-xs text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded border border-[#10b981]/30">
               HABILITADA PARA PROTOCOLO
             </span>
           </div>
 
-          <div className="divide-y divide-silver/10">
+          <div className="divide-y divide-white/[0.06]">
             {AUDIT_CHECKLIST.map((item, idx) => (
               <div
                 key={item.criterion}
-                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.01] transition-colors"
+                className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between hover:bg-white/[0.02] transition-colors"
               >
-                <div className="flex items-start gap-3.5">
-                  <span className="font-mono text-xs text-silver/60 pt-0.5">0{idx + 1}</span>
+                <div className="flex items-start gap-4">
+                  <span className="font-mono text-xs text-[#d4af37] pt-0.5">0{idx + 1}</span>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-semibold text-ice">{item.criterion}</h4>
-                    <p className="text-[11px] sm:text-xs text-muted mt-0.5">{item.detail}</p>
+                    <h4 className="text-xs sm:text-sm font-semibold text-[#fafaf9]">{item.criterion}</h4>
+                    <p className="text-[11px] sm:text-xs text-[#a1a1aa] mt-0.5 leading-relaxed">{item.detail}</p>
                   </div>
                 </div>
                 <span
                   className={`self-start sm:self-auto font-mono text-[11px] font-medium px-3 py-1 rounded border ${
                     item.status === "pass"
-                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                      : "border-amber-400/30 bg-amber-400/10 text-amber-300"
+                      ? "border-[#10b981]/40 bg-[#10b981]/10 text-[#10b981]"
+                      : "border-amber-400/40 bg-amber-400/10 text-amber-300"
                   }`}
                 >
                   {item.label}
@@ -107,9 +107,9 @@ export function SectionReviewGate() {
             ))}
           </div>
 
-          <div className="border-t border-silver/10 bg-black/30 px-6 py-4 text-xs text-muted">
-            <p className="flex items-center gap-2">
-              <IconShield className="h-4 w-4 text-silver" />
+          <div className="border-t border-white/[0.08] bg-[#0c0c0f] px-6 py-4 text-xs text-[#a1a1aa]">
+            <p className="flex items-center gap-2.5">
+              <IconShield className="h-4 w-4 text-[#d4af37]" />
               <span>Garantia de conformidade técnica: nenhuma peça é protocolada com jurisprudência revogada.</span>
             </p>
           </div>

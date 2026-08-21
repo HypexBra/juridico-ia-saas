@@ -5,94 +5,131 @@ import { Reveal } from "./reveal";
 import { IconArrowRight, IconCheck } from "./icons";
 
 const CHAOS_TASKS = [
-  { label: "Pesquisar jurisprudência", phase: "pesquisa" },
-  { label: "Organizar autos e anexos", phase: "organizacao" },
-  { label: "Ler centenas de páginas", phase: "leitura" },
-  { label: "Comparar cláusulas e minutas", phase: "analise" },
-  { label: "Escrever petições do zero", phase: "redacao" },
-  { label: "Revisar erros de digitação", phase: "revisao" },
-  { label: "Acompanhar diários oficiais", phase: "prazos" },
-  { label: "Cobrar honorários atrasados", phase: "financeiro" },
-  { label: "Responder mensagens repetitivas", phase: "atendimento" },
-  { label: "Atualizar planilhas manuais", phase: "gestao" },
+  {
+    id: "pesquisar",
+    label: "Pesquisar Jurisprudência",
+    pain: "5 a 10 abas abertas no Jusbrasil, STJ e TJ procurando ementas que muitas vezes já foram superadas.",
+    solution: "O sistema cruza o relatório fático do caso com temas repetitivos e súmulas vinculantes ativas em 2 segundos.",
+  },
+  {
+    id: "ler",
+    label: "Ler 200 Páginas de Autos",
+    pain: "Horas gastas passando o olho em certidões e comprovantes soltos procurando a data do despacho.",
+    solution: "Extração OCR instantânea com linha do tempo processual e destaques de inconsistências de valores.",
+  },
+  {
+    id: "redigir",
+    label: "Redigir Petições do Zero",
+    pain: "Copiar e colar parágrafos de peças antigas correndo risco de esquecer nomes de partes e pedidos anteriores.",
+    solution: "Minutas estruturadas com fundamentação fática, pedidos liquidados e jurisprudência vinculada aos autos.",
+  },
+  {
+    id: "prazos",
+    label: "Acompanhar Diários à Mão",
+    pain: "Conferir intimações no DJEN e calcular prazos úteis manualmente em planilhas sujeitas a erro humano.",
+    solution: "Varredura diária automática com desconto de feriados forenses locais e inclusão direta na pauta.",
+  },
+  {
+    id: "atendimento",
+    label: "Responder WhatsApp no Almoço",
+    pain: "Clientes mandando 'Doutor, alguma novidade?' a cada 3 dias exigindo que alguém pare o trabalho para checar o PJe.",
+    solution: "Portal do Cliente por CPF e respostas automáticas polidas com status real em linguagem acessível.",
+  },
 ];
 
 export function SectionProblem() {
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState(CHAOS_TASKS[0]);
 
   return (
-    <section className="relative overflow-hidden border-t border-silver/10 bg-[#080d17] py-24 sm:py-32">
-      <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        {/* Editorial Section Header */}
-        <div className="max-w-2xl">
+    <section className="relative overflow-hidden border-t border-white/[0.08] bg-[#09090b] py-28 sm:py-36">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="max-w-3xl">
           <Reveal>
-            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-[#d4af37]">
               01 · O Diagnóstico
             </span>
           </Reveal>
           <Reveal delayMs={100}>
-            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+            <h2 className="mt-4 font-display text-4xl font-bold leading-tight text-[#fafaf9] sm:text-5xl lg:text-6xl">
               O problema não é o Direito. <br />
-              <span className="font-normal italic text-silver-2">
+              <span className="font-normal italic text-[#d4af37]">
                 É tudo que acontece ao redor dele.
               </span>
             </h2>
           </Reveal>
           <Reveal delayMs={200}>
-            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
-              Um advogado gasta até 60% da semana alimentando sistemas desconexos,
-              conferindo intimações à mão e copiando informações de um lugar para o outro.
+            <p className="mt-6 text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
+              Um advogado gasta até 60% do seu tempo alimentando sistemas desconexos,
+              conferindo intimações à mão e copiando dados de um lugar para o outro.
               O tempo de pensar a tese foi engolido pela operação.
             </p>
           </Reveal>
         </div>
 
-        {/* Operational Friction Cloud */}
-        <div className="mt-14 rounded-md border border-silver/15 bg-navy-2/30 p-6 sm:p-10 backdrop-blur-sm">
-          <div className="flex items-center justify-between border-b border-silver/10 pb-4 text-xs">
-            <span className="font-mono uppercase text-muted tracking-wider">
-              A FRAGMENTAÇÃO DIÁRIA DO ESCRITÓRIO
+        {/* Interactive Friction Resolver */}
+        <div className="mt-16 overflow-hidden rounded-xl border border-white/[0.1] bg-[#121216] shadow-[0_20px_60px_rgba(0,0,0,0.7)]">
+          <div className="border-b border-white/[0.08] bg-[#0c0c0f] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+            <span className="font-mono text-xs text-[#d4af37] uppercase font-semibold">
+              EXPERIMENTE RESOLVER O ATRITO OPERACIONAL (CLIQUE ABAIXO)
             </span>
-            <span className="font-mono text-silver-2 hidden sm:inline-block">
-              10 PONTOS DE ATRITO
-            </span>
+            <span className="font-mono text-[10px] text-[#a1a1aa]">5 GARGALOS CRÍTICOS</span>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2.5 sm:gap-3">
-            {CHAOS_TASKS.map((task, idx) => {
-              const isSelected = activeFilter === task.phase;
-              return (
-                <button
-                  key={task.label}
-                  type="button"
-                  onClick={() => setActiveFilter(isSelected ? null : task.phase)}
-                  className={`group flex items-center gap-2 rounded-sm border px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 ${
-                    isSelected
-                      ? "border-silver bg-silver/20 text-ice"
-                      : "border-silver/20 bg-white/[0.02] text-muted hover:border-silver/40 hover:text-ice-2 hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <span className="font-mono text-[10px] text-silver/60">0{idx + 1}</span>
-                  <span>{task.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr]">
+            {/* Task Selector List */}
+            <div className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white/[0.08] space-y-2 bg-[#0a0a0d]">
+              {CHAOS_TASKS.map((task, idx) => {
+                const isSelected = selectedTask.id === task.id;
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => setSelectedTask(task)}
+                    className={`w-full flex items-center justify-between rounded-md border p-4 text-left transition-all ${
+                      isSelected
+                        ? "border-[#d4af37] bg-[#18181f] text-[#fafaf9] shadow-[0_0_15px_rgba(212,175,55,0.12)]"
+                        : "border-white/[0.06] bg-transparent text-[#a1a1aa] hover:border-white/[0.15] hover:text-[#fafaf9] hover:bg-white/[0.02]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-[#d4af37]/80">0{idx + 1}</span>
+                      <span className="text-xs sm:text-sm font-semibold">{task.label}</span>
+                    </div>
+                    <IconArrowRight
+                      className={`h-4 w-4 transition-transform ${
+                        isSelected ? "text-[#d4af37] translate-x-1" : "text-white/20"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Calming Narrative Resolution */}
-          <div className="mt-10 border-t border-silver/10 pt-8">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
-                <IconCheck className="h-6 w-6" />
-              </div>
+            {/* Contrast Transformation Board */}
+            <div className="p-6 sm:p-8 flex flex-col justify-between space-y-6 bg-[#121216]">
               <div>
-                <p className="font-display text-lg font-bold text-ice sm:text-xl">
-                  É aí que o Jurídico IA entra.
-                </p>
-                <p className="mt-1 text-sm text-muted leading-relaxed">
-                  Não como mais uma aba aberta no navegador, mas como a espinha dorsal
-                  que une peças, publicações, prazos e clientes em uma linha contínua de execução.
-                </p>
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 mb-4">
+                  <span className="font-mono text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">
+                    [x] O Caos Operacional Tradicional:
+                  </span>
+                  <p className="text-xs sm:text-sm leading-relaxed text-[#fafaf9]/80">
+                    {selectedTask.pain}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-[#10b981]/30 bg-[#10b981]/10 p-5">
+                  <span className="font-mono text-[10px] font-bold text-[#10b981] uppercase tracking-wider block mb-1">
+                    [✓] Como o Jurídico OS Resolve:
+                  </span>
+                  <p className="text-xs sm:text-sm leading-relaxed text-[#fafaf9] font-medium">
+                    {selectedTask.solution}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs text-[#a1a1aa]">
+                <span>Menos 15 horas semanais perdidas em retrabalho mecânico.</span>
+                <span className="font-mono text-[10px] text-[#d4af37] font-semibold">TRANSFORMAÇÃO REAL</span>
               </div>
             </div>
           </div>

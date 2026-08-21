@@ -11,14 +11,14 @@ const base = {
   strokeLinejoin: "round" as const,
 };
 
-/** Bespoke Geometric Monogram / Editorial Legal Brand Mark */
+/** Bespoke Geometric Monogram / Editorial Legal Brand Seal */
 export function IconLogoMark(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.3} />
-      <path d="M7 8h10" strokeWidth={1.3} />
-      <path d="M12 8v8a3 3 0 0 1-3 3" strokeWidth={1.4} />
-      <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
+      <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.4} />
+      <path d="M7 7.5h10" strokeWidth={1.4} />
+      <path d="M12 7.5v9a2.5 2.5 0 0 1-2.5 2.5" strokeWidth={1.5} />
+      <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -40,7 +40,7 @@ export function IconDossier(props: IconProps) {
   return (
     <svg {...base} {...props}>
       <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-      <path d="M8 13h8" />
+      <path d="M8 12h8" />
       <path d="M8 16h5" />
     </svg>
   );
@@ -163,31 +163,6 @@ export function IconClock(props: IconProps) {
   );
 }
 
-export function IconLibrary(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M4 4.5v15" />
-      <path d="M8 4.5v15" />
-      <path d="M4 4.5h4" />
-      <path d="M4 19.5h4" />
-      <path d="M12.5 5.2l3.9 15-3.9 1" />
-      <path d="M17 4l3.5 14.5" />
-    </svg>
-  );
-}
-
-export function IconChart(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M4 20V4" />
-      <path d="M4 20h16" />
-      <path d="M8 16v-4" />
-      <path d="M12.5 16V8" />
-      <path d="M17 16v-7" />
-    </svg>
-  );
-}
-
 export function IconUsers(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -195,16 +170,6 @@ export function IconUsers(props: IconProps) {
       <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5" />
       <circle cx="17.5" cy="9" r="2.3" />
       <path d="M15.5 20c.4-2.5 1.8-4 3.6-4.5" />
-    </svg>
-  );
-}
-
-export function IconDownload(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M12 3.5v11" />
-      <path d="M7.5 10.5l4.5 4.5 4.5-4.5" />
-      <path d="M4.5 17.5v2A1.5 1.5 0 0 0 6 21h12a1.5 1.5 0 0 0 1.5-1.5v-2" />
     </svg>
   );
 }
@@ -223,25 +188,6 @@ export function IconArrowRight(props: IconProps) {
     <svg {...base} {...props}>
       <path d="M4 12h16" />
       <path d="M14 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-export function IconArrowUpRight(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M7 17L17 7" />
-      <path d="M7 7h10v10" />
-    </svg>
-  );
-}
-
-export function IconMenu(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M4 6.5h16" />
-      <path d="M4 12h16" />
-      <path d="M4 17.5h16" />
     </svg>
   );
 }
@@ -339,33 +285,12 @@ export function IconTrendingUp(props: IconProps) {
   );
 }
 
-export function IconGauge(props: IconProps) {
+export function IconMenu(props: IconProps) {
   return (
     <svg {...base} {...props}>
-      <path d="M4 15a8 8 0 1 1 16 0" />
-      <path d="M12 15l3.5-4.5" />
-      <circle cx="12" cy="15" r="1.2" />
-    </svg>
-  );
-}
-
-export function IconBookOpen(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M12 6.5c-1.6-1.3-3.8-2-6.5-2v13c2.7 0 4.9.7 6.5 2 1.6-1.3 3.8-2 6.5-2v-13c-2.7 0-4.9.7-6.5 2Z" />
-      <path d="M12 6.5v13" />
-    </svg>
-  );
-}
-
-export function IconIdCard(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <rect x="3" y="5.5" width="18" height="13" rx="1.5" />
-      <circle cx="8" cy="11" r="1.8" />
-      <path d="M5.5 16c.5-1.6 1.6-2.4 2.5-2.4s2 .8 2.5 2.4" />
-      <path d="M14 9.5h4" />
-      <path d="M14 13h4" />
+      <path d="M4 6.5h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17.5h16" />
     </svg>
   );
 }

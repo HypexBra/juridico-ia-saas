@@ -1,84 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --color-navy: #13294b;
-  --color-navy-2: #1c3a66;
-  --color-navy-3: #24466f;
-  /* Accent trio: cool metallic silver-blue (replaced the original gold
-     accent). --color-silver was renamed from --color-gold — the old name
-     would lie about the hue, so the variable and every Tailwind class
-     (text-silver, bg-silver, border-silver, from-silver/to-silver,
-     stroke-silver, fill-silver, plus the "silver" tone token in
-     Badge/UsageRing) were renamed project-wide alongside the hex swap. */
-  --color-silver: #c7d2e8;
-  --color-silver-2: #e3ebf7;
-  --color-silver-3: #f5f8fc;
-  --color-ice: #f0f4f8;
-  --color-ice-2: #e2eaf4;
-  --color-muted: #9fb0cc;
-  --color-green: #22c55e;
+  --color-obsidian: #09090b;
+  --color-obsidian-card: #121216;
+  --color-obsidian-elevated: #18181f;
+  --color-gold: #d4af37;
+  --color-gold-light: #e5c07b;
+  --color-gold-dark: #a8892d;
+  --color-gold-muted: rgba(212, 175, 55, 0.15);
+  --color-bone: #fafaf9;
+  --color-bone-muted: #a1a1aa;
+  --color-bone-dark: #71717a;
+  --color-emerald-accent: #10b981;
+  --color-amber-accent: #f59e0b;
 }
 
 @theme inline {
-  --color-navy: var(--color-navy);
-  --color-navy-2: var(--color-navy-2);
-  --color-navy-3: var(--color-navy-3);
-  --color-silver: var(--color-silver);
-  --color-silver-2: var(--color-silver-2);
-  --color-silver-3: var(--color-silver-3);
-  --color-ice: var(--color-ice);
-  --color-ice-2: var(--color-ice-2);
-  --color-muted: var(--color-muted);
-  --color-green: var(--color-green);
+  --color-obsidian: var(--color-obsidian);
+  --color-obsidian-card: var(--color-obsidian-card);
+  --color-obsidian-elevated: var(--color-obsidian-elevated);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-gold-dark: var(--color-gold-dark);
+  --color-gold-muted: var(--color-gold-muted);
+  --color-bone: var(--color-bone);
+  --color-bone-muted: var(--color-bone-muted);
+  --color-bone-dark: var(--color-bone-dark);
+  --color-emerald-accent: var(--color-emerald-accent);
+  --color-amber-accent: var(--color-amber-accent);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
 
-/* `scroll-behavior: smooth` was removed on purpose: it's GSAP's own
-   documented ScrollTrigger gotcha (see ScrollTrigger docs, "avoid
-   scroll-behavior: smooth"). Some browsers apply the native smoothing
-   easing to *every* scroll event, including plain wheel/touch input, not
-   just anchor jumps — and that fights ScrollTrigger's per-frame scrub
-   read of `window.scrollY` every tick. Two independent smoothing/easing
-   layers stacked on the same scroll position is exactly what produced the
-   pinned "Art. 1º...7º" section's erratic/jumpy/stuck-then-lurching
-   behavior: the browser was already lagging the reported scroll position
-   behind the user's actual input, so ScrollTrigger's pin/scrub
-   recalculated against a stale, non-linear value every frame instead of
-   the raw, immediate one it expects. The few in-page anchor links
-   (`#funcionalidades`, `#precos`, `#faq`) now jump instantly instead of
-   easing — an acceptable, standard trade-off; re-introducing smooth
-   anchor jumps later should go through GSAP's own ScrollToPlugin (which
-   is ScrollTrigger-aware) rather than native CSS. */
-
 body {
-  background: var(--color-navy);
-  color: var(--color-ice);
+  background: var(--color-obsidian);
+  color: var(--color-bone);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-/* Disables native browser scroll anchoring site-wide. Scroll anchoring tries
-   to keep the visible content stable by silently adjusting `scrollTop`
-   whenever layout shifts above the viewport — and ScrollTrigger's pin
-   inserts/resizes a spacer element to reserve scroll room for the "Art.
-   1º...7º" pinned section, which is exactly that kind of shift. Two
-   independent systems fighting over the same scroll position (the browser
-   correcting for the spacer, ScrollTrigger reading `window.scrollY` every
-   scrub frame) is a documented ScrollTrigger gotcha and produces the
-   pinned section's "page going backward" jump. See GSAP ScrollTrigger
-   docs troubleshooting: "disable scroll anchoring". */
 html {
   overflow-anchor: none;
 }
 
-/* ---- Motion primitives (GSAP-driven components read these) ---- */
+/* Texture overlay for luxury tactile feel */
+.bg-noise {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+}
 
-/* SplitText word wrapper: clips the translateY reveal without cutting
-   descenders (g, y, j, ç) off the bottom of each word. */
-.text-reveal__unit {
-  overflow: hidden;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+.gold-glow {
+  box-shadow: 0 0 50px -10px rgba(212, 175, 55, 0.18);
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(to bottom, rgba(212, 175, 55, 0.4), rgba(255, 255, 255, 0.05)) 1;
 }
 
 @keyframes marquee {
@@ -87,10 +63,20 @@ html {
   }
 }
 
-/* ---- Nav scroll-progress bar: CSS Scroll-Driven Animation ----
-   Simple, linear, no pin/callback needed -> native `animation-timeline`
-   first, per the framework's CSS-before-GSAP rule. No @supports match =
-   the bar just stays at scale-x-0 (invisible), zero dependency on it. */
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar {
+  animation: radar-sweep 4s linear infinite;
+}
+
+/* Nav scroll-progress bar */
 @supports (animation-timeline: scroll()) {
   .nav-progress {
     animation: nav-progress-fill linear forwards;
@@ -107,83 +93,9 @@ html {
   }
 }
 
-/* ---- CTA glow: CSS Scroll-Driven Animation (view timeline) ----
-   Same rationale: a simple scale/opacity tied to view progress, no pin,
-   no callback. Falls back to the element's static inline opacity. */
-@supports (animation-timeline: view()) {
-  .cta-glow {
-    animation: cta-glow-in linear forwards;
-    animation-timeline: view();
-    animation-range: entry 0% cover 40%;
-  }
-}
-
-@keyframes cta-glow-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.85);
-  }
-  to {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-/* ---- App interno: transição de tela + skeleton loaders ---- */
-
-@keyframes app-page-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 10px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.app-page-enter {
-  animation: app-page-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes mobile-menu-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, -8px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.mobile-menu-enter {
-  animation: mobile-menu-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.skeleton {
-  background: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0.06) 30%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.06) 70%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .nav-progress,
-  .cta-glow {
+  .animate-radar {
     animation: none !important;
   }
 
@@ -193,6 +105,5 @@ html {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
   }
 }

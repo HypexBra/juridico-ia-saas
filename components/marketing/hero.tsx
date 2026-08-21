@@ -1,77 +1,78 @@
 import Link from "next/link";
-import { HeroCaseEngine } from "./hero-case-engine";
+import { HeroInteractiveStudio } from "./hero-interactive-studio";
 import { IconArrowRight, IconLockSecure } from "./icons";
 import { Reveal } from "./reveal";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-40 lg:pb-32">
-      {/* Subtle architectural grid lines */}
+    <section className="relative overflow-hidden pt-32 pb-24 sm:pt-40 sm:pb-32 lg:pt-44 lg:pb-36">
+      {/* Background Architectural Grid Lines */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(199,210,232,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(199,210,232,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
       />
 
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14">
-          {/* Left Editorial Column */}
+        <div className="grid grid-cols-1 gap-14 lg:grid-cols-[1.1fr_1.15fr] lg:items-center lg:gap-14">
+          {/* Left Column: Editorial Manifesto & Typography */}
           <div>
             <Reveal>
-              <div className="inline-flex items-center gap-2.5 rounded-sm border border-silver/20 bg-silver/5 px-3 py-1 text-[11px] font-mono font-medium text-silver-2 uppercase tracking-wider">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span>Sistema Operacional para Advocacia</span>
+              <div className="inline-flex items-center gap-2.5 rounded-sm border border-[#d4af37]/30 bg-[#d4af37]/10 px-3.5 py-1.5 text-[11px] font-mono font-medium text-[#d4af37] uppercase tracking-wider">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
+                <span>O Sistema Operacional Jurídico</span>
               </div>
             </Reveal>
 
             <Reveal delayMs={100}>
-              <h1 className="mt-6 font-display text-4xl font-black leading-[1.08] tracking-tight text-ice sm:text-5xl lg:text-[3.8rem]">
+              <h1 className="mt-7 font-display text-4xl font-black leading-[1.08] tracking-tight text-[#fafaf9] sm:text-6xl lg:text-[4rem]">
                 Menos operação. <br />
-                <span className="italic font-normal text-silver-2">Mais advocacia.</span>
+                <span className="italic font-normal text-[#d4af37]">Mais advocacia.</span>
               </h1>
             </Reveal>
 
             <Reveal delayMs={200}>
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                Casos, documentos, prazos do DJEN, redação jurídica fundamentada e portal do cliente
-                em um ambiente único e sincronizado. A tecnologia cuida da operação; você decide a estratégia.
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-[#a1a1aa] sm:text-lg">
+                Um ambiente único e orquestrado onde autos, contratos, jurisprudência do STJ,
+                intimações do DJEN e clientes convivem em sincronia contínua.
+                A tecnologia trabalha nos bastidores; você decide a estratégia.
               </p>
             </Reveal>
 
             <Reveal delayMs={300}>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-9 flex flex-wrap items-center gap-4">
                 <Link
                   href="/cadastro"
-                  className="group inline-flex items-center gap-2 rounded-sm border border-silver/60 bg-gradient-to-br from-silver to-silver-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_4px_20px_rgba(199,210,232,0.2)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(199,210,232,0.3)] active:translate-y-0 active:scale-[0.98]"
+                  className="group inline-flex items-center gap-2.5 rounded-sm border border-[#d4af37] bg-gradient-to-br from-[#d4af37] to-[#e5c07b] px-7 py-4 text-sm font-bold text-[#09090b] shadow-[0_4px_24px_rgba(212,175,55,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_32px_rgba(212,175,55,0.4)] active:translate-y-0 active:scale-[0.98]"
                 >
                   Começar gratuitamente
                   <IconArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
                 </Link>
                 <a
-                  href="#caso-sistema"
-                  className="inline-flex items-center gap-2 rounded-sm border border-silver/20 bg-white/[0.03] px-6 py-3.5 text-sm font-medium text-ice-2 transition-all duration-150 hover:border-silver/40 hover:bg-white/[0.07] active:scale-[0.98]"
+                  href="#dossie"
+                  className="inline-flex items-center gap-2 rounded-sm border border-white/15 bg-white/[0.03] px-7 py-4 text-sm font-medium text-[#fafaf9] transition-all duration-150 hover:border-[#d4af37]/50 hover:bg-white/[0.08] active:scale-[0.98]"
                 >
-                  Explorar o sistema
+                  Explorar o studio de caso
                 </a>
               </div>
             </Reveal>
 
             <Reveal delayMs={400}>
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted">
+              <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[#a1a1aa]">
                 <span className="flex items-center gap-1.5">
-                  <IconLockSecure className="h-3.5 w-3.5 text-silver/70" />
-                  Isolamento total de dados
+                  <IconLockSecure className="h-3.5 w-3.5 text-[#d4af37]" />
+                  Isolamento total de dados por banca
                 </span>
                 <span>·</span>
                 <span>Sem cartão de crédito</span>
                 <span>·</span>
-                <span>Fundamentação legal verificável</span>
+                <span>Precedentes verificáveis</span>
               </div>
             </Reveal>
           </div>
 
-          {/* Right Hero Visual Engine */}
+          {/* Right Column: Interactive Studio */}
           <Reveal delayMs={150}>
-            <HeroCaseEngine />
+            <HeroInteractiveStudio />
           </Reveal>
         </div>
       </div>

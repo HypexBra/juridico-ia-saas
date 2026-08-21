@@ -1,30 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
+import { Newsreader, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const newsreader = Newsreader({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
+  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Jurídico IA — Sistema Operacional Inteligente para Escritórios de Advocacia",
+  title: "Jurídico IA — O Sistema Operacional para Advocacia Contemporânea",
   description:
-    "Gestão de casos, análise documental com fundamentação legal verificável, prazos automáticos via DJEN, portal do cliente e memória institucional em uma plataforma única.",
+    "Gestão unificada de casos, auditoria contratual ativa com fundamentação legal real, sincronização diária com DJEN e memória institucional da sua banca.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b101b",
+  themeColor: "#09090b",
   width: "device-width",
   initialScale: 1,
 };
@@ -47,9 +48,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${playfair.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-navy text-ice font-sans selection:bg-silver/20 selection:text-ice">
+      <body className="min-h-full flex flex-col bg-[#09090b] text-[#fafaf9] font-sans selection:bg-[#d4af37]/30 selection:text-[#fafaf9] bg-noise">
         <PwaRegister />
         {children}
       </body>
