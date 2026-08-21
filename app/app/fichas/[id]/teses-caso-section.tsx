@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NovaTeseDialog } from "@/components/app/nova-tese-dialog";
 import { atualizarStatusTeseAction } from "../actions";
 import type { StatusTeseCaso, TeseCaso } from "@/lib/types";
 
@@ -29,7 +30,13 @@ function formatarData(iso: string): string {
  * (`em_avaliacao`/`adotada`/`descartada`) e histórico append-only de
  * mudanças.
  */
-export function TesesCasoSection({ tesesIniciais }: { tesesIniciais: TeseCaso[] }) {
+export function TesesCasoSection({
+  fichaCasoId,
+  tesesIniciais,
+}: {
+  fichaCasoId: string;
+  tesesIniciais: TeseCaso[];
+}) {
   const [teses, setTeses] = useState(tesesIniciais);
   const [erro, setErro] = useState<string | null>(null);
   const [pendenteId, setPendenteId] = useState<string | null>(null);
@@ -51,7 +58,13 @@ export function TesesCasoSection({ tesesIniciais }: { tesesIniciais: TeseCaso[] 
 
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-base font-semibold text-ice">Teses jurídicas ({teses.length})</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-display text-base font-semibold text-ice">Teses jurídicas ({teses.length})</h3>
+        <NovaTeseDialog
+          fichaCasoId={fichaCasoId}
+          onCriada={(tese) => setTeses((atual) => [tese, ...atual])}
+        />
+      </div>
 
       {erro && <p className="text-xs text-red-400">{erro}</p>}
 

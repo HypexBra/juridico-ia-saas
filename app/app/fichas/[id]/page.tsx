@@ -347,7 +347,7 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
             contador: teses.length,
             content: (
               <Card>
-                <TesesCasoSection tesesIniciais={teses} />
+                <TesesCasoSection fichaCasoId={ficha.id} tesesIniciais={teses} />
               </Card>
             ),
           },

@@ -434,3 +434,79 @@ export async function atualizarStatusTeseAction(
   revalidatePath(`/app/fichas/${teseAtual.ficha_caso_id}`);
   return { ok: true };
 }
+
+const criarTeseManualSchema = z.object({
+  fichaCasoId: z.string().uuid("Ficha inválida."),
+  titulo: z.string().trim().min(1, "Descreva a tese jurídica."),
+  descricao: z.string().trim().optional(),
+});
+
+export type CriarTeseManualResultado = { ok: true; tese: TeseCaso } | { ok: false; error: string };
+
+/**
+ * Cadastro MANUAL de uma tese jurídica (`teses_caso`) — distinto do
+ * write-back automático da IA (`montarTeseCasoDaAnaliseIa`/
+ * `montarTeseCasoDaAnaliseProcesso`, chamados em `gerarAnaliseIaAction` e no
+ * write-back de análise de processo). Reusa o mesmo `montarNovaTeseCaso`
+ * (mesmo formato de `historico` append-only, mesmo status inicial
+ * `em_avaliacao`) para não duplicar essa regra em dois lugares.
+ *
+ * "Caso Inteligente" Fase 1 (`teses_caso`, migration 0025) não está na lista
+ * de `FEATURES_PREMIUM` (`lib/planos/gating.ts`) — só as Fases 2/3 (análise
+ * inteligente de processo/documento) são Pro-only — então esta action não
+ * tem gate de plano, mesmo comportamento de `listarTesesCasoAction`/
+ * `atualizarStatusTeseAction` já existentes.
+ */
+export async function criarTeseManualAction(
+  input: z.infer<typeof criarTeseManualSchema>,
+): Promise<CriarTeseManualResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const parsed = criarTeseManualSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const supabase = await createClient();
+
+  // Confere que a ficha pertence ao escritório do usuário antes de inserir —
+  // a RLS de `teses_caso` já bloqueia no banco, mas checar aqui devolve uma
+  // mensagem clara em vez de um insert silenciosamente rejeitado.
+  const { data: ficha, error: erroFicha } = await supabase
+    .from("fichas_caso")
+    .select("id")
+    .eq("id", parsed.data.fichaCasoId)
+    .eq("escritorio_id", usuario.perfil.escritorio_id)
+    .maybeSingle();
+  if (erroFicha) return { ok: false, error: "Não foi possível localizar a ficha do caso." };
+  if (!ficha) return { ok: false, error: "Ficha de caso não encontrada." };
+
+  let payload;
+  try {
+    payload = montarNovaTeseCaso({
+      escritorioId: usuario.perfil.escritorio_id,
+      fichaCasoId: parsed.data.fichaCasoId,
+      tese: parsed.data.titulo,
+      fundamentacao: parsed.data.descricao ?? null,
+    });
+  } catch (erro) {
+    return { ok: false, error: erro instanceof Error ? erro.message : "Não foi possível criar a tese." };
+  }
+
+  const { data: novaTese, error: erroInsert } = await supabase
+    .from("teses_caso")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (erroInsert || !novaTese) {
+    console.error("[fichas/criarTeseManualAction] Falha ao inserir tese manual:", erroInsert, {
+      fichaCasoId: parsed.data.fichaCasoId,
+    });
+    return { ok: false, error: "Não foi possível salvar a tese. Tente novamente." };
+  }
+
+  revalidatePath(`/app/fichas/${parsed.data.fichaCasoId}`);
+  return { ok: true, tese: novaTese as TeseCaso };
+}
