@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { reindexarFichaCaso } from "@/lib/rag/indexacao-interna";
 import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
 import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
@@ -56,6 +57,16 @@ export async function criarFichaAction(
 
   if (error || !ficha) {
     return { error: "Não foi possível salvar a ficha. Tente novamente." };
+  }
+
+  // Best-effort: indisponibilidade momentânea do provedor de embedding não
+  // deve impedir o salvamento da ficha (já persistida acima) — só deixa o
+  // RAG servindo a versão anterior (vazia, neste caso de criação) até a
+  // próxima reindexação manual ou edição bem-sucedida.
+  try {
+    await reindexarFichaCaso(supabase, usuario.perfil.escritorio_id, ficha.id);
+  } catch (erroReindex) {
+    console.error("[fichas/criarFichaAction] Falha ao reindexar ficha para RAG:", erroReindex);
   }
 
   revalidatePath("/app/fichas");
