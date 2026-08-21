@@ -196,6 +196,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
           <LinkButton href={`/app/auditor?fichaId=${ficha.id}`} variant="secondary" size="sm">
             Auditar peça
           </LinkButton>
+          <LinkButton href={`/app/advogado-contra/novo?fichaId=${ficha.id}`} variant="secondary" size="sm">
+            Testar tese contra
+          </LinkButton>
           <ExcluirFichaButton fichaId={ficha.id} />
         </div>
       </Card>

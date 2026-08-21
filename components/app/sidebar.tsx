@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/app/redline", label: "Redline", icon: "shield" as const },
   { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
   { href: "/app/auditor", label: "Auditor de Peças", icon: "auditor" as const },
+  { href: "/app/advogado-contra", label: "Advogado do Contra", icon: "advogadoContra" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },
@@ -83,6 +84,15 @@ const ICONS: Record<string, React.ReactNode> = {
     <>
       <path d="M9 11l3 3L22 4" />
       <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </>
+  ),
+  advogadoContra: (
+    <>
+      <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+      <path d="M13 19l6-6" />
+      <path d="M16 16l4 4" />
+      <path d="M19 21l2-2" />
+      <path d="M9.5 6.5L3 13v3h3l6.5-6.5" />
     </>
   ),
   report: (
