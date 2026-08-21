@@ -624,6 +624,47 @@ export type ComparacaoDocumento = {
   processado_em: string | null;
 };
 
+/**
+ * Auditor de Peças (Fase 4, migration 0035) — auditoria de peça processual
+ * (petição, contestação, recurso) enviada por texto colado ou upload, com
+ * notas 0-10 por dimensão e veredito de risco geral categórico. Distinta de
+ * `AnaliseDocumento` (resumo/classificação genérica, sem pontuação) e de
+ * `ResultadoAnaliseRisco`/`analises_risco_contratual` (veredito por CLÁUSULA
+ * de CONTRATO, não notas agregadas de peça). Ver
+ * docs/adrs/0012-auditor-de-pecas.md.
+ *
+ * `resultado_auditoria` é tipado como `unknown` propositalmente: a estrutura
+ * `ResultadoAuditoriaPeca` (`lib/auditoria-peca/tipos.ts`) é entregue na
+ * Onda 1 do ADR 0012 (fora do escopo desta mudança) — trocar por esse tipo
+ * concreto assim que o módulo existir.
+ */
+export type OrigemAuditoriaPeca = "colado" | "upload";
+export type StatusAuditoriaPeca = "processando" | "pronto" | "erro";
+
+export type AuditoriaPeca = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  origem: OrigemAuditoriaPeca;
+  titulo: string | null;
+  texto_peca_analisado: string | null;
+  nome_arquivo: string | null;
+  tipo_arquivo: TipoArquivoAnaliseDocumento | null;
+  tamanho_bytes: number | null;
+  status: StatusAuditoriaPeca;
+  /**
+   * Estrutura `ResultadoAuditoriaPeca` (`lib/auditoria-peca/tipos.ts`,
+   * a ser entregue na Onda 1 do ADR 0012). `null` enquanto
+   * `status = "processando"`.
+   */
+  resultado_auditoria: unknown | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
 export const AREAS_DIREITO = [
   "Trabalhista",
   "Cível",
@@ -638,3 +679,16 @@ export const AREAS_DIREITO = [
 ] as const;
 
 export const LIMITE_MENSAGENS_FREE = 25; // uso mensal de IA no plano free — baixado de 60 pra empurrar upgrade pro Pro
+export const LIMITE_MENSAGENS_PRO = 300; // uso mensal de IA no plano pro — 12x o free, cobre uso diário intenso de um escritório pagante
+
+/**
+ * Limite mensal de mensagens/análises de IA (`uso_ia`) para um dado plano de
+ * escritório. Helper único usado por `contarUsoIaMesAction` e
+ * `enviarMensagemAction` (`app/app/chat/actions.ts`) para nunca duplicar o
+ * `if (plano === "pro")` em mais de um lugar — bug real corrigido: as duas
+ * funções aplicavam sempre `LIMITE_MENSAGENS_FREE`, travando escritórios Pro
+ * no teto do plano free.
+ */
+export function limiteMensagensIaPara(plano: "free" | "pro"): number {
+  return plano === "pro" ? LIMITE_MENSAGENS_PRO : LIMITE_MENSAGENS_FREE;
+}

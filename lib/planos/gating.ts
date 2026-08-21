@@ -46,6 +46,15 @@ export const FEATURES_PREMIUM = [
    * seção 7.
    */
   "comparacao_documentos",
+  /**
+   * (10) Auditor de Peças — avaliação de peça processual (colada ou
+   * upload) com notas 0-10 por dimensão (fundamentação, coerência, pedidos,
+   * jurisprudência) e veredito de risco geral (migration 0035,
+   * `auditorias_peca`). Pro-only sem tier gratuito parcial, mesmo padrão
+   * das demais features de análise estruturada por IA. Ver
+   * docs/adrs/0012-auditor-de-pecas.md, seção 7.
+   */
+  "auditoria_peca",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
