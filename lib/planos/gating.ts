@@ -67,6 +67,17 @@ export const FEATURES_PREMIUM = [
    * estruturada por IA. Ver docs/adrs/0013-advogado-do-contra.md.
    */
   "advogado_do_contra",
+  /**
+   * (12) Estrategista Jurídico — sintetiza teses/eventos/pessoas/
+   * jurisprudência citada/análises já existentes de um caso já aberto
+   * (`fichas_caso`) em objetivo, tese principal, teses subsidiárias, provas,
+   * riscos, oportunidades, próximos passos e ações recomendadas (migration
+   * 0041, `estrategias_caso`). Primeiro "agregador" do produto (lê múltiplas
+   * fontes estruturadas em vez de um texto avulso), mas mesmo padrão
+   * comercial das demais features de análise estruturada por IA: Pro-only
+   * sem tier gratuito parcial. Ver docs/adrs/0014-estrategista-caso.md.
+   */
+  "estrategista_caso",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
