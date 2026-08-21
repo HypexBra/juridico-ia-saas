@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:crypto";
+import { cifrar, decifrar } from "@/lib/seguranca/criptografia-simetrica";
 
 /**
  * Criptografia simétrica (AES-256-GCM) do `token_acesso` da Meta Cloud API
@@ -10,45 +10,30 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:
  * ainda, então a chave vive numa env var só do servidor (nunca
  * `NEXT_PUBLIC_*`, nunca lida em client component).
  *
- * Formato do ciphertext gravado no banco: `iv:authTag:dados`, tudo em hex —
- * autocontido, não precisa de coluna extra pro IV.
+ * Wrapper fino sobre `lib/seguranca/criptografia-simetrica.ts` (primitiva
+ * genérica compartilhada com `lib/ia/chaves/criptografia.ts`) — mantém
+ * exatamente a mesma env var (`WHATSAPP_TOKEN_ENCRYPTION_KEY`) e o mesmo
+ * salt (`"whatsapp-canal-escritorio"`) de antes da extração, então nenhum
+ * token já cifrado no banco hoje precisa ser re-cifrado (retrocompatível
+ * byte-a-byte: mesmo formato `iv:authTag:dados` em hex).
  */
 
-const ALGORITMO = "aes-256-gcm";
-const TAMANHO_IV = 12; // recomendado para GCM
+const SALT = "whatsapp-canal-escritorio";
 
-function derivarChave(): Buffer {
+function obterMasterKey(): string {
   const segredo = process.env.WHATSAPP_TOKEN_ENCRYPTION_KEY;
   if (!segredo) {
     throw new Error(
       "WHATSAPP_TOKEN_ENCRYPTION_KEY não configurada — necessária para criptografar/decriptografar o token do canal WhatsApp.",
     );
   }
-  // scrypt com salt fixo derivado do próprio propósito: o segredo de entrada
-  // já é de alta entropia (gerado 1x e guardado só nas env vars do
-  // servidor), então o salt fixo aqui só normaliza para 32 bytes exigidos
-  // pelo AES-256 — não está protegendo contra brute-force de senha fraca.
-  return scryptSync(segredo, "whatsapp-canal-escritorio", 32);
+  return segredo;
 }
 
 export function criptografarToken(tokenPlano: string): string {
-  const chave = derivarChave();
-  const iv = randomBytes(TAMANHO_IV);
-  const cipher = createCipheriv(ALGORITMO, chave, iv);
-  const criptografado = Buffer.concat([cipher.update(tokenPlano, "utf8"), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  return `${iv.toString("hex")}:${authTag.toString("hex")}:${criptografado.toString("hex")}`;
+  return cifrar(tokenPlano, obterMasterKey(), SALT);
 }
 
 export function descriptografarToken(ciphertext: string): string {
-  const partes = ciphertext.split(":");
-  if (partes.length !== 3) {
-    throw new Error("Formato de token criptografado inválido.");
-  }
-  const [ivHex, authTagHex, dadosHex] = partes;
-  const chave = derivarChave();
-  const decipher = createDecipheriv(ALGORITMO, chave, Buffer.from(ivHex, "hex"));
-  decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
-  const decriptografado = Buffer.concat([decipher.update(Buffer.from(dadosHex, "hex")), decipher.final()]);
-  return decriptografado.toString("utf8");
+  return decifrar(ciphertext, obterMasterKey(), SALT);
 }

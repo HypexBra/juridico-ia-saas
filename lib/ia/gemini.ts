@@ -1,7 +1,13 @@
+import "server-only";
+
 import { GoogleGenAI, type Schema } from "@google/genai";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { RAG_TOOLING_PROMPT } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
+import { selecionarChave, registrarFalhaQuota } from "@/lib/ia/chaves/pool";
+import { QuotaExcedidaError } from "@/lib/ia/erros";
+
+export { QuotaExcedidaError };
 
 // Roteamento de modelo por complexidade: FLASH cobre a esmagadora maioria das
 // perguntas (dúvida pontual, resumo curto); PRO entra só quando o pedido tem
@@ -87,10 +93,32 @@ function isErroTransiente(erro: unknown): boolean {
   return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT|UNAVAILABLE/i.test(mensagem);
 }
 
-function getClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  return new GoogleGenAI({ apiKey });
+/**
+ * Client do Gemini montado com uma chave vinda do pool interno
+ * (`lib/ia/chaves/pool.ts`, tabela `ia_provider_chaves`) — cada TENTATIVA do
+ * loop de retry abaixo chama isto de novo, então uma chave que acabou de
+ * levar 429 (marcada indisponível por `registrarFalhaQuota`) não é reusada
+ * na tentativa seguinte, mesmo dentro da mesma requisição de chat.
+ *
+ * Fallback de leitura de `GEMINI_API_KEY` (env var fixa) SÓ quando não há
+ * nenhuma linha ativa para "gemini" na tabela — transição para ambientes
+ * que ainda não cadastraram chaves via /admin/ia-chaves, documentado em
+ * .env.example. Retorna `null` quando nem pool nem env var têm uma chave
+ * disponível, para o caller lançar `QuotaExcedidaError` e acionar o
+ * fallback cross-provider.
+ */
+async function getClient(): Promise<{ genAI: GoogleGenAI; chaveId: string | null } | null> {
+  const chave = await selecionarChave("gemini");
+  if (chave) {
+    return { genAI: new GoogleGenAI({ apiKey: chave.chavePlana }), chaveId: chave.id };
+  }
+
+  const apiKeyEnv = process.env.GEMINI_API_KEY;
+  if (apiKeyEnv) {
+    return { genAI: new GoogleGenAI({ apiKey: apiKeyEnv }), chaveId: null };
+  }
+
+  return null;
 }
 
 export type ChatTurno = { role: "user" | "assistant"; conteudo: string };
@@ -107,19 +135,6 @@ export type RespostaIa = {
   tokensOut: number;
   functionCalls: ChamadaFuncao[];
 };
-
-/**
- * Lançado quando TODA a cadeia de modelos Gemini esgota quota/rate-limit
- * (429) mesmo após retentativas — sinal explícito para `lib/ia/provider.ts`
- * decidir se aciona o fallback para Groq. Qualquer outro erro (prompt
- * inválido, 5xx real, rede) propaga como o erro original, nunca como este.
- */
-export class QuotaExcedidaError extends Error {
-  constructor(public readonly causaOriginal: unknown) {
-    super("Quota do Gemini esgotada em todos os modelos da cadeia.");
-    this.name = "QuotaExcedidaError";
-  }
-}
 
 /**
  * Gera a resposta do copiloto. `contextoRag`, quando presente, é anexado
@@ -148,7 +163,6 @@ export async function gerarRespostaGemini(
     responseSchema?: Schema;
   } = {},
 ): Promise<RespostaIa> {
-  const genAI = getClient();
   const ultima = historico[historico.length - 1];
   const anteriores = historico.slice(0, -1);
 
@@ -169,40 +183,53 @@ export async function gerarRespostaGemini(
 
   let ultimoErro: unknown;
   for (const modelo of cadeiaModelos) {
-    const chat = genAI.chats.create({
-      model: modelo,
-      history: anteriores.map((turno) => ({
-        role: turno.role === "assistant" ? "model" : "user",
-        parts: [{ text: turno.conteudo }],
-      })),
-      config: {
-        systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
-        // `googleSearch` (grounding nativo do Gemini) fica ligado sempre que
-        // tools são permitidas — não só quando `habilitarFerramentas`
-        // (propose_*) está ativo — porque o problema que resolve (lei/
-        // súmula desatualizada) independe de haver proposta pendente. Gemini
-        // 3 suporta combinar o tool nativo com functionDeclarations na mesma
-        // chamada (`includeServerSideToolInvocations` habilita essa
-        // combinação); `usaSchema` já desliga tools por completo (JSON
-        // estruturado não aceita tools).
-        tools: usaSchema
-          ? undefined
-          : [
-              { googleSearch: {} },
-              ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
-            ],
-        toolConfig: usaSchema ? undefined : { includeServerSideToolInvocations: true },
-        maxOutputTokens: maxOutputTokensPara(modelo),
-        thinkingConfig: { thinkingBudget: thinkingBudgetPara(modelo) },
-        ...(usaSchema
-          ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
-          : {}),
-      },
-    });
-
     let erroDeQuotaEsgotouRetentativas = false;
 
     for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
+      // Chave (do pool ou, em transição, da env var) obtida A CADA
+      // tentativa: se a anterior acabou de ser marcada indisponível por
+      // `registrarFalhaQuota` (dentro do catch abaixo), esta tentativa já
+      // pega outra chave do pool em vez de repetir a mesma.
+      const cliente = await getClient();
+      if (!cliente) {
+        // Pool esgotado (nenhuma chave ativa/disponível) e sem
+        // GEMINI_API_KEY de transição configurada: não há com o que tentar
+        // de novo — sinaliza direto para o fallback cross-provider.
+        throw new QuotaExcedidaError(new Error("Pool de chaves Gemini esgotado e GEMINI_API_KEY não configurada."));
+      }
+      const { genAI, chaveId } = cliente;
+
+      const chat = genAI.chats.create({
+        model: modelo,
+        history: anteriores.map((turno) => ({
+          role: turno.role === "assistant" ? "model" : "user",
+          parts: [{ text: turno.conteudo }],
+        })),
+        config: {
+          systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
+          // `googleSearch` (grounding nativo do Gemini) fica ligado sempre que
+          // tools são permitidas — não só quando `habilitarFerramentas`
+          // (propose_*) está ativo — porque o problema que resolve (lei/
+          // súmula desatualizada) independe de haver proposta pendente. Gemini
+          // 3 suporta combinar o tool nativo com functionDeclarations na mesma
+          // chamada (`includeServerSideToolInvocations` habilita essa
+          // combinação); `usaSchema` já desliga tools por completo (JSON
+          // estruturado não aceita tools).
+          tools: usaSchema
+            ? undefined
+            : [
+                { googleSearch: {} },
+                ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
+              ],
+          toolConfig: usaSchema ? undefined : { includeServerSideToolInvocations: true },
+          maxOutputTokens: maxOutputTokensPara(modelo),
+          thinkingConfig: { thinkingBudget: thinkingBudgetPara(modelo) },
+          ...(usaSchema
+            ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
+            : {}),
+        },
+      });
+
       try {
         const resposta = await chat.sendMessage({ message: mensagemFinal });
         const uso = resposta.usageMetadata;
@@ -218,6 +245,14 @@ export async function gerarRespostaGemini(
       } catch (erro) {
         ultimoErro = erro;
         const deQuota = isErroDeQuota(erro);
+        // Chave veio do pool (não da env var de transição) e o erro é
+        // realmente de quota/rate-limit: registra a falha para o pool parar
+        // de selecionar esta chave por 65s (ver migration 0032), ANTES de
+        // decidir a próxima tentativa/modelo.
+        if (deQuota && chaveId) {
+          const motivo = erro instanceof Error ? erro.message : String(erro);
+          await registrarFalhaQuota(chaveId, motivo);
+        }
         // 429 de quota: no máximo UMA retentativa (a chamada seguinte já
         // esgotada de novo em <1s não ajuda em nada) e com backoff longo, pra
         // dar chance da janela de rate-limit da API resetar. Demais erros

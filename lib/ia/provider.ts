@@ -1,21 +1,29 @@
 import "server-only";
 
 import type { Schema } from "@google/genai";
-import { gerarRespostaGemini, QuotaExcedidaError, type ChatTurno, type RespostaIa } from "./gemini";
+import { gerarRespostaGemini, type ChatTurno, type RespostaIa } from "./gemini";
 import { gerarRespostaGroq } from "./groq";
+import { QuotaExcedidaError, TodosProvidersIndisponiveisError } from "@/lib/ia/erros";
 
 export type { ChatTurno, RespostaIa };
+export { TodosProvidersIndisponiveisError };
 
 /**
  * Ponto único de fallback entre providers de LLM: Gemini é o provider
  * principal para todos os callers (chat, risco.ts, triagem.ts); quando toda
  * a cadeia de modelos Gemini esgota quota/rate-limit (ver
- * `QuotaExcedidaError` em lib/ia/gemini.ts), a MESMA chamada é refeita via
+ * `QuotaExcedidaError` em lib/ia/erros.ts), a MESMA chamada é refeita via
  * Groq — o único outro provider com free tier real sem custo (Gemini e Groq
  * são os dois escolhidos deliberadamente; OpenAI/Claude não têm free tier de
  * API real hoje). Erros que não são de quota (prompt inválido, 5xx real,
  * rede) nunca acionam o fallback — propagam direto para não mascarar bugs
  * reais como indisponibilidade de provider.
+ *
+ * `providerOverride`, quando presente (switch manual do chat — ver
+ * app/app/chat/actions.ts/components/app/chat-app.tsx), chama SÓ o provider
+ * escolhido pelo usuário, SEM fallback cross-provider: se ele esgotar,
+ * propaga o erro original direto (o usuário escolheu explicitamente, não
+ * faz sentido a plataforma decidir trocar por ele).
  */
 export async function gerarResposta(
   historico: ChatTurno[],
@@ -24,12 +32,23 @@ export async function gerarResposta(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     responseSchema?: Schema;
+    providerOverride?: { provider: "gemini" | "groq" };
   } = {},
 ): Promise<RespostaIa> {
+  const { providerOverride, ...opcoesGeracao } = opcoes;
+
+  if (providerOverride) {
+    return providerOverride.provider === "gemini"
+      ? await gerarRespostaGemini(historico, opcoesGeracao)
+      : await gerarRespostaGroq(historico, opcoesGeracao);
+  }
+
+  let erroGemini: unknown;
   try {
-    return await gerarRespostaGemini(historico, opcoes);
+    return await gerarRespostaGemini(historico, opcoesGeracao);
   } catch (erro) {
     if (!(erro instanceof QuotaExcedidaError)) throw erro;
+    erroGemini = erro;
 
     // Log estruturado (sem qualquer chave/segredo) para dar visibilidade em
     // produção de quando o Gemini está no limite de quota e o Groq assumiu.
@@ -42,7 +61,20 @@ export async function gerarResposta(
         timestamp: new Date().toISOString(),
       }),
     );
+  }
 
-    return await gerarRespostaGroq(historico, opcoes);
+  try {
+    return await gerarRespostaGroq(historico, opcoesGeracao);
+  } catch (erroGroq) {
+    // Fix do bug "a IA está indisponível, não troca": antes, QUALQUER erro
+    // do Groq aqui (incluindo o próprio esgotamento do Groq) propagava
+    // sozinho e mascarava que o Gemini TAMBÉM já tinha falhado por quota —
+    // o operador via só "erro do Groq" no log e não enxergava que os DOIS
+    // providers estavam indisponíveis. Agora ambas as causas originais são
+    // preservadas em `TodosProvidersIndisponiveisError`, que
+    // app/app/chat/actions.ts trata com um log estruturado distinto
+    // (`pool_llm_esgotado`) só quando o esgotamento é de fato de AMBOS os
+    // providers.
+    throw new TodosProvidersIndisponiveisError(erroGemini, erroGroq);
   }
 }
