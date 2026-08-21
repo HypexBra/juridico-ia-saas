@@ -165,4 +165,40 @@ describe("parsearRespostaAuditoriaPeca", () => {
     };
     expect(parsearRespostaAuditoriaPeca(bruto)).not.toBeNull();
   });
+
+  it("guardrail de humildade epistêmica: rejeita nota 'quase extrema alta' (8.9) sem achado na dimensão", () => {
+    const bruto = {
+      ...respostaBaseValida(),
+      notas: { fundamentacao: 8.9, coerencia: 8, pedidos: 6.4, jurisprudencia: 7 },
+      achados: [achado({ categoria: "pedidos", severidade: "informativo" })],
+    };
+    expect(parsearRespostaAuditoriaPeca(bruto)).toBeNull();
+  });
+
+  it("guardrail de humildade epistêmica: aceita nota 'quase extrema alta' (8.9) com achado compatível", () => {
+    const bruto = {
+      ...respostaBaseValida(),
+      notas: { fundamentacao: 8.9, coerencia: 8, pedidos: 6.4, jurisprudencia: 7 },
+      achados: [achado({ categoria: "fundamentacao", severidade: "informativo" })],
+    };
+    expect(parsearRespostaAuditoriaPeca(bruto)).not.toBeNull();
+  });
+
+  it("guardrail de humildade epistêmica: rejeita nota 'quase extrema baixa' (2.1) sem achado 'critico' na dimensão", () => {
+    const bruto = {
+      ...respostaBaseValida(),
+      notas: { fundamentacao: 2.1, coerencia: 8, pedidos: 6.4, jurisprudencia: 7 },
+      achados: [achado({ categoria: "fundamentacao", severidade: "atencao" })],
+    };
+    expect(parsearRespostaAuditoriaPeca(bruto)).toBeNull();
+  });
+
+  it("guardrail de humildade epistêmica: aceita nota 'quase extrema baixa' (2.1) com achado 'critico' compatível", () => {
+    const bruto = {
+      ...respostaBaseValida(),
+      notas: { fundamentacao: 2.1, coerencia: 8, pedidos: 6.4, jurisprudencia: 7 },
+      achados: [achado({ categoria: "fundamentacao", severidade: "critico" })],
+    };
+    expect(parsearRespostaAuditoriaPeca(bruto)).not.toBeNull();
+  });
 });

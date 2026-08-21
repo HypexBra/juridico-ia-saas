@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { ItemCitavel, SecaoAccordion } from "@/components/app/citacao-resultado";
 import {
   CATEGORIAS_ACHADO_AUDITORIA,
   DIMENSOES_NOTA_AUDITORIA,
   type AchadoAuditoriaPeca,
   type CategoriaAchadoAuditoria,
-  type CitacaoAnaliseProcesso,
   type ContraArgumentoProvavel,
   type DimensaoNotaAuditoria,
   type ResultadoAuditoriaPeca,
@@ -15,17 +14,7 @@ import {
   type VereditoRiscoAuditoria,
 } from "@/lib/auditoria-peca/tipos";
 
-const CERTEZA_TONE: Record<CitacaoAnaliseProcesso["certeza"], "green" | "silver" | "muted"> = {
-  confirmado: "green",
-  inferido: "silver",
-  nao_encontrado: "muted",
-};
-
-const CERTEZA_LABEL: Record<CitacaoAnaliseProcesso["certeza"], string> = {
-  confirmado: "Confirmado",
-  inferido: "Inferido",
-  nao_encontrado: "Não encontrado na peça",
-};
+const LABEL_NAO_ENCONTRADO = "Não encontrado na peça";
 
 const DIMENSAO_LABEL: Record<DimensaoNotaAuditoria, string> = {
   fundamentacao: "Fundamentação",
@@ -107,51 +96,6 @@ function CartaoNota({ dimensao, nota }: { dimensao: DimensaoNotaAuditoria; nota:
   );
 }
 
-/**
- * Bloco de um item citável (achado, contra-argumento). Mesmo padrão visual
- * da Fase 2/Document Intelligence (`documento-resultado.tsx`): um item
- * `certeza: "nao_encontrado"` nunca é apresentado como fato — texto em
- * itálico/cinza — e o trecho de origem (`trechoOriginal`/`pagina`) fica
- * sempre visível junto do item, sem exigir clique extra.
- */
-function ItemCitavel({ texto, citacao, extra }: { texto: string; citacao: CitacaoAnaliseProcesso; extra?: ReactNode }) {
-  const naoEncontrado = citacao.certeza === "nao_encontrado";
-  return (
-    <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
-      <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
-        <p className={naoEncontrado ? "text-sm italic text-muted" : "text-sm text-ice-2"}>{texto}</p>
-        <Badge tone={CERTEZA_TONE[citacao.certeza]}>{CERTEZA_LABEL[citacao.certeza]}</Badge>
-      </div>
-      {extra}
-      {citacao.trechoOriginal && (
-        <p className="mt-2 border-t border-white/5 pt-2 text-xs text-muted">
-          <span className="font-medium text-silver-2">Trecho de origem</span>
-          {citacao.pagina !== null ? ` (pág. ${citacao.pagina})` : ""}: &ldquo;{citacao.trechoOriginal}&rdquo;
-        </p>
-      )}
-    </li>
-  );
-}
-
-function SecaoAccordion({ titulo, contador, children }: { titulo: string; contador: number; children: ReactNode }) {
-  const [aberto, setAberto] = useState(false);
-  return (
-    <div className="rounded-lg border border-white/10">
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left"
-      >
-        <span className="text-sm font-medium text-ice">
-          {titulo} <span className="ml-1 text-xs text-muted">({contador})</span>
-        </span>
-        <span className="text-xs text-muted">{aberto ? "Recolher" : "Expandir"}</span>
-      </button>
-      {aberto && <div className="border-t border-white/10 p-4">{children}</div>}
-    </div>
-  );
-}
-
 function achadosPorCategoria(achados: AchadoAuditoriaPeca[]): Array<[CategoriaAchadoAuditoria, AchadoAuditoriaPeca[]]> {
   return CATEGORIAS_ACHADO_AUDITORIA.map((categoria) => [categoria, achados.filter((a) => a.categoria === categoria)]).filter(
     ([, itens]) => itens.length > 0,
@@ -223,6 +167,7 @@ export function AuditorResultado({ resultado }: { resultado: ResultadoAuditoriaP
                     key={i}
                     citacao={achado}
                     texto={achado.descricao}
+                    labelNaoEncontrado={LABEL_NAO_ENCONTRADO}
                     extra={
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
                         <Badge tone={SEVERIDADE_TONE[achado.severidade]}>{SEVERIDADE_LABEL[achado.severidade]}</Badge>
@@ -250,6 +195,7 @@ export function AuditorResultado({ resultado }: { resultado: ResultadoAuditoriaP
                   key={i}
                   citacao={item}
                   texto={item.descricao}
+                  labelNaoEncontrado={LABEL_NAO_ENCONTRADO}
                   extra={<Badge tone={FORCA_TONE[item.forca]}>{FORCA_LABEL[item.forca]}</Badge>}
                 />
               ))}

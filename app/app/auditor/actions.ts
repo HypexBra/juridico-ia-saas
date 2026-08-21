@@ -17,6 +17,15 @@ import type { AuditoriaPeca } from "@/lib/types";
 /** Mesmo teto de `app/app/documentos/actions.ts` (Fase 3/4, análise estruturada por IA). */
 const MAX_TAMANHO_ARQUIVO_AUDITORIA = 15 * 1024 * 1024;
 
+/**
+ * Piso mínimo de caracteres para a peça colada (revisão de segurança/QA/
+ * techlead, Fase 4): evita gastar uma chamada de IA (e uma unidade de
+ * `uso_ia`) numa entrada sem substância suficiente para uma auditoria útil
+ * (ex.: "teste", um trecho isolado de uma linha). Rejeitado ANTES de criar o
+ * registro em `auditorias_peca` ou chamar a IA.
+ */
+const TAMANHO_MINIMO_PECA_AUDITORIA = 200;
+
 const EXTENSOES_POR_TIPO_AUDITORIA: Record<string, string[]> = {
   pdf: [".pdf"],
   docx: [".docx"],
@@ -104,6 +113,9 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
   const texto = typeof textoBruto === "string" ? textoBruto.trim() : "";
   if (!texto) {
     return { ok: false, error: "Cole o texto da peça antes de auditar." };
+  }
+  if (texto.length < TAMANHO_MINIMO_PECA_AUDITORIA) {
+    return { ok: false, error: "Texto muito curto para uma auditoria útil — cole a peça completa." };
   }
   if (texto.length > TAMANHO_MAXIMO_PECA_AUDITORIA) {
     return {

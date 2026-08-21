@@ -177,8 +177,13 @@ const CATEGORIAS_LASTRO_POR_DIMENSAO: Record<(typeof DIMENSOES_NOTA_AUDITORIA)[n
   jurisprudencia: ["jurisprudencia"],
 };
 
-const LIMIAR_NOTA_BAIXA_EXTREMA = 2;
-const LIMIAR_NOTA_ALTA_EXTREMA = 9;
+/**
+ * Limiares alargados (revisão de segurança/QA/techlead, Fase 4): uma nota
+ * "quase extrema" como 8.9 ou 2.1 é tão pouco confiável sem achado de lastro
+ * quanto uma nota 10 ou 0 — o guardrail não pode deixar essa faixa escapar.
+ */
+const LIMIAR_NOTA_BAIXA_EXTREMA = 2.5;
+const LIMIAR_NOTA_ALTA_EXTREMA = 8.5;
 
 const respostaAuditoriaPecaSchema = z
   .object({
