@@ -131,7 +131,7 @@ function TeseItem({
   );
 }
 
-function jaViroutarefa(titulo: string, tarefasCaso: TarefaCaso[]): boolean {
+function jaVirouTarefa(titulo: string, tarefasCaso: TarefaCaso[]): boolean {
   const tituloNormalizado = titulo.trim().toLowerCase();
   return tarefasCaso.some((tarefa) => tarefa.titulo.trim().toLowerCase() === tituloNormalizado);
 }
@@ -150,7 +150,7 @@ function ItemAcionavel({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const jaCriada = criadaLocal || jaViroutarefa(item.titulo, tarefasCaso);
+  const jaCriada = criadaLocal || jaVirouTarefa(item.titulo, tarefasCaso);
 
   function criarTarefa() {
     setErro(null);

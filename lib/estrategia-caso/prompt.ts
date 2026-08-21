@@ -251,8 +251,11 @@ function respostaEstrategiaSchemaBase() {
 export function parsearRespostaEstrategiaCaso(
   jsonBruto: unknown,
   idsTesesValidos: string[],
+  idsOutrasFontesValidas?: { eventos: string[]; analises: string[] },
 ): ResultadoEstrategiaCaso | null {
   const idsValidosSet = new Set(idsTesesValidos);
+  const idsEventosValidosSet = new Set(idsOutrasFontesValidas?.eventos ?? []);
+  const idsAnalisesValidosSet = new Set(idsOutrasFontesValidas?.analises ?? []);
 
   const schema = respostaEstrategiaSchemaBase().superRefine((valor, ctx) => {
     const principais = valor.teses.filter((tese) => tese.papel === "principal");
@@ -264,6 +267,14 @@ export function parsearRespostaEstrategiaCaso(
       });
     }
 
+    // Achado de QA: sem esta checagem, a IA poderia referenciar a MESMA tese
+    // cadastrada como "principal" e "subsidiaria" ao mesmo tempo em itens
+    // distintos do array — passa despercebido pelo "exatamente 1 principal"
+    // acima (ainda há só 1 item com papel "principal") e produziria uma
+    // contradição lógica visível na UI (a mesma tese exibida com os dois
+    // badges). Cada teseCasoId só pode aparecer 1 vez no array `teses`.
+    const teseCasoIdsVistos = new Set<string>();
+
     valor.teses.forEach((tese, indice) => {
       if (tese.origem === "tese_cadastrada") {
         if (!tese.teseCasoId || !idsValidosSet.has(tese.teseCasoId)) {
@@ -272,6 +283,14 @@ export function parsearRespostaEstrategiaCaso(
             message: "teseCasoId não corresponde a nenhuma tese cadastrada enviada no contexto.",
             path: ["teses", indice, "teseCasoId"],
           });
+        } else if (teseCasoIdsVistos.has(tese.teseCasoId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "A mesma tese cadastrada não pode aparecer mais de uma vez em 'teses' (ex.: como principal e subsidiária ao mesmo tempo).",
+            path: ["teses", indice, "teseCasoId"],
+          });
+        } else {
+          teseCasoIdsVistos.add(tese.teseCasoId);
         }
       } else if (!tese.tese?.trim() || !tese.fundamentacao?.trim()) {
         ctx.addIssue({
@@ -282,23 +301,44 @@ export function parsearRespostaEstrategiaCaso(
       }
     });
 
-    const verificarOrigensDeTese = (origens: { tipo: string; teseCasoId?: string }[], caminho: (string | number)[]) => {
+    type OrigemBruta = {
+      tipo: string;
+      teseCasoId?: string | null;
+      eventoCasoId?: string | null;
+      analiseDocumentoId?: string | null;
+      analiseProcessoId?: string | null;
+    };
+
+    // Mesmo guardrail fail-closed do teseCasoId, estendido às demais origens
+    // com id (achado de revisão de segurança) — evento/análise validados
+    // contra as listas realmente enviadas no contexto desta ficha, nunca
+    // aceitos só por "parecer" um id.
+    const verificarOrigens = (origens: OrigemBruta[], caminho: (string | number)[]) => {
       origens.forEach((origemItem, indiceOrigem) => {
-        if (origemItem.tipo === "tese" && (!origemItem.teseCasoId || !idsValidosSet.has(origemItem.teseCasoId))) {
+        const invalida =
+          (origemItem.tipo === "tese" && (!origemItem.teseCasoId || !idsValidosSet.has(origemItem.teseCasoId))) ||
+          (origemItem.tipo === "evento" &&
+            (!origemItem.eventoCasoId || !idsEventosValidosSet.has(origemItem.eventoCasoId))) ||
+          (origemItem.tipo === "analise_documento" &&
+            (!origemItem.analiseDocumentoId || !idsAnalisesValidosSet.has(origemItem.analiseDocumentoId))) ||
+          (origemItem.tipo === "analise_processo" &&
+            (!origemItem.analiseProcessoId || !idsAnalisesValidosSet.has(origemItem.analiseProcessoId)));
+
+        if (invalida) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "origem do tipo 'tese' referencia um teseCasoId que não veio no contexto.",
+            message: `origem do tipo '${origemItem.tipo}' referencia um id que não veio no contexto.`,
             path: [...caminho, indiceOrigem],
           });
         }
       });
     };
 
-    valor.riscos.forEach((item, indice) => verificarOrigensDeTese(item.origem, ["riscos", indice, "origem"]));
-    valor.oportunidades.forEach((item, indice) => verificarOrigensDeTese(item.origem, ["oportunidades", indice, "origem"]));
-    valor.provas.forEach((item, indice) => verificarOrigensDeTese(item.origem, ["provas", indice, "origem"]));
-    valor.proximosPassos.forEach((item, indice) => verificarOrigensDeTese(item.origem, ["proximosPassos", indice, "origem"]));
-    valor.acoesRecomendadas.forEach((item, indice) => verificarOrigensDeTese(item.origem, ["acoesRecomendadas", indice, "origem"]));
+    valor.riscos.forEach((item, indice) => verificarOrigens(item.origem, ["riscos", indice, "origem"]));
+    valor.oportunidades.forEach((item, indice) => verificarOrigens(item.origem, ["oportunidades", indice, "origem"]));
+    valor.provas.forEach((item, indice) => verificarOrigens(item.origem, ["provas", indice, "origem"]));
+    valor.proximosPassos.forEach((item, indice) => verificarOrigens(item.origem, ["proximosPassos", indice, "origem"]));
+    valor.acoesRecomendadas.forEach((item, indice) => verificarOrigens(item.origem, ["acoesRecomendadas", indice, "origem"]));
   });
 
   const parsed = schema.safeParse(jsonBruto);

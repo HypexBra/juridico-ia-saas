@@ -52,6 +52,16 @@ export type CriarTarefaCasoResultado = { ok: true; tarefa: TarefaCaso } | { ok: 
  * Distinta de `prazos`: não tem regra de dobra processual, é só trabalho
  * operacional da equipe. O título é validado por `montarNovaTarefaCaso`
  * (função pura, testável sem banco) antes de qualquer round-trip.
+ *
+ * Achado de revisão de segurança (Fase 6, Estrategista): diferente de
+ * update/delete (que sempre fazem um SELECT prévio por `id` já protegido
+ * pela RLS de `tarefas_caso`), um INSERT define `escritorio_id` a partir da
+ * PRÓPRIA sessão — passa a RLS mesmo se `fichaCasoId` apontar para uma
+ * ficha de OUTRO escritório (a FK só garante que a ficha existe em algum
+ * lugar, não que pertence a quem está chamando). Sem esta checagem
+ * explícita, um usuário autenticado que descobrisse o `fichaCasoId` de
+ * outro tenant (ex.: enumeração de UUID) podia inserir uma tarefa cruzando
+ * `escritorio_id` (o dele) com `ficha_caso_id` (de outro escritório).
  */
 export async function criarTarefaCasoAction(
   fichaCasoId: string,
@@ -59,6 +69,17 @@ export async function criarTarefaCasoAction(
 ): Promise<CriarTarefaCasoResultado> {
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const supabase = await createClient();
+  const { data: fichaVisivel, error: erroFicha } = await supabase
+    .from("fichas_caso")
+    .select("id")
+    .eq("id", fichaCasoId)
+    .eq("escritorio_id", usuario.perfil.escritorio_id)
+    .maybeSingle();
+  if (erroFicha || !fichaVisivel) {
+    return { ok: false, error: "Ficha não encontrada." };
+  }
 
   let payload;
   try {
@@ -74,7 +95,6 @@ export async function criarTarefaCasoAction(
     return { ok: false, error: erro instanceof Error ? erro.message : "Dados inválidos." };
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase.from("tarefas_caso").insert(payload).select("*").single();
 
   if (error || !data) {

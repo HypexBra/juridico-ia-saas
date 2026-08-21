@@ -87,6 +87,16 @@ export async function gerarEstrategiaCaso(
   try {
     const { dados } = parametros;
     const idsTesesValidos = dados.teses.map((tese) => tese.id);
+    // Defesa em profundidade (achado de revisão de segurança): mesmo
+    // guardrail fail-closed do teseCasoId, estendido às demais origens que
+    // carregam id (evento/análise) — hoje a UI não dereferencia esses ids
+    // (só mostra um label genérico por tipo), mas validar aqui evita que a
+    // lacuna vire IDOR se uma iteração futura passar a linkar/exibir dado a
+    // partir deles sem repetir esta checagem.
+    const idsOutrasFontesValidas = {
+      eventos: dados.eventos.map((evento) => evento.id),
+      analises: dados.resumosAnalises.map((analise) => analise.id),
+    };
     const contextoResumo = montarContextoResumo(dados);
 
     const contexto = montarContextoEstrategiaCaso(dados);
@@ -103,7 +113,7 @@ export async function gerarEstrategiaCaso(
       logPrefixo: "[estrategia-caso/gerar]",
     });
 
-    const resultado = parsearRespostaEstrategiaCaso(jsonBruto, idsTesesValidos);
+    const resultado = parsearRespostaEstrategiaCaso(jsonBruto, idsTesesValidos, idsOutrasFontesValidas);
 
     if (!resultado) {
       return {

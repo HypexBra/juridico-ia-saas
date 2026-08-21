@@ -104,6 +104,54 @@ describe("parsearRespostaEstrategiaCaso", () => {
     expect(resultado).toBeNull();
   });
 
+  it("rejeita a mesma tese cadastrada aparecendo como principal E subsidiária ao mesmo tempo — achado de QA", () => {
+    const resposta = respostaBaseValida();
+    resposta.teses = [
+      { origem: "tese_cadastrada", papel: "principal", teseCasoId: "tese-1", tese: null, fundamentacao: null },
+      { origem: "tese_cadastrada", papel: "subsidiaria", teseCasoId: "tese-1", tese: null, fundamentacao: null },
+    ];
+
+    const resultado = parsearRespostaEstrategiaCaso(resposta, IDS_TESES_VALIDOS);
+
+    expect(resultado).toBeNull();
+  });
+
+  it("rejeita origem de tipo 'evento'/'analise_documento'/'analise_processo' com id inventado — guardrail estendido (defesa em profundidade)", () => {
+    const idsOutrasFontesValidas = { eventos: ["evento-1"], analises: ["analise-1"] };
+
+    const respostaEvento = respostaBaseValida();
+    respostaEvento.riscos = [
+      {
+        categoria: "prazo",
+        nivel: "alto",
+        descricao: "Risco qualquer",
+        origem: [{ tipo: "evento", eventoCasoId: "evento-inventado" }],
+      },
+    ];
+    expect(parsearRespostaEstrategiaCaso(respostaEvento, IDS_TESES_VALIDOS, idsOutrasFontesValidas)).toBeNull();
+
+    const respostaAnalise = respostaBaseValida();
+    respostaAnalise.oportunidades = [
+      { descricao: "Oportunidade qualquer", origem: [{ tipo: "analise_documento", analiseDocumentoId: "analise-inventada" }] },
+    ];
+    expect(parsearRespostaEstrategiaCaso(respostaAnalise, IDS_TESES_VALIDOS, idsOutrasFontesValidas)).toBeNull();
+
+    // Ids que EXISTEM na lista válida devem passar normalmente.
+    const respostaValida = respostaBaseValida();
+    respostaValida.riscos = [
+      {
+        categoria: "prazo",
+        nivel: "baixo",
+        descricao: "Risco qualquer",
+        origem: [
+          { tipo: "evento", eventoCasoId: "evento-1" },
+          { tipo: "analise_processo", analiseProcessoId: "analise-1" },
+        ],
+      },
+    ];
+    expect(parsearRespostaEstrategiaCaso(respostaValida, IDS_TESES_VALIDOS, idsOutrasFontesValidas)).not.toBeNull();
+  });
+
   it("rejeita objetivo vazio", () => {
     const resposta = respostaBaseValida();
     resposta.objetivo = "   ";
