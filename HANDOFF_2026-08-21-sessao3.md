@@ -1,6 +1,6 @@
-# Handoff — sessão 2026-08-21 (sessão 3 — fixes de IA + conta de equipe)
+# Handoff — sessão 2026-08-21 (sessão 3 — fixes de IA + conta de equipe + Fases 5/6)
 
-Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `36585fe`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior.
+Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `a215914`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior. **Ver item 11 deste arquivo para o que foi adicionado DEPOIS do resumo original desta sessão (Fases 5 e 6 completas) — itens 1-10 abaixo são o texto original, mantido para rastreabilidade.**
 
 ## 1. Bug de IA "indisponível, não troca de provider" no CHAT — causa raiz real, corrigido
 
@@ -65,11 +65,11 @@ Confirme quais já rodaram — não tenho acesso direto ao banco nesta sessão:
 
 Verificado: `app/portal/mensagens/actions.ts` + `app/app/fichas/[id]/mensagens-actions.ts` já implementam um chat bidirecional cliente↔escritório dentro da ficha (feature Pro `portal_cliente_rico`). Não é um item pendente do pedido do usuário.
 
-## 8. Dashboard — lista de tarefas (Fase 19 do prompt mestre) — NÃO iniciado
+## 8. Dashboard — lista de tarefas (Fase 19 do prompt mestre) — IMPLEMENTADO nesta sessão (texto original abaixo, mantido como histórico)
 
-Confirmado: `app/app/dashboard/page.tsx` (383 linhas) já mostra "Próximos prazos" (`prazos`), mas nunca lê `caso_tarefas` (Fase 1, migration `0027`) — o dashboard de verdade não mostra uma lista de TAREFAS, só prazos. É o gap concreto por trás do "lembra das melhorias no dashboard, como a lista de tarefas".
+~~Confirmado: `app/app/dashboard/page.tsx` (383 linhas) já mostra "Próximos prazos" (`prazos`), mas nunca lê `caso_tarefas` (Fase 1, migration `0027`) — o dashboard de verdade não mostra uma lista de TAREFAS, só prazos. É o gap concreto por trás do "lembra das melhorias no dashboard, como a lista de tarefas".~~
 
-Próximo passo recomendado (não implementado, é escopo novo): seção "Hoje" no dashboard juntando prazos vencendo + tarefas de `caso_tarefas` com `concluida = false` e `data_limite` próxima, ordenados por urgência — visualmente igual ao card "Próximos prazos" já existente, reusando o mesmo componente de lista se possível. Isso também é o começo da Fase 19 ("HOJE / ATENÇÃO / PRODUTIVIDADE / FINANCEIRO") do prompt mestre do usuário.
+**Feito** (commit `0dc5d32`, antes das Fases 5/6): card "Minhas tarefas" novo em `/app/dashboard` (`components/app/tarefa-dashboard-item.tsx`), lendo `tarefas_caso` (nome real da tabela — o texto original acima citou `caso_tarefas` por engano) com `status != 'concluida'`, filtrado por responsável (ou sem responsável = visível a todos), com botão "Concluir" chamando a mesma `atualizarStatusTarefaCasoAction` já usada na ficha. Isso cobre o pedido original; o resto da Fase 19 (seções ATENÇÃO/PRODUTIVIDADE/FINANCEIRO redesenhadas) continua não iniciado.
 
 ## 9. Fase 5 — Advogado do Contra — IMPLEMENTADA E REVISADA nesta sessão
 
@@ -86,18 +86,50 @@ Depois do handoff original desta sessão ter sido escrito (o texto abaixo é his
 
 **Ação pendente sua**: rodar migration `0039` (e `0040`, ver item 6) no Supabase; testar o fluxo ponta a ponta em produção (colar tese, upload, selecionar tese cadastrada, conferir que o aviso de "hipótese da IA" aparece destacado na seção de precedentes).
 
-### Prompt mestre de 29 fases (Ciclos 1-7) — estado atualizado
+### Prompt mestre de 29 fases (Ciclos 1-7) — estado no fim desta sessão (ver item 11 abaixo)
 
-**Estado real por Ciclo** (atualizado):
-- **Ciclo 1 (Core Jurídico)**: Fases 0-3 completas.
-- **Ciclo 2 (IA Jurídica)**: Fases 4 (Auditor de Peças) e **5 (Advogado do Contra) completas**. **Fases 6-7 (Estrategista, Pesquisa Jurídica) NÃO iniciadas.**
-- **Ciclos 3-7**: nenhuma fase iniciada (Workflow Engine, Triagem/Portal/WhatsApp/Áudio, Calculadoras/Memória/Agentes, Dashboard redesign completo/planos Free-Pro-Firm, Segurança/Command Center/Observabilidade/Testes).
-
-**Próximo passo recomendado pra próxima sessão**: **Fase 6 — Estrategista Jurídico** (organizar objetivo/tese principal/teses subsidiárias/provas/riscos/próximos passos do caso, com opção de transformar recomendação em tarefa — ver `tarefas_caso`). Mesmo padrão de ondas: `architect`(ADR, opcional dado o volume de precedente já existente)/`database` → `ai-engineer` → `senior-engineer` → revisão paralela `security`+`qa`+tech lead (usar `subagent_type: "general-purpose"` para o papel de tech lead — **`techlead` não existe no registry de agentes deste ambiente**, confirmado nesta sessão).
-
-Fases que envolvem plano (Free/Pro/Firm): ao criar cada feature nova, adicionar em `lib/planos/gating.ts#FEATURES_PREMIUM` como Pro-only por padrão (mesmo padrão das 11 features já classificadas assim), a menos que o usuário diga o contrário.
+Este trecho ficou desatualizado assim que foi escrito — a sessão continuou e completou a Fase 6 também. Ver item 11 para o estado real final.
 
 ## 10. Notas de processo desta sessão
+
+- Sem acesso a MCP do Supabase/Stripe nesta sessão (`ToolSearch` não achou nenhuma ferramenta correspondente) — toda verificação de config/migration foi por leitura de código + `vercel env ls` (só lista nomes/datas, não valores). `vercel env pull` foi bloqueado pelo classificador de permissão do ambiente (puxaria secrets pro disco) — não insisti, é uma barreira de segurança do harness, não um erro.
+- `npm install` rodado (deps opcionais faltando localmente — `mammoth`, `@langchain/core` — impediam 5 suítes de teste de rodar; resolvido, sem mudança de versão de nada, só instalação do que já estava no `package-lock.json`/`package.json`).
+- Bug real encontrado e corrigido durante a sessão: `npx next build` local quebrava em `/auth/definir-senha` (client component pré-renderizado estaticamente tentando instanciar o client do Supabase) — corrigido com `export const dynamic = "force-dynamic"` (commit `b0afeeb`).
+- Todo código novo tem teste e passou por `tsc --noEmit` + suíte completa + `next build` antes de cada commit.
+- Fases 5 e 6 foram construídas via ondas de subagentes (`architect`(só Fase 6)/`database`→`ai-engineer`→`senior-engineer`→revisão paralela `security`+`qa`+`general-purpose`), cada onda verificada por mim (tsc+vitest, e nas últimas também `next build`) antes do commit — nenhum relatório de agente foi aceito sem confirmação própria. **`techlead` não existe no registry de agentes deste ambiente** — usar `subagent_type: "general-purpose"` com prompt de tech lead no lugar (confirmado 2x nesta sessão).
+
+## 11. Fase 6 — Estrategista Jurídico — IMPLEMENTADA E REVISADA (depois do item 9 ter sido escrito) + achado de segurança pré-existente corrigido
+
+Continuação da sessão depois do item 9: **ADR + 3 ondas + revisão paralela, tudo completo**, seguindo o mesmo processo da Fase 5.
+
+- **ADR** `docs/adrs/0014-estrategista-caso.md` (commit `998d450`, via agente `architect`) — decisão mais importante: esta feature é a primeira "agregadora" do produto (lê `fichas_caso`+`teses_caso`+`eventos_caso`+`pessoas_caso`+`caso_jurisprudencia_citada`+resumos de `analises_processo`/`analises_documento`, em vez de analisar um texto avulso como as 5 features anteriores) — por isso é **embutida em `/app/fichas/[id]`, sem rota standalone e sem item de sidebar** (divergência deliberada do padrão Auditor/Advogado do Contra, justificada porque "estratégia sem caso" não existe como conceito de produto).
+- **Onda 0 (database)**, commit `f9bb23c`: `supabase/migrations/0041_estrategia_caso.sql` (tabela `estrategias_caso`, `ficha_caso_id` NOT NULL — única tabela de resultado de IA do projeto sem uso standalone), 12ª feature `estrategista_caso`, 6ª tabela no gate de concorrência.
+- **Onda 1 (ai-engineer)**, commit `a65096a`: `lib/estrategia-caso/{tipos,contexto,prompt,gerar}.ts` — `montarContextoEstrategiaCaso` é função pura (sem I/O) que prioriza/corta o contexto por seção inteira ao atingir 120k caracteres; guardrail fail-closed contra `teseCasoId` alucinado.
+- **Onda 2 (senior-engineer)**, commit `6e7842a`: `app/app/fichas/[id]/estrategia-actions.ts` (busca as 6 fontes em paralelo com `Promise.all`) + nova aba "Estratégia" na ficha + botões "Cadastrar como tese"/"Criar tarefa" reusando actions já existentes (zero escrita nova).
+- **Onda 3 (revisão paralela)** + fixes aplicados no mesmo commit `a215914`:
+  - **Achado MEDIUM, pré-existente (não introduzido por esta feature, mas exposto por ela)**: `criarTarefaCasoAction` (`app/app/fichas/[id]/tarefas-actions.ts`) inseria uma tarefa com `escritorio_id` da PRÓPRIA sessão mas `ficha_caso_id` vindo de parâmetro sem checar que a ficha pertence a esse escritório — um usuário que descobrisse o `fichaCasoId` de outro tenant podia, chamando a action diretamente (fora da UI), inserir uma tarefa cruzando dados de dois escritórios. **Corrigido**: checagem explícita de ownership antes do insert.
+  - 2 guardrails LOW adicionados em `lib/estrategia-caso/prompt.ts`: (1) rejeita a mesma tese cadastrada aparecendo como principal E subsidiária ao mesmo tempo; (2) guardrail anti-alucinação de id, antes só para `teseCasoId`, estendido para `eventoCasoId`/`analiseDocumentoId`/`analiseProcessoId` (defesa em profundidade — a UI não dereferencia esses ids hoje, mas fecha a lacuna antes que uma UI futura precise).
+  - Typo cosmético corrigido (`jaViroutarefa` → `jaVirouTarefa`).
+  - 374 testes verdes ao final (372 + 2 novos cobrindo os guardrails), `tsc`/`next build` limpos.
+
+**Ação pendente sua**: rodar migration `0041` no Supabase; testar ponta a ponta na ficha de um caso (gerar estratégia, cadastrar uma tese sugerida, criar uma tarefa a partir de um próximo passo).
+
+### Estado real por Ciclo, ao FIM desta sessão
+
+- **Ciclo 1 (Core Jurídico)**: Fases 0-3 completas.
+- **Ciclo 2 (IA Jurídica)**: Fases 4, 5 e **6 completas**. **Só falta a Fase 7 (Pesquisa Jurídica Verificável)** pra fechar o ciclo inteiro.
+- **Ciclos 3-7**: nenhuma fase iniciada.
+
+### Fase 7 — Pesquisa Jurídica Verificável — NÃO iniciada, com um ponto de partida real já mapeado
+
+Investigado antes de decidir não começar agora (feature grande demais pra encaixar no fim desta sessão sem virar trabalho raso): `lib/rag/jurisprudencia.ts` já existe, mas é só um **helper de ingestão manual/admin** de jurisprudência pro RAG compartilhado (migration `0008`) — não é busca ao vivo. A pesquisa jurídica "ao vivo" que já existe hoje é indireta: `lib/ia/gemini.ts` liga `googleSearch` (grounding nativo do Gemini) sempre que tools estão permitidas no chat, precisamente para não deixar lei/súmula desatualizada — mas isso é uma ferramenta do CHAT, não uma feature de pesquisa jurídica dedicada com UI própria, fonte estruturada (órgão/número/data/relator/link) e "comparador de decisões" como o roadmap pede.
+
+Antes de implementar a Fase 7 de verdade, a próxima sessão precisa decidir (pesquisa real, não suposição):
+1. Existe API pública real do STF/STJ/tribunais com dados estruturados (número/relator/data/ementa) que dê pra integrar de forma confiável, ou a única fonte viável continua sendo `googleSearch` grounding do Gemini (que traz texto, não um schema estruturado garantido)?
+2. Se não houver API estruturada confiável, como fica o requisito "sempre apresentar fonte/órgão/número/data/relator/link" do roadmap? Precisa de um schema que aceite campos `null` quando o grounding não trouxer aquele dado específico (mesma humildade epistêmica já usada em todas as 6 features de IA deste projeto — nunca inventar um campo que faltar).
+3. `CATEGORIAS_ACHADO_AUDITORIA`/`OrigemContextoEstrategia` (Fases 4/6) já têm o tipo `jurisprudencia`/`analise_processo` — decidir se a Fase 7 gera uma tabela nova (`pesquisas_juridicas`?) ou se é uma capacidade do chat mais bem estruturada (schema de citação) sem tabela de histórico própria.
+
+Recomendo abrir com uma sessão de **pesquisa** (`researcher`/`WebSearch`) sobre disponibilidade real de API de tribunais antes de qualquer `architect`/ADR — diferente das Fases 5/6, aqui a viabilidade técnica não é óbvia a partir só do código existente.
 
 - Sem acesso a MCP do Supabase/Stripe nesta sessão (`ToolSearch` não achou nenhuma ferramenta correspondente) — toda verificação de config/migration foi por leitura de código + `vercel env ls` (só lista nomes/datas, não valores). `vercel env pull` foi bloqueado pelo classificador de permissão do ambiente (puxaria secrets pro disco) — não insisti, é uma barreira de segurança do harness, não um erro.
 - `npm install` rodado (deps opcionais faltando localmente — `mammoth`, `@langchain/core` — impediam 5 suítes de teste de rodar; resolvido, sem mudança de versão de nada, só instalação do que já estava no `package-lock.json`/`package.json`).
