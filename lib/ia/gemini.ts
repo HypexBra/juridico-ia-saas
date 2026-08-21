@@ -183,7 +183,7 @@ export async function gerarRespostaGemini(
 
   let ultimoErro: unknown;
   for (const modelo of cadeiaModelos) {
-    let erroDeQuotaEsgotouRetentativas = false;
+    let erroTransienteEsgotouRetentativas = false;
 
     for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
       // Chave (do pool ou, em transição, da env var) obtida A CADA
@@ -257,23 +257,28 @@ export async function gerarRespostaGemini(
         // esgotada de novo em <1s não ajuda em nada) e com backoff longo, pra
         // dar chance da janela de rate-limit da API resetar. Demais erros
         // transientes (rede/5xx) mantêm o backoff exponencial curto original.
-        if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
-          erroDeQuotaEsgotouRetentativas = deQuota;
+        const transiente = isErroTransiente(erro);
+        if (!transiente || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
+          erroTransienteEsgotouRetentativas = transiente;
           break;
         }
         await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
       }
     }
 
-    // Erro não-transiente ou transiente-não-quota (rede/5xx já esgotado):
-    // trocar de modelo não ajuda (não é problema de RPM), propaga direto.
-    if (!erroDeQuotaEsgotouRetentativas) throw ultimoErro;
+    // Erro não-transiente (prompt inválido etc.): trocar de modelo não ajuda,
+    // propaga direto. Erro transiente (quota OU sobrecarga/5xx/rede) esgotado
+    // neste modelo: vale tentar o próximo da cadeia — mesmo fix do bug em
+    // lib/ia/chamada-estruturada.ts (um 503 "UNAVAILABLE" não é quota, mas
+    // travava aqui e nunca chegava a trocar de modelo/provider).
+    if (!erroTransienteEsgotouRetentativas) throw ultimoErro;
     console.error(
-      `[gemini/gerarResposta] Quota esgotada em "${modelo}", tentando próximo modelo da cadeia (se houver).`,
+      `[gemini/gerarResposta] Falha transiente em "${modelo}", tentando próximo modelo da cadeia (se houver).`,
     );
   }
-  // Todos os modelos da cadeia Gemini esgotaram quota: sinaliza para
-  // lib/ia/provider.ts acionar o fallback para Groq, em vez de propagar o
-  // erro bruto do SDK do Gemini.
+  // Todos os modelos da cadeia Gemini esgotaram por erro transiente (quota OU
+  // 5xx/rede): sinaliza para lib/ia/provider.ts acionar o fallback
+  // cross-provider para Groq, em vez de propagar o erro bruto do SDK do
+  // Gemini (bug: 503 nunca acionava o fallback, só 429 acionava).
   throw new QuotaExcedidaError(ultimoErro);
 }
