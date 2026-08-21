@@ -1,6 +1,28 @@
 # Handoff — sessão 2026-08-21 (sessão 3 — fixes de IA + conta de equipe + Fases 5/6)
 
-Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `a215914`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior. **Ver itens 9-11 deste arquivo para o que foi adicionado DEPOIS do resumo original desta sessão (Fases 5 e 6 completas) — itens 1-10 abaixo são o texto original, mantido para rastreabilidade.**
+Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `b823f2f`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior. **Ver itens 9-11 deste arquivo para o que foi adicionado DEPOIS do resumo original desta sessão (Fases 5 e 6 completas) — itens 1-10 abaixo são o texto original, mantido para rastreabilidade.**
+
+## TL;DR — leia isto primeiro
+
+**O que foi corrigido/entregue** (tudo em produção, testado — 384 testes verdes, `tsc`/`next build` limpos em cada commit):
+1. Bug do chat "IA indisponível, não troca de provider" — causa raiz real corrigida (item 1).
+2. RAG sem recência + modelos desatualizados no RAG — corrigido (item 2).
+3. Conta de equipe por escritório implementada de verdade (convite por e-mail) — resolve a causa do "parece que tá todo mundo junto" (item 4).
+4. Bug antigo achado de quebra: link de "redefinir senha"/convite nunca levava a lugar nenhum (`/auth/callback` citado desde o início do projeto, nunca implementado) — corrigido (item 4).
+5. Open redirect real em `/auth/callback` + hardening de RLS em `convites_equipe` — corrigido (item 4 / commit `6e9d157`).
+6. **Fase 5 — Advogado do Contra**: feature nova completa (IA simula a parte adversária de uma tese), com guardrail anti-alucinação de jurisprudência (item 9).
+7. **Fase 6 — Estrategista Jurídico**: feature nova completa (IA sintetiza teses/eventos/documentos do caso em estratégia acionável), embutida na ficha (item 10). No processo, achou e corrigiu um IDOR pré-existente em `criarTarefaCasoAction` (não introduzido por esta feature, mas exposto por ela).
+8. Lista de tarefas no dashboard (item 8).
+9. Dívida técnica fechada: upload validava só extensão/MIME, agora confere o conteúdo binário real (magic bytes) — item 11.
+10. **Fase 7 (Pesquisa Jurídica Verificável)**: só pesquisa de viabilidade feita, NADA implementado ainda — ver item 10, subseção "Fase 7". Achado importante: grounding do Gemini sozinho NÃO é seguro pra citar jurisprudência (evidência de alucinação de citação mesmo com busca ativa) — próxima sessão precisa abrir o Portal de Dados Abertos do STJ e a API do DataJud/CNJ pra confirmar schema real antes de desenhar qualquer coisa.
+
+**Ações manuais SUAS, pendentes** (nada disso eu consigo fazer remotamente):
+- Rodar migrations `0037` a `0041` no Supabase (ordem e detalhe de cada uma no item 6).
+- Supabase Dashboard → Authentication → URL Configuration → Redirect URLs: adicionar `https://SEU_DOMINIO/auth/callback` (item 4, ação 2) — sem isso o convite de equipe e a redefinição de senha quebram.
+- Confirmar no Dashboard do Stripe que o webhook está registrado apontando pra `/api/webhooks/stripe` (item 5) — não consegui verificar isso remotamente.
+- Testar ponta a ponta em produção: convite de equipe (item 4), Advogado do Contra (item 9), Estrategista (item 10).
+
+**Próximo passo recomendado**: investigação técnica direta da Fase 7 (abrir `dadosabertos.web.stj.jus.br` e `datajud-wiki.cnj.jus.br/api-publica/exemplos/` de verdade, não só ler sobre eles) antes de qualquer ADR/arquitetura — ver item 10, subseção "Fase 7" pro roteiro completo.
 
 ## 1. Bug de IA "indisponível, não troca de provider" no CHAT — causa raiz real, corrigido
 
@@ -86,7 +108,7 @@ Depois do handoff original desta sessão ter sido escrito (o texto abaixo é his
 
 **Ação pendente sua**: rodar migration `0039` (e `0040`, ver item 6) no Supabase; testar o fluxo ponta a ponta em produção (colar tese, upload, selecionar tese cadastrada, conferir que o aviso de "hipótese da IA" aparece destacado na seção de precedentes).
 
-### Prompt mestre de 29 fases (Ciclos 1-7) — estado no fim desta sessão (ver item 11 abaixo)
+### Prompt mestre de 29 fases (Ciclos 1-7) — estado no fim desta sessão (ver item 10 abaixo)
 
 Este trecho ficou desatualizado assim que foi escrito — a sessão continuou e completou a Fase 6 também. Ver item 10 para o estado real final.
 
