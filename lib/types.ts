@@ -1,6 +1,7 @@
 import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
 import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
 import type { ResultadoAuditoriaPeca } from "@/lib/auditoria-peca/tipos";
+import type { ResultadoAdvogadoContra } from "@/lib/advogado-contra/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -672,6 +673,47 @@ export type AuditoriaPeca = {
    * `status = "processando"`.
    */
   resultado_auditoria: ResultadoAuditoriaPeca | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
+/**
+ * Advogado do Contra (Fase 5, migration 0039) — a IA assume a perspectiva da
+ * parte ADVERSÁRIA de uma tese/petição/argumento jurídico e produz achados
+ * adversariais qualitativos (nunca redige nada). Estruturalmente análoga a
+ * `AuditoriaPeca`, mas SEM notas 0-10 por dimensão: só um veredito
+ * categórico final de vulnerabilidade. Distinta também por aceitar uma 3ª
+ * origem (`tese_cadastrada`, vinda de `teses_caso` — Fase 1) além de
+ * `colado`/`upload`, por isso ganha `tese_caso_id`, campo que
+ * `AuditoriaPeca` não tem. Ver docs/adrs/0013-advogado-do-contra.md.
+ *
+ * `resultado_advogado_contra` aponta para `ResultadoAdvogadoContra`
+ * (`lib/advogado-contra/tipos.ts`, entregue na Onda 1 do ADR 0013).
+ */
+export type OrigemAdvogadoContra = "colado" | "upload" | "tese_cadastrada";
+export type StatusAdvogadoContra = "processando" | "pronto" | "erro";
+
+export type AnaliseAdvogadoContra = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  tese_caso_id: string | null;
+  origem: OrigemAdvogadoContra;
+  titulo: string | null;
+  texto_peca_analisado: string | null;
+  nome_arquivo: string | null;
+  tipo_arquivo: TipoArquivoAnaliseDocumento | null;
+  tamanho_bytes: number | null;
+  status: StatusAdvogadoContra;
+  /**
+   * Estrutura `ResultadoAdvogadoContra` (`lib/advogado-contra/tipos.ts`,
+   * entregue na Onda 1 do ADR 0013). `null` enquanto
+   * `status = "processando"`.
+   */
+  resultado_advogado_contra: ResultadoAdvogadoContra | null;
   modelo_ia_usado: string | null;
   erro: string | null;
   criado_por: string | null;
