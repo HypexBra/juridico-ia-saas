@@ -21,49 +21,22 @@ import {
   TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO,
   type TipoArquivoComparacaoDocumento,
 } from "@/lib/analise-documento/comparar";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AnaliseDocumento, ComparacaoDocumento } from "@/lib/types";
 
 /** Mesmo teto de `app/app/base-conhecimento/actions.ts` / Fase 2 (ADR 0011, seção 7). */
 const MAX_TAMANHO_ARQUIVO_DOCUMENTO = 15 * 1024 * 1024;
-
-const EXTENSOES_POR_TIPO_DOCUMENTO: Record<string, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO_DOCUMENTO: Record<string, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/**
- * Decide o `tipo_arquivo` a partir do MIME type e/ou extensão do arquivo
- * enviado, restrito ao subconjunto de tipos permitido pelo caller (análise
- * individual/lote aceita os 3 tipos; comparação só pdf/docx — ver
- * `lib/analise-documento/comparar.ts`). Mesma tolerância de
- * `inferirTipoArquivoAnaliseProcesso` (Fase 2). Devolve `null` quando o
- * arquivo não bate com nenhum tipo permitido.
- */
-function inferirTipoArquivoDocumento<T extends string>(arquivo: File, tiposPermitidos: readonly T[]): T | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of tiposPermitidos) {
-    const extensoes = EXTENSOES_POR_TIPO_DOCUMENTO[tipo] ?? [];
-    const mimes = MIME_POR_TIPO_DOCUMENTO[tipo] ?? [];
-    if (mimes.includes(arquivo.type) || extensoes.some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 /** Melhor palpite de `tipo_arquivo` só para satisfazer o `check` da coluna em
  * linhas de lote que já nasceram inválidas (formato não suportado) — a linha
  * é marcada `status: "erro"` de qualquer forma, então o valor aqui é só
  * metadado aproximado, nunca usado para decidir o caminho de extração. */
 function inferirTipoArquivoAproximado(arquivo: File): TipoArquivoAnaliseDocumento {
-  return inferirTipoArquivoDocumento(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO) ?? "pdf";
+  return inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO) ?? "pdf";
 }
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -145,9 +118,14 @@ export async function analisarDocumentoAction(formData: FormData): Promise<Anali
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoDocumento(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const supabase = await createClient();
@@ -180,7 +158,6 @@ export async function analisarDocumentoAction(formData: FormData): Promise<Anali
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await analisarDocumento({ buffer, tipoArquivo, nomeArquivo: arquivo.name });
   const agora = new Date().toISOString();
 
@@ -276,7 +253,7 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
     if (arquivo.size > MAX_TAMANHO_ARQUIVO_DOCUMENTO) {
       return { arquivo, tipoArquivo: null, erroValidacao: "Arquivo muito grande (limite de 15MB)." };
     }
-    const tipoArquivo = inferirTipoArquivoDocumento(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO);
+    const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ANALISE_DOCUMENTO);
     if (!tipoArquivo) {
       return { arquivo, tipoArquivo: null, erroValidacao: "Formato não suportado (envie PDF, DOCX ou imagem)." };
     }
@@ -324,6 +301,20 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
     }
 
     const buffer = Buffer.from(await item.arquivo.arrayBuffer());
+    if (!bufferBateComAssinatura(buffer, item.tipoArquivo as TipoArquivoAnaliseDocumento)) {
+      const agora = new Date().toISOString();
+      const { data: atualizada } = await supabase
+        .from("analises_documento")
+        .update({ status: "erro", erro: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO, processado_em: agora })
+        .eq("id", linha.id)
+        .select("*")
+        .single<AnaliseDocumento>();
+      analisesFinal.push(
+        atualizada ?? { ...linha, status: "erro", erro: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO, processado_em: agora },
+      );
+      continue;
+    }
+
     const resultado = await analisarDocumento({
       buffer,
       tipoArquivo: item.tipoArquivo as TipoArquivoAnaliseDocumento,
@@ -410,10 +401,19 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
     return { ok: false, error: "Documento B muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivoA = inferirTipoArquivoDocumento(arquivoA, TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO);
+  const tipoArquivoA = inferirTipoArquivoUpload(arquivoA, TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO);
   if (!tipoArquivoA) return { ok: false, error: "Formato do Documento A não suportado. Envie PDF ou DOCX." };
-  const tipoArquivoB = inferirTipoArquivoDocumento(arquivoB, TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO);
+  const tipoArquivoB = inferirTipoArquivoUpload(arquivoB, TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO);
   if (!tipoArquivoB) return { ok: false, error: "Formato do Documento B não suportado. Envie PDF ou DOCX." };
+
+  const bufferA = Buffer.from(await arquivoA.arrayBuffer());
+  if (!bufferBateComAssinatura(bufferA, tipoArquivoA)) {
+    return { ok: false, error: `Documento A: ${MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO}` };
+  }
+  const bufferB = Buffer.from(await arquivoB.arrayBuffer());
+  if (!bufferBateComAssinatura(bufferB, tipoArquivoB)) {
+    return { ok: false, error: `Documento B: ${MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO}` };
+  }
 
   const supabase = await createClient();
   const fichaResolvida = await resolverFichaCasoIdOpcional(supabase, formData);
@@ -450,9 +450,6 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
     console.error("[documentos/actions/compararDocumentosAction] Falha ao registrar comparação:", erroInsert);
     return { ok: false, error: "Não foi possível registrar a comparação. Tente novamente." };
   }
-
-  const bufferA = Buffer.from(await arquivoA.arrayBuffer());
-  const bufferB = Buffer.from(await arquivoB.arrayBuffer());
 
   const resultado = await compararDocumentos({
     bufferA,

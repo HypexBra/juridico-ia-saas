@@ -11,7 +11,6 @@ import {
 import {
   analisarDocumentoProcesso,
   TIPOS_ARQUIVO_ANALISE_PROCESSO,
-  type TipoArquivoAnaliseProcesso,
 } from "@/lib/analise-processo/analisar";
 import { montarPayloadPessoaCaso } from "@/lib/casos/pessoas";
 import { registrarEventoCaso } from "@/lib/casos/timeline";
@@ -26,39 +25,15 @@ import {
   verificarPodeAplicarWriteback,
   type ContagemWritebackAnaliseProcesso,
 } from "@/lib/analise-processo/writeback";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AnaliseProcesso } from "@/lib/types";
 
 /** Mesmo teto de `app/app/base-conhecimento/actions.ts` (ADR 0004, seção 6). */
 const MAX_TAMANHO_ARQUIVO_ANALISE = 15 * 1024 * 1024;
-
-const EXTENSOES_POR_TIPO: Record<TipoArquivoAnaliseProcesso, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO: Record<TipoArquivoAnaliseProcesso, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/**
- * Decide o `tipo_arquivo` (`analises_processo.tipo_arquivo`) a partir do MIME
- * type e/ou extensão do arquivo enviado — mesma tolerância de
- * `uploadDocumentoAction` (base de conhecimento), que já lida com navegadores
- * reportando MIME type vazio/genérico para alguns formatos. Devolve `null`
- * quando o arquivo não bate com nenhum dos 3 formatos suportados.
- */
-function inferirTipoArquivoAnaliseProcesso(arquivo: File): TipoArquivoAnaliseProcesso | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of TIPOS_ARQUIVO_ANALISE_PROCESSO) {
-    if (MIME_POR_TIPO[tipo].includes(arquivo.type) || EXTENSOES_POR_TIPO[tipo].some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -110,9 +85,14 @@ export async function uploadEAnalisarProcessoAction(
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoAnaliseProcesso(arquivo);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ANALISE_PROCESSO);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const supabase = await createClient();
@@ -147,7 +127,6 @@ export async function uploadEAnalisarProcessoAction(
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await analisarDocumentoProcesso({ buffer, tipoArquivo, nomeArquivo: arquivo.name });
 
   const agora = new Date().toISOString();

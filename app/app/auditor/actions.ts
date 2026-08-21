@@ -14,8 +14,12 @@ import {
   auditarPeca,
   TAMANHO_MAXIMO_PECA_AUDITORIA,
   TIPOS_ARQUIVO_AUDITORIA_PECA,
-  type TipoArquivoAuditoriaPeca,
 } from "@/lib/auditoria-peca/auditar";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AuditoriaPeca } from "@/lib/types";
 
 /** Mesmo teto de `app/app/documentos/actions.ts` (Fase 3/4, análise estruturada por IA). */
@@ -29,31 +33,6 @@ const MAX_TAMANHO_ARQUIVO_AUDITORIA = 15 * 1024 * 1024;
  * registro em `auditorias_peca` ou chamar a IA.
  */
 const TAMANHO_MINIMO_PECA_AUDITORIA = 200;
-
-const EXTENSOES_POR_TIPO_AUDITORIA: Record<string, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO_AUDITORIA: Record<string, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/** Mesma tolerância MIME/extensão de `inferirTipoArquivoDocumento` (ADR 0011). */
-function inferirTipoArquivoAuditoria(arquivo: File): TipoArquivoAuditoriaPeca | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of TIPOS_ARQUIVO_AUDITORIA_PECA) {
-    const extensoes = EXTENSOES_POR_TIPO_AUDITORIA[tipo] ?? [];
-    const mimes = MIME_POR_TIPO_AUDITORIA[tipo] ?? [];
-    if (mimes.includes(arquivo.type) || extensoes.some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -226,9 +205,14 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoAuditoria(arquivo);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_AUDITORIA_PECA);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const titulo = resolverTituloOpcional(formData);
@@ -264,7 +248,6 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Não foi possível registrar a auditoria. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await auditarPeca({ origem: "upload", titulo, buffer, tipoArquivo, nomeArquivo: arquivo.name });
   const agora = new Date().toISOString();
 

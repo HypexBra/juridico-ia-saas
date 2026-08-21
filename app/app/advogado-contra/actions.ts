@@ -14,8 +14,12 @@ import {
   analisarComoAdvogadoContra,
   TAMANHO_MAXIMO_TESE_ADVOGADO_CONTRA,
   TIPOS_ARQUIVO_ADVOGADO_CONTRA,
-  type TipoArquivoAdvogadoContra,
 } from "@/lib/advogado-contra/analisar";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AnaliseAdvogadoContra, TeseCaso } from "@/lib/types";
 
 /** Mesmo teto de `app/app/auditor/actions.ts` (Fase 4) — 15MB de upload. */
@@ -30,31 +34,6 @@ const MAX_TAMANHO_ARQUIVO_ADVOGADO_CONTRA = 15 * 1024 * 1024;
  * passa por esse piso: `teses_caso.tese` já vem validada pela Fase 1.
  */
 const TAMANHO_MINIMO_TESE_ADVOGADO_CONTRA = 100;
-
-const EXTENSOES_POR_TIPO_ADVOGADO_CONTRA: Record<string, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO_ADVOGADO_CONTRA: Record<string, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/** Mesma tolerância MIME/extensão de `inferirTipoArquivoAuditoria` (ADR 0012). */
-function inferirTipoArquivoAdvogadoContra(arquivo: File): TipoArquivoAdvogadoContra | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of TIPOS_ARQUIVO_ADVOGADO_CONTRA) {
-    const extensoes = EXTENSOES_POR_TIPO_ADVOGADO_CONTRA[tipo] ?? [];
-    const mimes = MIME_POR_TIPO_ADVOGADO_CONTRA[tipo] ?? [];
-    if (mimes.includes(arquivo.type) || extensoes.some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -226,9 +205,14 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoAdvogadoContra(arquivo);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ADVOGADO_CONTRA);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const titulo = resolverTituloOpcional(formData);
@@ -264,7 +248,6 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await analisarComoAdvogadoContra({
     origem: "upload",
     titulo,
