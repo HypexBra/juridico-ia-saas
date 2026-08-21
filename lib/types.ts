@@ -1,5 +1,6 @@
 import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
 import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
+import type { ResultadoAuditoriaPeca } from "@/lib/auditoria-peca/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -633,10 +634,8 @@ export type ComparacaoDocumento = {
  * de CONTRATO, não notas agregadas de peça). Ver
  * docs/adrs/0012-auditor-de-pecas.md.
  *
- * `resultado_auditoria` é tipado como `unknown` propositalmente: a estrutura
- * `ResultadoAuditoriaPeca` (`lib/auditoria-peca/tipos.ts`) é entregue na
- * Onda 1 do ADR 0012 (fora do escopo desta mudança) — trocar por esse tipo
- * concreto assim que o módulo existir.
+ * `resultado_auditoria` aponta para `ResultadoAuditoriaPeca`
+ * (`lib/auditoria-peca/tipos.ts`, entregue na Onda 1 do ADR 0012).
  */
 export type OrigemAuditoriaPeca = "colado" | "upload";
 export type StatusAuditoriaPeca = "processando" | "pronto" | "erro";
@@ -657,7 +656,7 @@ export type AuditoriaPeca = {
    * a ser entregue na Onda 1 do ADR 0012). `null` enquanto
    * `status = "processando"`.
    */
-  resultado_auditoria: unknown | null;
+  resultado_auditoria: ResultadoAuditoriaPeca | null;
   modelo_ia_usado: string | null;
   erro: string | null;
   criado_por: string | null;
