@@ -1,6 +1,6 @@
 # Handoff — sessão 2026-08-21 (sessão 3 — fixes de IA + conta de equipe + Fases 5/6)
 
-Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `a215914`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior. **Ver item 11 deste arquivo para o que foi adicionado DEPOIS do resumo original desta sessão (Fases 5 e 6 completas) — itens 1-10 abaixo são o texto original, mantido para rastreabilidade.**
+Sessão rodou sem o usuário presente (autorização ampla dada previamente). Tudo commitado E pushado em `main`. HEAD atual: `a215914`. Ver `HANDOFF_2026-08-21.md` (sessão 1: pool multi-chave, Document Intelligence, Auditor de Peças) e `HANDOFF_2026-08-21-sessao1.md` (sessão 2: 4 fixes de bug de IA) para o histórico anterior. **Ver itens 9-11 deste arquivo para o que foi adicionado DEPOIS do resumo original desta sessão (Fases 5 e 6 completas) — itens 1-10 abaixo são o texto original, mantido para rastreabilidade.**
 
 ## 1. Bug de IA "indisponível, não troca de provider" no CHAT — causa raiz real, corrigido
 
@@ -88,17 +88,9 @@ Depois do handoff original desta sessão ter sido escrito (o texto abaixo é his
 
 ### Prompt mestre de 29 fases (Ciclos 1-7) — estado no fim desta sessão (ver item 11 abaixo)
 
-Este trecho ficou desatualizado assim que foi escrito — a sessão continuou e completou a Fase 6 também. Ver item 11 para o estado real final.
+Este trecho ficou desatualizado assim que foi escrito — a sessão continuou e completou a Fase 6 também. Ver item 10 para o estado real final.
 
-## 10. Notas de processo desta sessão
-
-- Sem acesso a MCP do Supabase/Stripe nesta sessão (`ToolSearch` não achou nenhuma ferramenta correspondente) — toda verificação de config/migration foi por leitura de código + `vercel env ls` (só lista nomes/datas, não valores). `vercel env pull` foi bloqueado pelo classificador de permissão do ambiente (puxaria secrets pro disco) — não insisti, é uma barreira de segurança do harness, não um erro.
-- `npm install` rodado (deps opcionais faltando localmente — `mammoth`, `@langchain/core` — impediam 5 suítes de teste de rodar; resolvido, sem mudança de versão de nada, só instalação do que já estava no `package-lock.json`/`package.json`).
-- Bug real encontrado e corrigido durante a sessão: `npx next build` local quebrava em `/auth/definir-senha` (client component pré-renderizado estaticamente tentando instanciar o client do Supabase) — corrigido com `export const dynamic = "force-dynamic"` (commit `b0afeeb`).
-- Todo código novo tem teste e passou por `tsc --noEmit` + suíte completa + `next build` antes de cada commit.
-- Fases 5 e 6 foram construídas via ondas de subagentes (`architect`(só Fase 6)/`database`→`ai-engineer`→`senior-engineer`→revisão paralela `security`+`qa`+`general-purpose`), cada onda verificada por mim (tsc+vitest, e nas últimas também `next build`) antes do commit — nenhum relatório de agente foi aceito sem confirmação própria. **`techlead` não existe no registry de agentes deste ambiente** — usar `subagent_type: "general-purpose"` com prompt de tech lead no lugar (confirmado 2x nesta sessão).
-
-## 11. Fase 6 — Estrategista Jurídico — IMPLEMENTADA E REVISADA (depois do item 9 ter sido escrito) + achado de segurança pré-existente corrigido
+## 10. Fase 6 — Estrategista Jurídico — IMPLEMENTADA E REVISADA (depois do item 9 ter sido escrito) + achado de segurança pré-existente corrigido
 
 Continuação da sessão depois do item 9: **ADR + 3 ondas + revisão paralela, tudo completo**, seguindo o mesmo processo da Fase 5.
 
@@ -120,16 +112,32 @@ Continuação da sessão depois do item 9: **ADR + 3 ondas + revisão paralela, 
 - **Ciclo 2 (IA Jurídica)**: Fases 4, 5 e **6 completas**. **Só falta a Fase 7 (Pesquisa Jurídica Verificável)** pra fechar o ciclo inteiro.
 - **Ciclos 3-7**: nenhuma fase iniciada.
 
-### Fase 7 — Pesquisa Jurídica Verificável — NÃO iniciada, com um ponto de partida real já mapeado
+### Fase 7 — Pesquisa Jurídica Verificável — pesquisa de viabilidade FEITA nesta sessão, implementação NÃO iniciada
 
-Investigado antes de decidir não começar agora (feature grande demais pra encaixar no fim desta sessão sem virar trabalho raso): `lib/rag/jurisprudencia.ts` já existe, mas é só um **helper de ingestão manual/admin** de jurisprudência pro RAG compartilhado (migration `0008`) — não é busca ao vivo. A pesquisa jurídica "ao vivo" que já existe hoje é indireta: `lib/ia/gemini.ts` liga `googleSearch` (grounding nativo do Gemini) sempre que tools estão permitidas no chat, precisamente para não deixar lei/súmula desatualizada — mas isso é uma ferramenta do CHAT, não uma feature de pesquisa jurídica dedicada com UI própria, fonte estruturada (órgão/número/data/relator/link) e "comparador de decisões" como o roadmap pede.
+Investigado (agente `researcher` com `WebSearch`, ~15 buscas) antes de desenhar qualquer arquitetura — resultado completo abaixo, pra próxima sessão não repetir a pesquisa:
 
-Antes de implementar a Fase 7 de verdade, a próxima sessão precisa decidir (pesquisa real, não suposição):
-1. Existe API pública real do STF/STJ/tribunais com dados estruturados (número/relator/data/ementa) que dê pra integrar de forma confiável, ou a única fonte viável continua sendo `googleSearch` grounding do Gemini (que traz texto, não um schema estruturado garantido)?
-2. Se não houver API estruturada confiável, como fica o requisito "sempre apresentar fonte/órgão/número/data/relator/link" do roadmap? Precisa de um schema que aceite campos `null` quando o grounding não trouxer aquele dado específico (mesma humildade epistêmica já usada em todas as 6 features de IA deste projeto — nunca inventar um campo que faltar).
-3. `CATEGORIAS_ACHADO_AUDITORIA`/`OrigemContextoEstrategia` (Fases 4/6) já têm o tipo `jurisprudencia`/`analise_processo` — decidir se a Fase 7 gera uma tabela nova (`pesquisas_juridicas`?) ou se é uma capacidade do chat mais bem estruturada (schema de citação) sem tabela de histórico própria.
+**O que existe hoje no projeto**: `lib/rag/jurisprudencia.ts` é só um helper de ingestão MANUAL/admin de jurisprudência pro RAG compartilhado (migration `0008`) — não é busca ao vivo. `lib/ia/gemini.ts` liga `googleSearch` (grounding nativo do Gemini) sempre que tools estão permitidas no chat — é a única "pesquisa ao vivo" que existe, mas é uma ferramenta do CHAT, não uma feature dedicada com fonte estruturada.
 
-Recomendo abrir com uma sessão de **pesquisa** (`researcher`/`WebSearch`) sobre disponibilidade real de API de tribunais antes de qualquer `architect`/ADR — diferente das Fases 5/6, aqui a viabilidade técnica não é óbvia a partir só do código existente.
+**Achados da pesquisa** (fontes citadas no relatório completo do agente, não repetidas aqui por brevidade):
+1. **STF**: não tem API pública de busca de jurisprudência — só o portal de busca web (`jurisprudencia.stf.jus.br`), pra humanos.
+2. **STJ**: tem um **Portal de Dados Abertos** (`dadosabertos.web.stj.jus.br`, formato CKAN) com dataset de jurisprudência que segundo o próprio STJ inclui **texto integral** de decisões do DJe — a pista mais promissora encontrada, mas **ninguém abriu o dataset ainda pra confirmar os campos exatos** (relator/número/data/link linha a linha).
+3. **CNJ/DataJud**: tem API pública oficial (`api-publica.datajud.cnj.jus.br`) cobrindo TODOS os tribunais, mas é API de **metadados processuais e movimentação**, não de conteúdo de acórdão/ementa — útil talvez só como camada de "isso é um processo real?" (checagem de existência), não como fonte de conteúdo citável. Schema JSON exato não foi confirmado (o agente não conseguiu abrir `/exemplos/` do wiki do CNJ).
+4. **Serviços comerciais** (Escavador, JusBrasil, Predictus): todos reais, com produtos reais, mas parecem focados em CONSULTA PROCESSUAL POR NÚMERO (compliance/due diligence), não em BUSCA TEMÁTICA de jurisprudência — não confirmado se algum resolve o caso de uso real ("buscar por tema X e receber acórdãos relevantes"). Escavador bloqueou acesso à página de preços (403); nenhum tem free tier claramente documentado.
+5. **Grounding do Gemini como fonte única — DESACONSELHADO com evidência concreta**: há relatos no fórum oficial da Google AI ("hallucinated URLs with grounding", 2026) e múltiplos papers acadêmicos recentes (arXiv, ainda não peer-reviewed) mostrando que LLMs **continuam fabricando citações jurídicas mesmo com grounding/busca ativada** — inclusive casos REAIS de escritórios de advocacia americanos punidos judicialmente por citação alucinada gerada por IA (incluindo Gemini), noticiado por fonte especializada em legaltech (LawNext, 2025). Isso é exatamente o risco que a regra de produto deste projeto ("nunca inventar jurisprudência") existe pra evitar — usar só grounding sem uma camada de verificação é incompatível com essa regra.
+
+**Recomendação do research pra próxima sessão** (não decidida, não implementada):
+1. Abrir de fato `dadosabertos.web.stj.jus.br` (dataset de jurisprudência) e `datajud-wiki.cnj.jus.br/api-publica/exemplos/` — são as duas pontas soltas mais importantes, ninguém confirmou o schema real ainda.
+2. Verificar `robots.txt`/ToS de `jurisprudencia.stf.jus.br` e `stj.jus.br` antes de cogitar scraping como plano B pro STF (que não tem nem API nem dados abertos confirmados).
+3. Se a arquitetura final incluir grounding do Gemini de alguma forma, adicionar uma camada de verificação em runtime (confirmar programaticamente que o link citado resolve pra um recurso real e contém o número de processo citado) ANTES de exibir ao usuário como fonte — nunca confiar só na saída do modelo.
+4. Cobertura parcial e HONESTA (ex.: só STF+STJ, ou só STJ se for a única fonte confirmada) é mais defensável que fingir cobertura nacional via scraping frágil.
+
+Só depois dessas 2-3 verificações técnicas diretas (abrir os dados reais, não só a documentação) é que faz sentido escrever um ADR de arquitetura — diferente das Fases 5/6, aqui a viabilidade técnica não estava clara a partir só do código/documentação existente.
+
+## 11. Dívida técnica fechada nesta sessão: upload validava só extensão/MIME, nunca conteúdo binário real
+
+Registrada desde a sessão 1 (Fase 3) como dívida aceita, transversal a 4 features (análise de processo, Document Intelligence, Auditor de Peças, Advogado do Contra) — cada uma com sua própria cópia de `inferirTipoArquivo*`/`MIME_POR_TIPO_*` (achado repetido pelo tech lead nas revisões da Fase 5 e 6). **Corrigido** (commit `c3ba3ec`): `lib/uploads/validacao.ts` unifica a inferência de tipo (mesma lógica, sem duplicação) e adiciona `bufferBateComAssinatura` — confere os magic bytes reais do arquivo (`%PDF-`, assinatura ZIP `PK\x03\x04` pra DOCX, JPEG/PNG/WEBP por assinatura) contra o tipo declarado, ANTES de gastar upload+chamada de IA num arquivo renomeado/forjado. Aplicado nos 4 pontos de upload. Não é sanitização completa (não valida estrutura interna do ZIP/PDF), só fecha o caso mais barato de burlar. 384 testes verdes ao final (374 + 10 novos), `tsc`/`next build` limpos.
+
+## 12. Notas de processo desta sessão (consolidado)
 
 - Sem acesso a MCP do Supabase/Stripe nesta sessão (`ToolSearch` não achou nenhuma ferramenta correspondente) — toda verificação de config/migration foi por leitura de código + `vercel env ls` (só lista nomes/datas, não valores). `vercel env pull` foi bloqueado pelo classificador de permissão do ambiente (puxaria secrets pro disco) — não insisti, é uma barreira de segurança do harness, não um erro.
 - `npm install` rodado (deps opcionais faltando localmente — `mammoth`, `@langchain/core` — impediam 5 suítes de teste de rodar; resolvido, sem mudança de versão de nada, só instalação do que já estava no `package-lock.json`/`package.json`).
