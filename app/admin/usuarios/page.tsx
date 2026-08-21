@@ -188,7 +188,14 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
                 <td className="py-3 pr-3 text-muted">{u.totalConversas}</td>
                 <td className="py-3 pr-3 text-muted">{u.totalMensagens}</td>
                 <td className="py-3">
-                  <UsuarioLinhaAcoes perfilId={u.perfilId} ativo={u.ativo} role={u.role} isAdminPlataforma={u.isAdminPlataforma} />
+                  <UsuarioLinhaAcoes
+                    perfilId={u.perfilId}
+                    ativo={u.ativo}
+                    role={u.role}
+                    isAdminPlataforma={u.isAdminPlataforma}
+                    escritorioId={u.escritorioId}
+                    plano={u.plano}
+                  />
                 </td>
               </tr>
             ))}

@@ -109,6 +109,23 @@ export async function enviarModeloParaAssinaturaAction(
     return { error: `Falha ao enviar para o Autentique: ${resultado.error}`, ok: false };
   }
 
+  // Investigação (bug-hunter, 2026-08-21): esta UPDATE falhava em 100% dos
+  // envios reais, mesmo com o Autentique retornando sucesso. Causa raiz
+  // confirmada e corrigida em
+  // `supabase/migrations/0036_fix_status_documentos_assinatura_varchar.sql`:
+  // a coluna `status` era `varchar(20)`, mas o literal 'aguardando_assinatura'
+  // usado abaixo tem 21 caracteres — Postgres rejeitava com "value too long
+  // for type character varying(20)" (nunca foi race condition, RLS ou tipo
+  // incompatível). Hipóteses descartadas por inspeção, não repetir:
+  // - `resultado.idExterno` estourar varchar(100): IDs do Autentique são
+  //   UUIDs (36 chars), muito abaixo do limite.
+  // - `arquivo_gerado_em` (ISO string) incompatível com `timestamptz`:
+  //   PostgREST aceita ISO 8601 normalmente, sem type coercion problemático.
+  // - Race condition de duplo clique: `EnviarAssinaturaForm` desabilita o
+  //   botão via `isPending` (`useActionState`) durante o submit.
+  // - RLS calculando `escritorio_atual()` errado: mesmo client `supabase`
+  //   (mesma sessão/cookies) usado no INSERT e no UPDATE, sem trocar de
+  //   contexto de execução entre as duas chamadas.
   const { error: erroUpdate } = await supabase
     .from("documentos_para_assinatura")
     .update({
@@ -120,7 +137,17 @@ export async function enviarModeloParaAssinaturaAction(
     .eq("id", registro.id);
 
   if (erroUpdate) {
+    // Log estruturado com todo o contexto necessário para diagnosticar sem
+    // precisar reabrir investigação: escritorio/perfil/registro identificam
+    // QUEM e QUAL LINHA, código/mensagem/detalhes/hint do Postgres dizem O
+    // QUÊ. Ver `supabase/migrations/0036_fix_status_documentos_assinatura_varchar.sql`
+    // para a causa raiz já corrigida uma vez (coluna `status` menor que o
+    // próprio valor do seu CHECK constraint); se este log voltar a disparar
+    // com `codigo: "22001"` (value too long), é uma REGRESSÃO dessa mesma
+    // classe de bug em outra coluna, não algo novo.
     console.error("[assinatura] falha ao atualizar documentos_para_assinatura após envio ao Autentique", {
+      escritorioId: usuario.perfil.escritorio_id,
+      perfilId: usuario.perfil.id,
       documentoId: registro.id,
       idExternoAutentique: resultado.idExterno,
       codigo: erroUpdate.code,

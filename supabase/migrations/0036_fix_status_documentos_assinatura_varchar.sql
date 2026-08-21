@@ -1,0 +1,33 @@
+-- Bug real (bug-hunter, 2026-08-21): o Autentique recebia e processava o
+-- documento com sucesso, mas a UPDATE local que gravava
+-- `status = 'aguardando_assinatura'` em `documentos_para_assinatura` falhava
+-- sempre, mostrando "Documento foi enviado ao Autentique, mas houve falha ao
+-- salvar o status localmente." em 100% dos envios.
+--
+-- Causa raiz (5 Whys):
+-- 1. Por que a UPDATE falha? -> Postgres rejeita o valor com
+--    "value too long for type character varying(20)".
+-- 2. Por que o valor é longo demais? -> a string 'aguardando_assinatura' tem
+--    21 caracteres, mas a coluna `status` foi criada como `varchar(20)` em
+--    0003_prazos_financeiro_portal.sql.
+-- 3. Por que isso passou despercebido? -> o CHECK constraint
+--    `check (status in ('rascunho', 'aguardando_assinatura', ...))` foi
+--    escrito com o mesmo literal de 21 chars, então a migration aplicou sem
+--    erro (CHECK só é avaliado quando uma linha tenta usar aquele valor, não
+--    na criação da tabela) e passou despercebido em toda revisão de schema
+--    por inspeção estática.
+-- 4. Por que não foi pego em teste? -> não havia teste de integração que
+--    de fato tentasse persistir o status 'aguardando_assinatura' contra um
+--    banco real (só mocks/inspeção de schema).
+-- 5. Causa raiz: erro de dimensionamento de coluna na migration original —
+--    `varchar(20)` menor que o próprio valor mais longo permitido pelo seu
+--    CHECK constraint. Nenhum documento jamais conseguiu transicionar para
+--    "aguardando_assinatura" desde a criação da tabela.
+--
+-- Fix: alarga a coluna para varchar(30), suficiente para o maior valor atual
+-- ('aguardando_assinatura', 21 chars) com folga para futuros status sem
+-- precisar de nova migration por poucos caracteres. O CHECK constraint
+-- (nome auto-gerado pelo Postgres) não muda — continua validando o mesmo
+-- conjunto de valores.
+alter table documentos_para_assinatura
+  alter column status type varchar(30);

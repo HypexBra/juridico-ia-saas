@@ -37,7 +37,14 @@ export default async function AdminUsuarioDetalhePage({ params }: PageProps<"/ad
           <h1 className="mt-1 font-display text-2xl font-semibold text-ice">{usuario.nome}</h1>
           <p className="mt-1 text-sm text-muted">{usuario.escritorioNome}</p>
         </div>
-        <UsuarioLinhaAcoes perfilId={usuario.perfilId} ativo={usuario.ativo} role={usuario.role} isAdminPlataforma={!!adminRow} />
+        <UsuarioLinhaAcoes
+          perfilId={usuario.perfilId}
+          ativo={usuario.ativo}
+          role={usuario.role}
+          isAdminPlataforma={!!adminRow}
+          escritorioId={usuario.escritorioId}
+          plano={usuario.plano}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
