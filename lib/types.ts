@@ -2,6 +2,7 @@ import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
 import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
 import type { ResultadoAuditoriaPeca } from "@/lib/auditoria-peca/tipos";
 import type { ResultadoAdvogadoContra } from "@/lib/advogado-contra/tipos";
+import type { ResultadoEstrategiaCaso } from "@/lib/estrategia-caso/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -714,6 +715,45 @@ export type AnaliseAdvogadoContra = {
    * `status = "processando"`.
    */
   resultado_advogado_contra: ResultadoAdvogadoContra | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
+/**
+ * Estrategista Jurídico (Fase 6, migration 0041) — a IA sintetiza tudo que
+ * já existe sobre um caso já aberto (fatos da ficha, teses cadastradas,
+ * linha do tempo de eventos, pessoas envolvidas, jurisprudência citada,
+ * resumos de análises de documento/processo) e produz objetivo, teses,
+ * provas, riscos, oportunidades, próximos passos e ações recomendadas.
+ * Primeiro "agregador" do produto — diferente de `AuditoriaPeca`/
+ * `AnaliseAdvogadoContra` (analisam um único texto avulso), aqui não há
+ * texto novo do usuário, só leitura de múltiplas tabelas relacionais.
+ * `ficha_caso_id` NÃO é nullable (diferente das 5 tabelas de resultado de IA
+ * anteriores) — o Estrategista não faz sentido sem um caso já aberto. Ver
+ * docs/adrs/0014-estrategista-caso.md.
+ *
+ * `resultado_estrategia` aponta para `ResultadoEstrategiaCaso`
+ * (`lib/estrategia-caso/tipos.ts`, entregue na Onda 1 do ADR 0014).
+ */
+export type StatusEstrategiaCaso = "processando" | "pronto" | "erro";
+
+export type EstrategiaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  status: StatusEstrategiaCaso;
+  /**
+   * Estrutura `ResultadoEstrategiaCaso` (`lib/estrategia-caso/tipos.ts`,
+   * entregue na Onda 1 do ADR 0014). `null` enquanto
+   * `status = "processando"`.
+   */
+  resultado_estrategia: ResultadoEstrategiaCaso | null;
+  /** Snapshot leve (contadores) do que foi lido para gerar esta versão —
+   * `lib/estrategia-caso/gerar.ts#ContextoResumoEstrategiaCaso`. */
+  contexto_resumo: Record<string, unknown> | null;
   modelo_ia_usado: string | null;
   erro: string | null;
   criado_por: string | null;
