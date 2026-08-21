@@ -1,4 +1,5 @@
 import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
+import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/document-intelligence/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -563,6 +564,64 @@ export type AdminLog = {
   alvo_id: string | null;
   detalhes: Record<string, unknown> | null;
   criado_em: string;
+};
+
+/**
+ * Document Intelligence (Fase 3, migration 0033) — análise individual/em
+ * lote de UM documento avulso (PDF/DOCX/imagem), não necessariamente
+ * vinculado a uma `FichaCaso` aberta (`ficha_caso_id` nullable, mesmo
+ * precedente de `ResultadoAnaliseRisco`/`analises_risco_contratual`,
+ * migration 0017). Distinta de `AnaliseProcesso` (narrativa de CASO
+ * inteiro, `ficha_caso_id` obrigatório). Ver
+ * docs/adrs/0011-document-intelligence.md.
+ */
+export type TipoArquivoAnaliseDocumento = "pdf" | "docx" | "imagem";
+export type StatusAnaliseDocumento = "processando" | "pronto" | "erro";
+
+export type AnaliseDocumento = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  nome_arquivo: string;
+  tipo_arquivo: TipoArquivoAnaliseDocumento;
+  tamanho_bytes: number;
+  status: StatusAnaliseDocumento;
+  /**
+   * Estrutura `ResultadoAnaliseDocumento` (`lib/document-intelligence/tipos.ts`,
+   * entregue na Onda 1 do ADR 0011). `null` enquanto `status = "processando"`.
+   */
+  resultado_analise: ResultadoAnaliseDocumento | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
+/**
+ * Document Intelligence (Fase 3, migration 0034) — comparador de documentos
+ * (Contrato A x Contrato B): cláusulas adicionadas/removidas/alteradas,
+ * riscos, recomendações. Ver docs/adrs/0011-document-intelligence.md, seção 2.
+ */
+export type ComparacaoDocumento = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  nome_arquivo_a: string;
+  nome_arquivo_b: string;
+  analise_documento_a_id: string | null;
+  analise_documento_b_id: string | null;
+  status: StatusAnaliseDocumento;
+  /**
+   * Estrutura `ResultadoComparacaoDocumento` (`lib/document-intelligence/tipos.ts`,
+   * entregue na Onda 1 do ADR 0011). `null` enquanto `status = "processando"`.
+   */
+  resultado_comparacao: ResultadoComparacaoDocumento | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
 };
 
 export const AREAS_DIREITO = [

@@ -1,6 +1,7 @@
 import "server-only";
 
-import { GoogleGenAI, type Part } from "@google/genai";
+import type { Part } from "@google/genai";
+import { gerarRespostaEstruturada } from "../ia/chamada-estruturada";
 import {
   ANALISE_PROCESSO_RESPONSE_SCHEMA,
   ANALISE_PROCESSO_SYSTEM_PROMPT,
@@ -36,30 +37,6 @@ const MODELO_FALLBACK_QUOTA_ANALISE_PROCESSO = "gemini-flash-lite-latest";
 export const MAX_OUTPUT_TOKENS_ANALISE_PROCESSO = 16_384;
 export const THINKING_BUDGET_ANALISE_PROCESSO = 2048;
 
-const MAX_TENTATIVAS = 3;
-const BASE_DELAY_MS = 600;
-const BASE_DELAY_MS_QUOTA = 15_000;
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function isErroDeQuota(erro: unknown): boolean {
-  const mensagem = erro instanceof Error ? erro.message : String(erro);
-  return /429|quota|rate.?limit/i.test(mensagem);
-}
-
-function isErroTransiente(erro: unknown): boolean {
-  const mensagem = erro instanceof Error ? erro.message : String(erro);
-  return /429|500|502|503|504|rate.?limit|timeout|ECONNRESET|ETIMEDOUT|UNAVAILABLE/i.test(mensagem);
-}
-
-function getClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  return new GoogleGenAI({ apiKey });
-}
-
 const MIME_TYPE_POR_EXTENSAO: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -75,62 +52,24 @@ function inferirMimeTypeImagem(nomeArquivo: string): string {
 /**
  * Chama o Gemini uma única vez (sem histórico de chat — cada análise é
  * independente) com `responseSchema` fixo e cadeia de fallback de modelo em
- * caso de quota esgotada, mesmo padrão de retry/backoff de
- * `lib/ia/gemini.ts#gerarRespostaGemini`. Mantido self-contido neste módulo
- * (em vez de estender `lib/ia/gemini.ts`, hoje focado em chat multi-turno
- * texto-only) para não acoplar o teto de tokens/retry do chat ao desta
- * análise — se um padrão comum de "chamada estruturada one-shot" emergir
- * entre features, extrair um helper compartilhado é candidato a refactor
- * futuro, não decidido preventivamente aqui.
+ * caso de quota esgotada. Delega para o helper compartilhado
+ * `lib/ia/chamada-estruturada.ts#gerarRespostaEstruturada` (ADR 0011, seção
+ * 3) — a cópia local (`chamarGeminiComSchema`) foi removida, mesma lógica de
+ * retry/backoff/fallback-por-quota, sem mudança de comportamento observável.
  */
-async function chamarGeminiComSchema(promptTexto: string, parteExtra: Part | null): Promise<unknown> {
-  const genAI = getClient();
-  const parts: Part[] = [{ text: promptTexto }];
-  if (parteExtra) parts.push(parteExtra);
+function chamarGeminiComSchema(promptTexto: string, parteExtra: Part | null): Promise<unknown> {
+  const cadeiaModelos = [MODELO_ANALISE_PROCESSO, MODELO_FALLBACK_QUOTA_ANALISE_PROCESSO];
 
-  const cadeiaModelos = [MODELO_ANALISE_PROCESSO, MODELO_FALLBACK_QUOTA_ANALISE_PROCESSO].filter(
-    (modelo, indice, lista) => lista.indexOf(modelo) === indice,
-  );
-
-  let ultimoErro: unknown;
-  for (const modelo of cadeiaModelos) {
-    let erroDeQuotaEsgotouRetentativas = false;
-
-    for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
-      try {
-        const resposta = await genAI.models.generateContent({
-          model: modelo,
-          contents: [{ role: "user", parts }],
-          config: {
-            systemInstruction: ANALISE_PROCESSO_SYSTEM_PROMPT,
-            maxOutputTokens: MAX_OUTPUT_TOKENS_ANALISE_PROCESSO,
-            thinkingConfig: { thinkingBudget: THINKING_BUDGET_ANALISE_PROCESSO },
-            responseMimeType: "application/json",
-            responseSchema: ANALISE_PROCESSO_RESPONSE_SCHEMA,
-          },
-        });
-
-        const texto = resposta.text;
-        if (!texto) throw new Error("Resposta vazia do Gemini.");
-        return JSON.parse(texto);
-      } catch (erro) {
-        ultimoErro = erro;
-        const deQuota = isErroDeQuota(erro);
-        if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
-          erroDeQuotaEsgotouRetentativas = deQuota;
-          break;
-        }
-        await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
-      }
-    }
-
-    if (!erroDeQuotaEsgotouRetentativas) throw ultimoErro;
-    console.error(
-      `[analise-processo/analisar] Quota esgotada em "${modelo}", tentando próximo modelo da cadeia (se houver).`,
-    );
-  }
-
-  throw ultimoErro instanceof Error ? ultimoErro : new Error("Falha desconhecida ao chamar o Gemini.");
+  return gerarRespostaEstruturada({
+    promptTexto,
+    parteExtra,
+    systemPrompt: ANALISE_PROCESSO_SYSTEM_PROMPT,
+    responseSchema: ANALISE_PROCESSO_RESPONSE_SCHEMA,
+    maxOutputTokens: MAX_OUTPUT_TOKENS_ANALISE_PROCESSO,
+    thinkingBudget: THINKING_BUDGET_ANALISE_PROCESSO,
+    cadeiaModelos,
+    logPrefixo: "[analise-processo/analisar]",
+  });
 }
 
 export type ParametrosAnalisarDocumentoProcesso = {

@@ -4,6 +4,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { LinkButton } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { GerarAnaliseButton } from "@/components/app/gerar-analise-button";
 import { GerarRiscoButton } from "@/components/app/gerar-risco-button";
@@ -189,6 +190,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
 
         <div className="flex flex-wrap gap-3">
           <FichaLidaToggle fichaId={ficha.id} lida={ficha.lida} />
+          <LinkButton href={`/app/documentos/novo?fichaId=${ficha.id}`} variant="secondary" size="sm">
+            Analisar documento
+          </LinkButton>
           <ExcluirFichaButton fichaId={ficha.id} />
         </div>
       </Card>

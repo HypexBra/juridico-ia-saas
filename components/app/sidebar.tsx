@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/app/prazos", label: "Prazos", icon: "clock" as const },
   { href: "/app/modelos", label: "Modelos", icon: "layout" as const },
   { href: "/app/redline", label: "Redline", icon: "shield" as const },
+  { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },
@@ -59,6 +60,14 @@ const ICONS: Record<string, React.ReactNode> = {
     <>
       <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
       <path d="M9 12l2 2 4-4" />
+    </>
+  ),
+  documentos: (
+    <>
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h6.5" />
+      <polyline points="14 2 14 8 20 8" />
+      <circle cx="16.5" cy="17.5" r="2.5" />
+      <line x1="18.35" y1="19.35" x2="21" y2="22" />
     </>
   ),
   users: (

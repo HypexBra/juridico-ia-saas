@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Escritorio } from "@/lib/types";
 
 /**
- * As 7 features premium do plano Pro (rodada separada de implementação —
+ * As features premium do plano Pro (rodada separada de implementação —
  * ver CLAUDE.md deste projeto). Chave estável usada em
  * `escritorios.features_overrides` e em todo `exigirAcessoPremium(...)` /
  * `escritorioTemAcesso(...)` chamado pelo app: NUNCA renomear uma chave já
@@ -29,6 +29,23 @@ export const FEATURES_PREMIUM = [
    * docs/adrs/0004-analise-inteligente-processos.md.
    */
   "analise_inteligente_processo",
+  /**
+   * (8) Document Intelligence — análise individual E em lote de documento
+   * avulso (migration 0033, `analises_documento`). Mesma chave para
+   * individual e lote: lote é a mesma operação repetida N vezes, não uma
+   * feature de precificação distinta. Ver
+   * docs/adrs/0011-document-intelligence.md, seção 7.
+   */
+  "analise_documento",
+  /**
+   * (9) Document Intelligence — comparador de documentos A x B (migration
+   * 0034, `comparacoes_documento`). Chave separada de `analise_documento`
+   * (não reusada) porque é operacionalmente mais cara (2x extração + prompt
+   * maior) e permite limite de uso diferenciado no futuro sem tocar no gate
+   * de análise individual. Ver docs/adrs/0011-document-intelligence.md,
+   * seção 7.
+   */
+  "comparacao_documentos",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
