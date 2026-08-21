@@ -89,7 +89,12 @@ export async function gerarRespostaEstruturada({
 
   let ultimoErro: unknown;
   for (const modelo of modelosUnicos) {
-    let erroDeQuotaEsgotouRetentativas = false;
+    // Se o erro final deste modelo for transiente (quota OU sobrecarga/5xx/rede),
+    // vale a pena tentar o próximo modelo da cadeia antes de desistir — travar
+    // aqui só porque o erro não era de quota é o bug original: um 503
+    // "UNAVAILABLE" (sobrecarga do modelo, não quota) esgotava as retentativas
+    // e propagava direto, nunca chegando a tentar o modelo de fallback.
+    let erroTransienteEsgotouRetentativas = false;
 
     for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
       try {
@@ -111,16 +116,17 @@ export async function gerarRespostaEstruturada({
       } catch (erro) {
         ultimoErro = erro;
         const deQuota = isErroDeQuota(erro);
-        if (!isErroTransiente(erro) || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
-          erroDeQuotaEsgotouRetentativas = deQuota;
+        const transiente = isErroTransiente(erro);
+        if (!transiente || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
+          erroTransienteEsgotouRetentativas = transiente;
           break;
         }
         await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
       }
     }
 
-    if (!erroDeQuotaEsgotouRetentativas) throw ultimoErro;
-    console.error(`${logPrefixo} Quota esgotada em "${modelo}", tentando próximo modelo da cadeia (se houver).`);
+    if (!erroTransienteEsgotouRetentativas) throw ultimoErro;
+    console.error(`${logPrefixo} Falha transiente em "${modelo}", tentando próximo modelo da cadeia (se houver).`);
   }
 
   throw ultimoErro instanceof Error ? ultimoErro : new Error("Falha desconhecida ao chamar o Gemini.");

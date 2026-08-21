@@ -152,6 +152,9 @@ describe("auditarPeca", () => {
     const resultado = await auditarPeca({ origem: "colado", titulo: null, texto: "Texto." });
 
     expect(resultado.ok).toBe(false);
-    if (!resultado.ok) expect(resultado.erro).toContain("429 quota esgotada");
+    if (!resultado.ok) {
+      expect(resultado.erro).toContain("sobrecarregada");
+      expect(resultado.erro).not.toContain("429");
+    }
   });
 });

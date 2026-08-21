@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Part } from "@google/genai";
 import { gerarRespostaEstruturada } from "../ia/chamada-estruturada";
+import { mensagemErroIaParaUsuario } from "../ia/erros";
 import {
   extrairTextoDeDocx,
   extrairTextoDePdfPorPagina,
@@ -133,9 +134,6 @@ export async function analisarDocumento({
     return { ok: true, resultado, modeloIaUsado: MODELO_DOCUMENT_INTELLIGENCE };
   } catch (erro) {
     console.error("[analise-documento/analisar] Falha ao analisar documento:", erro);
-    return {
-      ok: false,
-      erro: erro instanceof Error ? erro.message : "Erro desconhecido ao analisar o documento.",
-    };
+    return { ok: false, erro: mensagemErroIaParaUsuario(erro) };
   }
 }

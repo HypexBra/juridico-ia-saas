@@ -112,6 +112,31 @@ describe("gerarRespostaEstruturada", () => {
     expect(generateContentMock).toHaveBeenCalledTimes(4);
   });
 
+  it("erro transiente NÃO-quota (503 sustentado) esgota retentativas e avança para o próximo modelo da cadeia — fix do bug 'IA indisponível sem trocar de modelo'", async () => {
+    const rejeitarCom503 = async () => {
+      throw new Error('{"error":{"code":503,"message":"model overloaded","status":"UNAVAILABLE"}}');
+    };
+    generateContentMock
+      .mockImplementationOnce(rejeitarCom503)
+      .mockImplementationOnce(rejeitarCom503)
+      .mockImplementationOnce(rejeitarCom503)
+      .mockResolvedValueOnce(respostaGeminiComTexto({ ok: true }));
+
+    const promise = gerarRespostaEstruturada({
+      ...PARAMETROS_BASE,
+      cadeiaModelos: ["modelo-a", "modelo-b"],
+    });
+    await vi.runAllTimersAsync();
+    const resultado = await promise;
+
+    expect(resultado).toEqual({ ok: true });
+    // 3 tentativas (MAX_TENTATIVAS) esgotadas no modelo-a, depois 1ª tentativa no modelo-b.
+    expect(generateContentMock).toHaveBeenCalledTimes(4);
+    expect(generateContentMock.mock.calls[0]?.[0]).toMatchObject({ model: "modelo-a" });
+    expect(generateContentMock.mock.calls[2]?.[0]).toMatchObject({ model: "modelo-a" });
+    expect(generateContentMock.mock.calls[3]?.[0]).toMatchObject({ model: "modelo-b" });
+  });
+
   it("erro não-transiente (ex: prompt/schema inválido) propaga direto, sem nenhuma retentativa", async () => {
     generateContentMock.mockImplementationOnce(async () => {
       throw new Error("Invalid argument: responseSchema malformado");

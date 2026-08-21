@@ -9,7 +9,7 @@ import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
 import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
 import { montarNovaTeseCaso, montarAtualizacaoStatusTese, montarTeseCasoDaAnaliseIa } from "@/lib/casos/teses";
-import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE, type StatusTeseCaso, type TeseCaso } from "@/lib/types";
+import { AREAS_DIREITO, limiteMensagensIaPara, type StatusTeseCaso, type TeseCaso } from "@/lib/types";
 
 const criarFichaSchema = z.object({
   nomeCliente: z.string().trim().min(1, "Informe o nome do cliente."),
@@ -174,10 +174,11 @@ export async function gerarAnaliseIaAction(fichaId: string): Promise<GerarAnalis
     .select("id", { count: "exact", head: true })
     .eq("mes_ref", mesRef);
 
-  if ((usoAtual ?? 0) >= LIMITE_MENSAGENS_FREE) {
+  const limiteMensagens = limiteMensagensIaPara(usuario.perfil.escritorio.plano);
+  if ((usoAtual ?? 0) >= limiteMensagens) {
     return {
       ok: false,
-      error: `Limite mensal de ${LIMITE_MENSAGENS_FREE} análises de IA do plano free atingido.`,
+      error: `Limite mensal de ${limiteMensagens} análises de IA do plano ${usuario.perfil.escritorio.plano} atingido.`,
     };
   }
 

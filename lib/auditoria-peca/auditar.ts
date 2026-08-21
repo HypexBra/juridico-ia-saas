@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Part } from "@google/genai";
 import { gerarRespostaEstruturada } from "../ia/chamada-estruturada";
+import { mensagemErroIaParaUsuario } from "../ia/erros";
 import {
   extrairTextoDeDocx,
   extrairTextoDePdfPorPagina,
@@ -144,9 +145,6 @@ export async function auditarPeca(parametros: ParametrosAuditarPeca): Promise<Re
     return { ok: true, resultado, modeloIaUsado: MODELO_AUDITORIA_PECA };
   } catch (erro) {
     console.error("[auditoria-peca/auditar] Falha ao auditar peça:", erro);
-    return {
-      ok: false,
-      erro: erro instanceof Error ? erro.message : "Erro desconhecido ao auditar a peça.",
-    };
+    return { ok: false, erro: mensagemErroIaParaUsuario(erro) };
   }
 }

@@ -127,7 +127,13 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
           type: Type.OBJECT,
           properties: {
             area_direito: { type: Type.STRING },
-            resumo_fatos: { type: Type.STRING },
+            resumo_fatos: {
+              type: Type.STRING,
+              description:
+                "Narrativa jurídica COMPLETA dos fatos (não uma frase única) — mesmo padrão de detalhe de " +
+                "propose_create_ficha: contexto, cronologia, fundamentos legais potenciais, provas mencionadas " +
+                "e o que falta esclarecer.",
+            },
             urgencia: { type: Type.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
             lida: { type: Type.BOOLEAN },
           },
@@ -171,7 +177,17 @@ export const GEMINI_FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
             nome_cliente: { type: Type.STRING },
             telefone: { type: Type.STRING },
             area_direito: { type: Type.STRING },
-            resumo_fatos: { type: Type.STRING },
+            resumo_fatos: {
+              type: Type.STRING,
+              description:
+                "Narrativa jurídica COMPLETA dos fatos relatados na conversa, não um resumo de uma frase. " +
+                "Inclua: contexto e histórico relevante; todos os fatos narrados em ordem cronológica com " +
+                "datas/valores/nomes de partes quando informados; direitos/deveres e fundamentos legais " +
+                "potencialmente aplicáveis (lei/artigo, quando identificável); documentos e provas já " +
+                "mencionados; e o que ainda falta esclarecer. Escreva em parágrafos corridos, linguagem " +
+                "jurídica técnica — este texto é o que o advogado vai ler para entender o caso sem precisar " +
+                "reler a conversa inteira, então prefira ser mais completo do que sucinto.",
+            },
             urgencia: { type: Type.STRING, format: "enum", enum: ["baixa", "normal", "alta"] },
           },
         },

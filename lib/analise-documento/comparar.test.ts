@@ -115,7 +115,8 @@ describe("compararDocumentos", () => {
 
     expect(resultado.ok).toBe(false);
     if (!resultado.ok) {
-      expect(resultado.erro).toContain("429 quota esgotada");
+      expect(resultado.erro).toContain("sobrecarregada");
+      expect(resultado.erro).not.toContain("429");
     }
   });
 });

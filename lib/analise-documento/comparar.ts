@@ -1,6 +1,7 @@
 import "server-only";
 
 import { gerarRespostaEstruturada } from "../ia/chamada-estruturada";
+import { mensagemErroIaParaUsuario } from "../ia/erros";
 import { extrairTextoDeDocx, extrairTextoDePdfPorPagina, truncarTextoExtraido } from "../analise-processo/extracao";
 import {
   COMPARACAO_DOCUMENTO_RESPONSE_SCHEMA,
@@ -128,9 +129,6 @@ export async function compararDocumentos({
     return { ok: true, resultado, modeloIaUsado: MODELO_COMPARACAO_DOCUMENTO };
   } catch (erro) {
     console.error("[analise-documento/comparar] Falha ao comparar documentos:", erro);
-    return {
-      ok: false,
-      erro: erro instanceof Error ? erro.message : "Erro desconhecido ao comparar os documentos.",
-    };
+    return { ok: false, erro: mensagemErroIaParaUsuario(erro) };
   }
 }

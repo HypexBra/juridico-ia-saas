@@ -167,7 +167,10 @@ describe("analisarDocumento", () => {
 
     expect(resultado.ok).toBe(false);
     if (!resultado.ok) {
-      expect(resultado.erro).toContain("429 quota esgotada");
+      // Erro de provider (quota/5xx) nunca vaza mensagem crua pro usuário —
+      // ver lib/ia/erros.ts#mensagemErroIaParaUsuario.
+      expect(resultado.erro).toContain("sobrecarregada");
+      expect(resultado.erro).not.toContain("429");
     }
   });
 });

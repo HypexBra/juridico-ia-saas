@@ -39,3 +39,22 @@ export class TodosProvidersIndisponiveisError extends Error {
     this.name = "TodosProvidersIndisponiveisError";
   }
 }
+
+/**
+ * Mensagem em PT-BR segura para exibir ao usuário quando uma chamada de IA
+ * falha. Bug corrigido: chamadas one-shot (`lib/ia/chamada-estruturada.ts`,
+ * usada por Document Intelligence/análise de processo/auditor) propagavam o
+ * erro crú do provider — ex: `{"error":{"code":503,"message":"...
+ * UNAVAILABLE"}}` — direto pro `erro`/`error` da action e a UI mostrava o
+ * JSON bruto do Gemini pro usuário. Detecta erro transiente de provider
+ * (5xx/429/timeout/rede) pela mensagem e troca por texto compreensível;
+ * qualquer outro erro (ex: falha de parse, bug de schema) mantém a mensagem
+ * original, que já é escrita em código nosso.
+ */
+export function mensagemErroIaParaUsuario(erro: unknown): string {
+  const mensagem = erro instanceof Error ? erro.message : String(erro);
+  if (/429|5\d{2}|quota|rate.?limit|timeout|ECONNRESET|ETIMEDOUT|UNAVAILABLE/i.test(mensagem)) {
+    return "A IA está sobrecarregada no momento. Tente novamente em alguns instantes.";
+  }
+  return mensagem;
+}

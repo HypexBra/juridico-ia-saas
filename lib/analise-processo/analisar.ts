@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Part } from "@google/genai";
 import { gerarRespostaEstruturada } from "../ia/chamada-estruturada";
+import { mensagemErroIaParaUsuario } from "../ia/erros";
 import {
   ANALISE_PROCESSO_RESPONSE_SCHEMA,
   ANALISE_PROCESSO_SYSTEM_PROMPT,
@@ -136,9 +137,6 @@ export async function analisarDocumentoProcesso({
     return { ok: true, resultado, modeloIaUsado: MODELO_ANALISE_PROCESSO };
   } catch (erro) {
     console.error("[analise-processo/analisar] Falha ao analisar documento de processo:", erro);
-    return {
-      ok: false,
-      erro: erro instanceof Error ? erro.message : "Erro desconhecido ao analisar o documento.",
-    };
+    return { ok: false, erro: mensagemErroIaParaUsuario(erro) };
   }
 }
