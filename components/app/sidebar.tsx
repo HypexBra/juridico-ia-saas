@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/app/modelos", label: "Modelos", icon: "layout" as const },
   { href: "/app/redline", label: "Redline", icon: "shield" as const },
   { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
+  { href: "/app/auditor", label: "Auditor de Peças", icon: "auditor" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },
@@ -76,6 +77,12 @@ const ICONS: Record<string, React.ReactNode> = {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </>
+  ),
+  auditor: (
+    <>
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
     </>
   ),
   report: (
