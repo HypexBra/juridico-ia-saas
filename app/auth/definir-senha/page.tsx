@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   title: "Definir senha — Jurídico IA",
 };
 
+// Nunca estático: a página só faz sentido por trás de um link de e-mail
+// único (convite/redefinição de senha) e o form client-side depende da
+// sessão do momento (`supabase.auth.getSession()`, ver definir-senha-form).
+// Também evita o build tentar pré-renderizar um client component que
+// instancia o client do Supabase sem as env vars `NEXT_PUBLIC_*` presentes
+// no ambiente de build (só relevante localmente sem `.env.local`; em
+// produção essas vars já existem, mas a página não deve ser cacheada de
+// qualquer forma).
+export const dynamic = "force-dynamic";
+
 export default function DefinirSenhaPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
