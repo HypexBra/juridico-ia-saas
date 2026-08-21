@@ -56,8 +56,10 @@ Conferido: `app/api/webhooks/stripe/route.ts` grava `escritorios.plano = 'pro'` 
 
 Confirme quais já rodaram — não tenho acesso direto ao banco nesta sessão:
 - `0033`–`0036` (sessões anteriores, Document Intelligence/Auditor/fix varchar Autentique) — se ainda não rodaram, ver handoffs anteriores.
-- `0037_recencia_busca_chunks.sql` (esta sessão — recência no RAG).
-- `0038_convites_equipe.sql` (esta sessão — conta de equipe, inclui RLS mais restritiva em `perfis_insert`).
+- `0037_recencia_busca_chunks.sql` (recência no RAG).
+- `0038_convites_equipe.sql` (conta de equipe, inclui RLS mais restritiva em `perfis_insert`).
+- `0039_advogado_contra.sql` (Fase 5, tabela `analises_advogado_contra`).
+- `0040_convites_equipe_hardening.sql` (trigger de imutabilidade em `convites_equipe`, achado de revisão de segurança).
 
 ## 7. Chat cliente → advogado — já existe, não é gap
 
@@ -69,21 +71,36 @@ Confirmado: `app/app/dashboard/page.tsx` (383 linhas) já mostra "Próximos praz
 
 Próximo passo recomendado (não implementado, é escopo novo): seção "Hoje" no dashboard juntando prazos vencendo + tarefas de `caso_tarefas` com `concluida = false` e `data_limite` próxima, ordenados por urgência — visualmente igual ao card "Próximos prazos" já existente, reusando o mesmo componente de lista se possível. Isso também é o começo da Fase 19 ("HOJE / ATENÇÃO / PRODUTIVIDADE / FINANCEIRO") do prompt mestre do usuário.
 
-## 9. Prompt mestre de 29 fases (Ciclos 1-7) — não executado nesta sessão, por design
+## 9. Fase 5 — Advogado do Contra — IMPLEMENTADA E REVISADA nesta sessão
 
-O usuário colou um prompt mestre pedindo evolução completa em 29 fases (Case Intelligence → Advogado do Contra → Workflow Engine → WhatsApp → Command Center → Segurança → Testes, etc.), mas o PRÓPRIO usuário recomendou execução sequencial, não tudo de uma vez ("recomendo que a execução seja sequencial — não pedir para a IA implementar 29 fases de uma vez, porque ela provavelmente vai criar muita coisa superficialmente"). Segui essa recomendação: esta sessão focou nos bugs reportados em produção + o gap de conta de equipe (que é pré-requisito de várias fases futuras — ex: Fase 22/Firm precisa de multi-usuário funcionando de verdade, o que só ficou pronto agora).
+Depois do handoff original desta sessão ter sido escrito (o texto abaixo é histórico, mantido para rastreabilidade), a sessão continuou e completou a Fase 5 inteira em 3 ondas + revisão, todas commitadas e pushadas:
 
-**Estado real por Ciclo** (do que já foi confirmado nos handoffs anteriores + esta sessão):
-- **Ciclo 1 (Core Jurídico)**: Fases 0-3 completas (Caso Inteligente, Análise de Processos, Document Intelligence).
-- **Ciclo 2 (IA Jurídica)**: Fase 4 (Auditor de Peças) completa. **Fases 5-7 (Advogado do Contra, Estrategista, Pesquisa Jurídica) NÃO iniciadas** — só desenho preliminar no ADR 0012, nenhum código.
+- **Onda 0 (database)**, commit `0dc5d32`: `supabase/migrations/0039_advogado_contra.sql` (tabela `analises_advogado_contra`, 3 origens: colado/upload/tese_cadastrada), `lib/planos/gating.ts` (11ª feature `advogado_do_contra`), `lib/ia/limite-concorrencia.ts` (5ª tabela no gate).
+- **Onda 1 (ai-engineer)**, commit `7360b62`: `lib/advogado-contra/{tipos,prompt,analisar}.ts` + testes — achados adversariais qualitativos (sem notas 0-10), guardrail crítico anti-alucinação de "precedentes contrários prováveis" (regex CNJ em `.refine()` fail-closed + prompt reforçado), guardrail de lastro para `vulnerabilidadeGeral: "alta"`.
+- **Onda 2 (senior-engineer)**, commit `86bc778`: `app/app/advogado-contra/**`, `components/app/advogado-contra-{form,resultado}.tsx`, nav na sidebar, atalho "Testar tese contra" na ficha.
+- **Onda 3 (revisão paralela — security + qa + tech lead)**: nenhum achado crítico/alto/médio/bloqueante. Um achado baixo já conhecido (regex CNJ não cobre variantes tipo "Súmula 123"/"REsp 1.234.567" sem pontuação — mitigado por instrução de prompt explícita citando esses exemplos). ADR retroativo `docs/adrs/0013-advogado-do-contra.md` (commit `c671c62`).
+
+**Decisão de produto em aberto, sinalizada pelo tech lead** (não decidida, não aplicada): o Auditor de Peças (`/app/auditor`) tem o formulário INLINE na página de listagem; o Advogado do Contra (`/app/advogado-contra`) tem o formulário numa rota separada (`/app/advogado-contra/novo`), seguindo literalmente o que o próprio ADR 0012 especificava para o Auditor — mas o Auditor já em produção nunca seguiu esse ponto do seu próprio ADR. Ou seja: divergência de UX real entre as duas features irmãs, mas não é claro qual lado "corrigir" (mudar o Auditor afeta usuários reais; mudar o Advogado do Contra é mais barato por ser novo). Fica pra você decidir.
+
+**Lacunas de teste não-bloqueantes** (reportadas pelo QA, nenhuma é bug): boundary exato de `TAMANHO_MAXIMO_TESE_ADVOGADO_CONTRA` sem teste automatizado (comportamento manualmente verificado como correto), combinação de todos os arrays opcionais vazios simultaneamente sem teste combinatório.
+
+**Ação pendente sua**: rodar migration `0039` (e `0040`, ver item 6) no Supabase; testar o fluxo ponta a ponta em produção (colar tese, upload, selecionar tese cadastrada, conferir que o aviso de "hipótese da IA" aparece destacado na seção de precedentes).
+
+### Prompt mestre de 29 fases (Ciclos 1-7) — estado atualizado
+
+**Estado real por Ciclo** (atualizado):
+- **Ciclo 1 (Core Jurídico)**: Fases 0-3 completas.
+- **Ciclo 2 (IA Jurídica)**: Fases 4 (Auditor de Peças) e **5 (Advogado do Contra) completas**. **Fases 6-7 (Estrategista, Pesquisa Jurídica) NÃO iniciadas.**
 - **Ciclos 3-7**: nenhuma fase iniciada (Workflow Engine, Triagem/Portal/WhatsApp/Áudio, Calculadoras/Memória/Agentes, Dashboard redesign completo/planos Free-Pro-Firm, Segurança/Command Center/Observabilidade/Testes).
 
-**Próximo passo recomendado pra próxima sessão** (retomando exatamente onde a sessão 2 parou, ver `HANDOFF_2026-08-21.md` item 9 pra contexto já mapeado): **Fase 5 — Advogado do Contra**. Estruturalmente parecido com o Auditor de Peças (Fase 4), mas com achados adversariais em vez de notas 0-10; decidir tabela nova vs. reuso; entrada por texto/upload ou tese já cadastrada (`teses_caso`); nova feature key em `FEATURES_PREMIUM`; entrar em `lib/ia/limite-concorrencia.ts`; guardrail de humildade epistêmica igual ao Auditor (Zod força "hipótese da IA", nunca citação verificada — pesquisa com fonte real só na Fase 7). Onda de implementação: `architect` (ADR) → `database` → `ai-engineer` → `senior-engineer` → revisão `security`+`qa`+`techlead`.
+**Próximo passo recomendado pra próxima sessão**: **Fase 6 — Estrategista Jurídico** (organizar objetivo/tese principal/teses subsidiárias/provas/riscos/próximos passos do caso, com opção de transformar recomendação em tarefa — ver `tarefas_caso`). Mesmo padrão de ondas: `architect`(ADR, opcional dado o volume de precedente já existente)/`database` → `ai-engineer` → `senior-engineer` → revisão paralela `security`+`qa`+tech lead (usar `subagent_type: "general-purpose"` para o papel de tech lead — **`techlead` não existe no registry de agentes deste ambiente**, confirmado nesta sessão).
 
-Fases que o usuário marcou como possivelmente PRO (planos): o prompt mestre já lista o que entra em Free/Pro/Firm nas Fases 20-22 — ao implementar cada fase nova, checar `lib/planos/gating.ts#FEATURES_PREMIUM` e classificar a feature nova como Pro por padrão (consistente com o que já foi feito pro Auditor/Document Intelligence), a menos que o usuário diga o contrário.
+Fases que envolvem plano (Free/Pro/Firm): ao criar cada feature nova, adicionar em `lib/planos/gating.ts#FEATURES_PREMIUM` como Pro-only por padrão (mesmo padrão das 11 features já classificadas assim), a menos que o usuário diga o contrário.
 
 ## 10. Notas de processo desta sessão
 
 - Sem acesso a MCP do Supabase/Stripe nesta sessão (`ToolSearch` não achou nenhuma ferramenta correspondente) — toda verificação de config/migration foi por leitura de código + `vercel env ls` (só lista nomes/datas, não valores). `vercel env pull` foi bloqueado pelo classificador de permissão do ambiente (puxaria secrets pro disco) — não insisti, é uma barreira de segurança do harness, não um erro.
 - `npm install` rodado (deps opcionais faltando localmente — `mammoth`, `@langchain/core` — impediam 5 suítes de teste de rodar; resolvido, sem mudança de versão de nada, só instalação do que já estava no `package-lock.json`/`package.json`).
-- Todo código novo tem teste (`lib/ia/gemini.test.ts`, `lib/onboarding.test.ts`) e passou por `tsc --noEmit` + suíte completa (320 testes verdes) antes de cada commit.
+- Bug real encontrado e corrigido durante a sessão: `npx next build` local quebrava em `/auth/definir-senha` (client component pré-renderizado estaticamente tentando instanciar o client do Supabase) — corrigido com `export const dynamic = "force-dynamic"` (commit `b0afeeb`).
+- Todo código novo tem teste e passou por `tsc --noEmit` + suíte completa + `next build` antes de cada commit. Suíte terminou esta sessão em 350 testes verdes (começou em 317).
+- Fase 5 foi construída via ondas de subagentes (`database`→`ai-engineer`→`senior-engineer`→revisão paralela `security`+`qa`+`general-purpose`), cada uma verificada por mim (tsc+vitest, e nas duas últimas também `next build`) antes do commit — nenhum relatório de agente foi aceito sem confirmação própria.
