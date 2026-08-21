@@ -9,6 +9,9 @@ interface PlanFeature {
   included: boolean;
 }
 
+/** Preço exibido aqui é só cópia/UI — a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx). */
+const PRECO_PRO_MENSAL = "R$ 149";
+
 const FREE_FEATURES: PlanFeature[] = [
   { label: "Uso mensal de IA limitado", included: true },
   { label: "Chat jurídico (petições, contratos, pareceres)", included: true },
@@ -20,12 +23,13 @@ const FREE_FEATURES: PlanFeature[] = [
 ];
 
 const PRO_FEATURES: PlanFeature[] = [
-  { label: "Uso mensal de IA ampliado", included: true },
-  { label: "Chat jurídico (petições, contratos, pareceres)", included: true },
-  { label: "Triagem de clientes", included: true },
-  { label: "Controle de prazos", included: true },
-  { label: "Exportação em DOCX/PDF", included: true },
-  { label: "Biblioteca de modelos", included: true },
+  { label: "Tudo do plano Free, sem limite mensal de IA", included: true },
+  { label: "Redação assistida: IA redige a peça inteira, não só responde", included: true },
+  { label: "Análise de risco contratual cláusula-por-cláusula (redline)", included: true },
+  { label: "Relatórios avançados: realization rate e breakdown financeiro", included: true },
+  { label: "Mail-merge condicional (automação de documento avançada)", included: true },
+  { label: "API/integrações abertas", included: true },
+  { label: "Portal do cliente rico: chat bidirecional e notificação em tempo real", included: true },
   { label: "Múltiplos advogados no time", included: true },
 ];
 
@@ -42,8 +46,7 @@ export function Pricing() {
             Comece sem custo, cresça quando precisar
           </h2>
           <p className="mt-4 text-muted">
-            O plano Pro está em construção. Quem entra pelo Free hoje é
-            avisado em primeira mão quando ele abrir.
+            Assine quando quiser, cancele quando quiser — sem fidelidade.
           </p>
         </div>
 
@@ -107,7 +110,7 @@ export function Pricing() {
                   className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-silver to-silver-2"
                 />
               <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-silver to-silver-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
-                Em breve
+                Mais popular
               </span>
               <h3 className="font-display text-lg font-bold text-ice">Pro</h3>
               <p className="mt-1.5 text-sm text-muted">
@@ -115,9 +118,10 @@ export function Pricing() {
                 peças por mês.
               </p>
               <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-2xl font-black text-silver-2">
-                  Lista de espera
+                <span className="font-display text-4xl font-black text-ice">
+                  {PRECO_PRO_MENSAL}
                 </span>
+                <span className="text-sm text-muted">/mês</span>
               </div>
               <ul className="mt-7 flex flex-1 flex-col gap-3">
                 {PRO_FEATURES.map((feature) => (
@@ -131,7 +135,7 @@ export function Pricing() {
                 href="/cadastro"
                 className="mt-8 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-5 py-3 text-center text-sm font-semibold text-navy transition-transform hover:-translate-y-0.5"
               >
-                Entrar na lista de espera
+                Assinar Plano Pro
               </Link>
               </div>
             </BorderGlow>

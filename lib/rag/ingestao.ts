@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { dividirEmChunks } from "./chunking";
 import { gerarEmbedding } from "./embeddings";
 
-type FonteTipo = "documento_upload" | "ficha_caso" | "prazo" | "modelo";
+type FonteTipo = "documento_upload" | "ficha_caso" | "prazo" | "modelo" | "memoria_ia_caso";
 
 /**
  * Indexa (chunk + embed + insert) um texto de origem qualquer no pgvector.

@@ -281,6 +281,14 @@ export async function enviarPropostaParaAssinaturaAction(
     .eq("id", registro.id);
 
   if (erroUpdate) {
+    console.error("[assinatura] falha ao atualizar documentos_para_assinatura após envio ao Autentique", {
+      documentoId: registro.id,
+      idExternoAutentique: resultado.idExterno,
+      codigo: erroUpdate.code,
+      mensagem: erroUpdate.message,
+      detalhes: erroUpdate.details,
+      dica: erroUpdate.hint,
+    });
     return {
       error: "Documento foi enviado ao Autentique, mas houve falha ao salvar o status localmente.",
       ok: false,

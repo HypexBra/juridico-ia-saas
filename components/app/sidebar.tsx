@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/app/fichas", label: "Fichas", icon: "file" as const },
   { href: "/app/prazos", label: "Prazos", icon: "clock" as const },
   { href: "/app/modelos", label: "Modelos", icon: "layout" as const },
+  { href: "/app/redline", label: "Redline", icon: "shield" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },
@@ -52,6 +53,12 @@ const ICONS: Record<string, React.ReactNode> = {
       <line x1="12" y1="20" x2="12" y2="10" />
       <line x1="18" y1="20" x2="18" y2="4" />
       <line x1="6" y1="20" x2="6" y2="16" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
+      <path d="M9 12l2 2 4-4" />
     </>
   ),
   users: (
@@ -97,12 +104,14 @@ export function Sidebar({
   nomeEscritorio,
   nomeUsuario,
   role,
+  isAdminPlataforma = false,
   open,
   onClose,
 }: {
   nomeEscritorio: string;
   nomeUsuario: string;
   role: Role;
+  isAdminPlataforma?: boolean;
   open: boolean;
   onClose: () => void;
 }) {
@@ -177,6 +186,20 @@ export function Sidebar({
             );
           })}
         </nav>
+
+        {isAdminPlataforma && (
+          <div className="border-t border-white/10 px-3 py-3">
+            <Link
+              href="/admin"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-amber-300 transition-all duration-150 ease-out hover:bg-amber-500/10 active:scale-[0.97]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
+              </svg>
+              Painel Admin
+            </Link>
+          </div>
+        )}
 
         <div className="border-t border-white/10 px-3 py-3">
           <LogoutButton />

@@ -6,7 +6,9 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PrazoViewRow } from "@/components/portal/prazo-view-row";
 import { NotificacoesPanel } from "@/components/portal/notificacoes-panel";
-import type { FichaCaso, NotificacaoCliente, Prazo } from "@/lib/types";
+import { ChatCaso } from "@/components/portal/chat-caso";
+import { escritorioTemAcesso } from "@/lib/planos/gating";
+import type { FichaCaso, MensagemPortalCliente, NotificacaoCliente, Prazo } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Meu processo — Portal do Cliente",
@@ -28,7 +30,9 @@ export default async function PortalDashboardPage() {
   // próprio caso, e as três tabelas não têm policy de INSERT/UPDATE/DELETE
   // para o papel de cliente do portal (só a leitura das próprias
   // notificações tem UPDATE, tratado à parte em `NotificacoesPanel`).
-  const [{ data: ficha }, { data: prazos }, { data: notificacoes }] = await Promise.all([
+  const temAcessoChat = await escritorioTemAcesso(clientePortal.escritorio_id, "portal_cliente_rico");
+
+  const [{ data: ficha }, { data: prazos }, { data: notificacoes }, { data: mensagens }] = await Promise.all([
     supabase
       .from("fichas_caso")
       .select("*")
@@ -47,6 +51,16 @@ export default async function PortalDashboardPage() {
       .eq("cliente_portal_id", clientePortal.id)
       .order("criado_em", { ascending: false })
       .returns<NotificacaoCliente[]>(),
+    // Só busca o histórico do chat quando o escritório tem a feature — evita
+    // um round-trip inútil (e uma tela vazia confusa) para escritórios Free.
+    temAcessoChat
+      ? supabase
+          .from("mensagens_portal_cliente")
+          .select("*")
+          .eq("cliente_portal_id", clientePortal.id)
+          .order("criado_em", { ascending: true })
+          .returns<MensagemPortalCliente[]>()
+      : Promise.resolve({ data: [] as MensagemPortalCliente[] | null }),
   ]);
 
   const listaPrazos = prazos ?? [];
@@ -85,6 +99,13 @@ export default async function PortalDashboardPage() {
               <p className="whitespace-pre-wrap text-sm text-ice-2">{ficha.resumo_fatos}</p>
             </div>
           )}
+        </Card>
+      )}
+
+      {ficha && temAcessoChat && (
+        <Card>
+          <CardTitle className="mb-4">Fale com o escritório</CardTitle>
+          <ChatCaso fichaId={ficha.id} mensagensIniciais={mensagens ?? []} />
         </Card>
       )}
 

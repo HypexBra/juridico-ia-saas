@@ -3,15 +3,7 @@ import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
 import {
   IconBanknote,
-  IconBell,
-  IconBookOpen,
-  IconChart,
-  IconClipboard,
   IconClock,
-  IconDownload,
-  IconGauge,
-  IconIdCard,
-  IconLibrary,
   IconPortal,
   IconScale,
   IconSignature,
@@ -28,6 +20,12 @@ interface Article {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
+// Curadoria deliberada: só as cláusulas essenciais aqui (o resto do produto
+// — biblioteca de modelos, export DOCX/PDF, multi-usuário, score de risco,
+// jurisprudência ampliada, e as 6 features Pro — continua real e disponível
+// dentro do app, só não precisa de uma linha própria na landing pra não
+// poluir a primeira impressão). Ver components/marketing/pricing.tsx pra o
+// detalhamento completo por plano.
 const ARTICLES: Article[] = [
   {
     numeral: "Art. 1º",
@@ -45,101 +43,45 @@ const ARTICLES: Article[] = [
   },
   {
     numeral: "Art. 3º",
-    title: "Controle de prazos processuais",
+    title: "Prazo automático via diário oficial",
     description:
-      "Uma lista de vencimentos por processo, visível no painel, para que nenhuma contestação, recurso ou manifestação perca o prazo por falta de acompanhamento manual.",
+      "O sistema varre o DJEN todos os dias procurando pelos processos cadastrados e lança o prazo sozinho no painel — ninguém precisa mais ler publicação por publicação à mão.",
     icon: IconClock,
   },
   {
     numeral: "Art. 4º",
-    title: "Biblioteca de modelos",
-    description:
-      "Salve as peças e cláusulas que o escritório já validou. A IA reaproveita esses modelos como ponto de partida, mantendo o padrão de linguagem da banca em cada novo documento.",
-    icon: IconLibrary,
-  },
-  {
-    numeral: "Art. 5º",
-    title: "Exportação em DOCX e PDF",
-    description:
-      "O que sai do chat chega pronto para revisão: baixe qualquer petição, contrato ou parecer em Word ou PDF, formatado, sem retrabalho de diagramação.",
-    icon: IconDownload,
-  },
-  {
-    numeral: "Art. 6º",
-    title: "Financeiro do uso de IA",
-    description:
-      "Um painel simples mostra quanto do limite mensal de IA já foi consumido pelo escritório, por advogado e por tipo de documento gerado.",
-    icon: IconChart,
-  },
-  {
-    numeral: "Art. 7º",
-    title: "Multi-usuário por escritório",
-    description:
-      "Convide os advogados do seu time para a mesma conta. Cada um trabalha com seus próprios casos, sob o mesmo painel e a mesma biblioteca de modelos.",
-    icon: IconClipboard,
-  },
-  {
-    numeral: "Art. 8º",
-    title: "Prazo automático via diário oficial",
-    description:
-      "O sistema varre o DJEN todos os dias procurando pelos processos cadastrados e lança o prazo sozinho no painel — ninguém precisa mais ler publicação por publicação à mão.",
-    icon: IconBell,
-  },
-  {
-    numeral: "Art. 9º",
     title: "Portal do cliente",
     description:
       "Cada cliente recebe um acesso próprio para acompanhar o andamento do caso, documentos e prazos. Antes mesmo do convite formal, ele já confere o status básico só com o CPF.",
     icon: IconPortal,
   },
   {
-    numeral: "Art. 10º",
+    numeral: "Art. 5º",
     title: "Financeiro de honorários",
     description:
       "Contratos de honorário e parcelas em um painel só: quem já pagou, quem está em atraso, quanto entra no mês — sem depender de planilha paralela.",
     icon: IconBanknote,
   },
   {
-    numeral: "Art. 11º",
+    numeral: "Art. 6º",
     title: "Assinatura eletrônica",
     description:
       "Envie contratos e petições para assinatura direto da plataforma, com validade jurídica, e acompanhe quem já assinou sem precisar sair do painel.",
     icon: IconSignature,
   },
   {
-    numeral: "Art. 12º",
-    title: "Perfil com OAB",
-    description:
-      "Cada advogado do escritório mantém seu número de OAB vinculado ao perfil, já refletido em petições e documentos gerados pela IA.",
-    icon: IconIdCard,
-  },
-  {
-    numeral: "Art. 13º",
+    numeral: "Art. 7º",
     title: "Lembrete automático via WhatsApp",
     description:
       "Prazo perto do fim ou parcela de honorário vencendo: o sistema dispara a mensagem sozinho, todos os dias, sem depender de alguém lembrar de avisar o cliente.",
     icon: IconWhatsapp,
   },
   {
-    numeral: "Art. 14º",
+    numeral: "Art. 8º",
     title: "Relatório de produtividade por advogado",
     description:
       "Casos, faturamento e taxa de êxito por advogado, num painel só — o sócio vê onde o escritório está ganhando e onde está perdendo tempo, sem montar planilha.",
     icon: IconTrendingUp,
-  },
-  {
-    numeral: "Art. 15º",
-    title: "Score de risco do caso",
-    description:
-      "Um semáforo (baixo, médio, alto) calculado pela IA a partir dos fatos do caso, visível direto na lista de fichas — prioriza a atenção do time pro que mais importa.",
-    icon: IconGauge,
-  },
-  {
-    numeral: "Art. 16º",
-    title: "Jurisprudência ampliada no chat",
-    description:
-      "Além dos modelos que o escritório sobe, a IA também busca em jurisprudência pública do STF e do STJ — mais fundamentação, sem depender só do que já foi cadastrado.",
-    icon: IconBookOpen,
   },
 ];
 
@@ -164,7 +106,7 @@ export function Features() {
             O contrato de serviço do seu novo associado
           </h2>
           <p className="mt-4 text-muted">
-            Dezesseis cláusulas, nenhuma promessa vazia — cada uma existe e funciona hoje.
+            Oito cláusulas essenciais, nenhuma promessa vazia — cada uma existe e funciona hoje.
           </p>
         </div>
       </div>

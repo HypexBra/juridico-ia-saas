@@ -17,6 +17,14 @@ const canalSchema = z.object({
   // Vazio = "não alterar o token já salvo" (edição sem trocar credencial);
   // só entra na criptografia/gravação quando o admin digita um valor novo.
   tokenAcesso: z.string().trim().optional(),
+  // Vazio = alerta de ficha urgente desativado para este escritório
+  // (feature opt-in, ver migration 0012 e `lib/whatsapp/lembretes.ts`).
+  telefoneAlertaUrgencia: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .transform((v) => (v ? v : null)),
 });
 
 export type CanalWhatsappState = { error: string | null; sucesso: string | null };
@@ -49,6 +57,7 @@ export async function salvarCanalWhatsappAction(
     phoneNumberId: formData.get("phoneNumberId"),
     numeroExibicao: formData.get("numeroExibicao"),
     tokenAcesso: formData.get("tokenAcesso"),
+    telefoneAlertaUrgencia: formData.get("telefoneAlertaUrgencia"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos.", sucesso: null };
@@ -70,6 +79,7 @@ export async function salvarCanalWhatsappAction(
     escritorio_id: usuario.perfil.escritorio_id,
     phone_number_id: parsed.data.phoneNumberId,
     numero_exibicao: parsed.data.numeroExibicao,
+    telefone_alerta_urgencia: parsed.data.telefoneAlertaUrgencia,
     ativo: true,
     atualizado_em: new Date().toISOString(),
   };
@@ -89,7 +99,7 @@ export async function salvarCanalWhatsappAction(
   revalidatePath("/app/perfil");
   return {
     error: null,
-    sucesso: "Canal WhatsApp salvo. Os lembretes automáticos de prazo e parcela passam a valer no próximo ciclo do cron.",
+    sucesso: "Canal WhatsApp salvo. Os lembretes automáticos de prazo, parcela e alerta de ficha urgente passam a valer no próximo ciclo do cron.",
   };
 }
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { criarEscritorioEPerfil } from "@/lib/onboarding";
+import { buscarConfiguracoesPlataforma } from "@/lib/admin/configuracoes";
 
 const cadastroSchema = z.object({
   nomeUsuario: z.string().trim().min(2, "Informe seu nome completo."),
@@ -31,6 +32,14 @@ export async function cadastroAction(
   if (!parsed.success) {
     return {
       error: parsed.error.issues[0]?.message ?? "Dados inválidos.",
+      precisaConfirmarEmail: false,
+    };
+  }
+
+  const { novosCadastrosHabilitados } = await buscarConfiguracoesPlataforma();
+  if (!novosCadastrosHabilitados) {
+    return {
+      error: "Novos cadastros estão temporariamente desabilitados. Tente novamente mais tarde.",
       precisaConfirmarEmail: false,
     };
   }

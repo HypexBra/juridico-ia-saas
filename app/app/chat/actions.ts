@@ -44,7 +44,7 @@ async function mesRefAtual() {
   return new Date().toISOString().slice(0, 7);
 }
 
-export type ConversaResumo = Pick<Conversa, "id" | "titulo" | "iniciada_em" | "total_msgs">;
+export type ConversaResumo = Pick<Conversa, "id" | "titulo" | "iniciada_em" | "total_msgs" | "criado_por">;
 
 export async function listarConversasAction(): Promise<ConversaResumo[]> {
   const usuario = await getUsuarioAtual();
@@ -53,13 +53,104 @@ export async function listarConversasAction(): Promise<ConversaResumo[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("conversas")
-    .select("id, titulo, iniciada_em, total_msgs")
+    .select("id, titulo, iniciada_em, total_msgs, criado_por")
     .eq("tipo", "interno")
     .order("iniciada_em", { ascending: false })
     .limit(50);
 
   if (error) throw error;
   return data ?? [];
+}
+
+export type ExcluirConversaResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * Exclui uma conversa (e cascata: mensagens, conversas_tags — FKs `on
+ * delete cascade`, ver migration 0001). Só o próprio autor pode excluir: a
+ * RLS (`conversas_delete_proprio_autor`, migration 0014) já bloqueia no
+ * banco, mas checa aqui também pra devolver uma mensagem de erro clara em
+ * vez de um "0 rows affected" silencioso.
+ *
+ * Antes de excluir, DESVINCULA (não apaga) qualquer `fichas_caso` que tenha
+ * nascido desta conversa — `fichas_caso.conversa_id` tem `on delete
+ * cascade`, e uma ficha de caso carrega prazos/contratos/honorários reais;
+ * excluir uma conversa de chat nunca deve arrastar um caso inteiro junto.
+ */
+export async function excluirConversaAction(conversaId: string): Promise<ExcluirConversaResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Não autenticado." };
+
+  const parsed = z.string().uuid().safeParse(conversaId);
+  if (!parsed.success) return { ok: false, error: "Conversa inválida." };
+
+  const supabase = await createClient();
+
+  const { data: conversa, error: erroBusca } = await supabase
+    .from("conversas")
+    .select("id, criado_por")
+    .eq("id", parsed.data)
+    .maybeSingle<{ id: string; criado_por: string | null }>();
+
+  if (erroBusca) return { ok: false, error: "Não foi possível localizar a conversa." };
+  if (!conversa) return { ok: false, error: "Conversa não encontrada." };
+  if (conversa.criado_por !== usuario.perfil.id) {
+    return { ok: false, error: "Você só pode excluir conversas criadas por você." };
+  }
+
+  const { error: erroDesvincular } = await supabase
+    .from("fichas_caso")
+    .update({ conversa_id: null })
+    .eq("conversa_id", parsed.data);
+  if (erroDesvincular) {
+    console.error("[chat/excluirConversaAction] Falha ao desvincular fichas_caso:", erroDesvincular);
+    return { ok: false, error: "Não foi possível excluir a conversa (falha ao preservar casos vinculados)." };
+  }
+
+  const { error: erroExclusao } = await supabase.from("conversas").delete().eq("id", parsed.data);
+  if (erroExclusao) {
+    console.error("[chat/excluirConversaAction] Falha ao excluir conversa:", erroExclusao);
+    return { ok: false, error: "Não foi possível excluir a conversa." };
+  }
+
+  return { ok: true };
+}
+
+/** Exclui TODAS as conversas do próprio usuário (mesmas regras de excluirConversaAction, em lote). */
+export async function excluirTodasConversasAction(): Promise<ExcluirConversaResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Não autenticado." };
+
+  const supabase = await createClient();
+
+  const { data: minhasConversas, error: erroBusca } = await supabase
+    .from("conversas")
+    .select("id")
+    .eq("criado_por", usuario.perfil.id)
+    .eq("tipo", "interno")
+    .returns<{ id: string }[]>();
+
+  if (erroBusca) return { ok: false, error: "Não foi possível localizar suas conversas." };
+  if (!minhasConversas || minhasConversas.length === 0) return { ok: true };
+
+  const ids = minhasConversas.map((c) => c.id);
+
+  const { error: erroDesvincular } = await supabase.from("fichas_caso").update({ conversa_id: null }).in("conversa_id", ids);
+  if (erroDesvincular) {
+    console.error("[chat/excluirTodasConversasAction] Falha ao desvincular fichas_caso:", erroDesvincular);
+    return { ok: false, error: "Não foi possível excluir as conversas (falha ao preservar casos vinculados)." };
+  }
+
+  const { error: erroExclusao } = await supabase
+    .from("conversas")
+    .delete()
+    .eq("criado_por", usuario.perfil.id)
+    .eq("tipo", "interno");
+  if (erroExclusao) {
+    console.error("[chat/excluirTodasConversasAction] Falha ao excluir conversas em lote:", erroExclusao);
+    return { ok: false, error: "Não foi possível excluir as conversas." };
+  }
+
+  return { ok: true };
 }
 
 export async function carregarMensagensAction(conversaId: string): Promise<Mensagem[]> {

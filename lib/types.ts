@@ -1,3 +1,5 @@
+import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
+
 export type Role = "owner" | "admin" | "advogado";
 
 export type Escritorio = {
@@ -5,6 +7,14 @@ export type Escritorio = {
   nome: string;
   slug: string;
   plano: "free" | "pro";
+  /**
+   * Overrides pontuais de feature premium por escritório (migration 0012),
+   * ex: `{ "analise_risco_contratual": true }` libera 1 feature pro num
+   * escritório free sem mudar `plano`. Tipo solto aqui (evita import de
+   * `FeaturePremium` em `lib/types.ts`, que é importado por praticamente
+   * todo o app); `lib/planos/gating.ts` é quem interpreta as chaves.
+   */
+  features_overrides: Record<string, boolean> | null;
   criado_em: string;
 };
 
@@ -103,6 +113,16 @@ export type DocumentoConhecimento = {
   processado_em: string | null;
 };
 
+/**
+ * Andamento/resultado do processo judicial em si (distinto de
+ * `conversas.status`, que é o status do CHAT de triagem, e de `lida`, que é
+ * só inbox). Ver `supabase/migrations/0011_status_processual_caso.sql` para
+ * o porquê desta coluna existir. `em_andamento` é o estado inicial de toda
+ * ficha nova; `ganho`/`acordo` confirmam o direito ao êxito (ainda que o
+ * valor não esteja parcelado); `perdido`/`arquivado` encerram sem êxito.
+ */
+export type StatusProcessualFicha = "em_andamento" | "ganho" | "acordo" | "perdido" | "arquivado";
+
 export type FichaCaso = {
   id: string;
   escritorio_id: string;
@@ -119,7 +139,144 @@ export type FichaCaso = {
   lida: boolean;
   nivel_risco: "baixo" | "medio" | "alto" | null;
   risco_calculado_em: string | null;
+  status_processual: StatusProcessualFicha;
+  status_processual_atualizado_em: string | null;
+  /**
+   * Soft delete (migration 0022) — `excluirFichaAction` passa a marcar esta
+   * coluna em vez de fazer DELETE físico. `null` = ficha ativa. A policy
+   * RLS de select já filtra `deletado_em is null` por padrão, então uma
+   * ficha carregada do client normalmente vem com este campo `null`; só
+   * aparece preenchido em rotas administrativas que leiam via service_role.
+   */
+  deletado_em: string | null;
   criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0023) — pessoa envolvida no caso além do cliente principal. */
+export type TipoPessoaCaso = "parte" | "adverso" | "testemunha" | "terceiro";
+
+export type PessoaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo: TipoPessoaCaso;
+  nome: string;
+  documento: string | null;
+  contato: string | null;
+  papel_processual: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0024) — linha do tempo do caso (append-only). */
+export type OrigemEventoCaso = "manual" | "ia" | "djen" | "documento";
+
+export type EventoCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo_evento: string;
+  descricao: string;
+  data_evento: string;
+  origem: OrigemEventoCaso;
+  referencia_id: string | null;
+  criado_por: string | null;
+  criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0025) — tese jurídica avaliada para o caso. */
+export type StatusTeseCaso = "em_avaliacao" | "adotada" | "descartada";
+
+export type EntradaHistoricoTeseCaso = {
+  em: string;
+  status_anterior: StatusTeseCaso | null;
+  status_novo: StatusTeseCaso;
+  nota: string | null;
+};
+
+export type TeseCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tese: string;
+  fundamentacao: string | null;
+  status: StatusTeseCaso;
+  historico: EntradaHistoricoTeseCaso[];
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0026) — jurisprudência (tabela pública `jurisprudencias`) citada num caso. */
+export type CasoJurisprudenciaCitada = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  jurisprudencia_id: string;
+  nota_advogado: string | null;
+  criado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0027) — tarefa operacional do caso (distinta de `Prazo`, que é processual/legal). */
+export type StatusTarefaCaso = "pendente" | "em_andamento" | "concluida";
+
+export type TarefaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  titulo: string;
+  responsavel_perfil_id: string | null;
+  status: StatusTarefaCaso;
+  prazo_opcional: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+/** "Caso Inteligente" (Fase 1, migration 0028) — memória incremental de IA por caso (append-only). */
+export type TipoMemoriaIaCaso = "resumo_acumulado" | "decisao" | "fato_novo";
+
+export type MemoriaIaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  tipo_memoria: TipoMemoriaIaCaso;
+  conteudo: string;
+  criado_em: string;
+};
+
+/**
+ * "Caso Inteligente" (Fase 2, migration 0030) — análise inteligente de um
+ * documento do processo (PDF/DOCX/imagem) vinculado a uma `FichaCaso`. As 12
+ * seções da análise (`resultado_analise`) são tipadas em
+ * `ResultadoAnaliseProcesso` (`lib/analise-processo/tipos.ts`), não aqui —
+ * mesmo padrão de `ResultadoAnaliseRisco` (`lib/redline/tipos.ts`) para
+ * `analises_risco_contratual` (migration 0017). Ver
+ * `docs/adrs/0004-analise-inteligente-processos.md`.
+ */
+export type TipoArquivoAnaliseProcesso = "pdf" | "docx" | "imagem";
+export type StatusAnaliseProcesso = "processando" | "pronto" | "erro";
+
+export type AnaliseProcesso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  nome_arquivo: string;
+  tipo_arquivo: TipoArquivoAnaliseProcesso;
+  tamanho_bytes: number;
+  status: StatusAnaliseProcesso;
+  /** Estrutura `ResultadoAnaliseProcesso` — `null` enquanto `status = "processando"`. */
+  resultado_analise: ResultadoAnaliseProcesso | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+  /**
+   * Migration 0031 — momento em que o write-back automático (pessoas/
+   * timeline/teses + propostas de prazo) foi aplicado. `null` = ainda não
+   * aplicado (botão "Aplicar ao caso" disponível). Ver `lib/analise-processo/writeback.ts`.
+   */
+  writeback_aplicado_em: string | null;
 };
 
 export type StatusLeadTriagem = "novo" | "em_analise" | "convertido" | "descartado";
@@ -273,6 +430,24 @@ export type NotificacaoCliente = {
   criado_em: string;
 };
 
+export type RemetenteMensagemPortal = "cliente" | "escritorio";
+
+/**
+ * Chat bidirecional cliente <-> escritório (feature Pro
+ * "portal_cliente_rico", migration 0019). Independente de `Conversa`/
+ * `Mensagem` (chat interno do escritório).
+ */
+export type MensagemPortalCliente = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  cliente_portal_id: string;
+  remetente: RemetenteMensagemPortal;
+  conteudo: string;
+  lida: boolean;
+  criado_em: string;
+};
+
 export type Modelo = {
   id: string;
   escritorio_id: string;
@@ -297,19 +472,61 @@ export type PeticaoGerada = {
   criado_em: string;
 };
 
+/**
+ * Status Stripe da assinatura (migration 0012). `inexistente` é o valor
+ * inicial (nunca fez checkout) — não confundir com `canceled` (já foi
+ * assinante e cancelou). Espelha o campo `status` de uma Subscription do
+ * Stripe 1:1, exceto `inexistente` que é local.
+ */
+export type StatusAssinaturaStripe =
+  | "inexistente"
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete"
+  | "incomplete_expired";
+
+/**
+ * Espelho local da subscription no Stripe (migration 0012) — usada para
+ * auditoria/tela "minha assinatura". NÃO é a fonte de verdade do gating de
+ * feature: isso é `escritorios.plano`, atualizado pelo webhook Stripe
+ * (`app/api/webhooks/stripe/route.ts`) sempre que este registro muda de
+ * status. Ver `lib/planos/gating.ts`.
+ */
+export type Assinatura = {
+  id: string;
+  escritorio_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  status: StatusAssinaturaStripe;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  criado_em: string;
+  atualizado_em: string;
+};
+
 export type CanalWhatsappEscritorio = {
   id: string;
   escritorio_id: string;
   phone_number_id: string;
   token_acesso: string;
   numero_exibicao: string | null;
+  /**
+   * Número interno (equipe/advogado do escritório) que recebe o alerta
+   * proativo de ficha com urgência alta sem contato (migration 0012).
+   * `null` = feature desativada para este escritório (opt-in).
+   */
+  telefone_alerta_urgencia: string | null;
   ativo: boolean;
   criado_em: string;
   atualizado_em: string;
 };
 
-export type TipoReferenciaLembrete = "prazo" | "parcela_honorario";
-export type MarcoLembrete = "d3" | "d1" | "d0" | "atraso";
+export type TipoReferenciaLembrete = "prazo" | "parcela_honorario" | "ficha_urgente";
+export type MarcoLembrete = "d3" | "d1" | "d0" | "atraso" | "sem_resposta";
 export type StatusLembreteWhatsapp = "enviado" | "falhou";
 
 export type LembreteWhatsappEnviado = {
@@ -322,6 +539,29 @@ export type LembreteWhatsappEnviado = {
   status: StatusLembreteWhatsapp;
   mensagem_id_externo: string | null;
   erro: string | null;
+  criado_em: string;
+};
+
+/** Admin do SaaS (cross-tenant) — ver docs/adrs/0003-admin-plataforma.md. NÃO confundir com `Perfil.role`. */
+export type PlataformaAdmin = {
+  id: string;
+  auth_user_id: string;
+  nome: string;
+  email: string;
+  ativo: boolean;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+};
+
+export type AdminLog = {
+  id: string;
+  admin_id: string | null;
+  admin_nome: string;
+  acao: string;
+  alvo_tipo: string | null;
+  alvo_id: string | null;
+  detalhes: Record<string, unknown> | null;
   criado_em: string;
 };
 
@@ -338,4 +578,4 @@ export const AREAS_DIREITO = [
   "LGPD",
 ] as const;
 
-export const LIMITE_MENSAGENS_FREE = 60; // uso mensal de IA no plano free (heurística p/ caber na free tier do Gemini)
+export const LIMITE_MENSAGENS_FREE = 25; // uso mensal de IA no plano free — baixado de 60 pra empurrar upgrade pro Pro

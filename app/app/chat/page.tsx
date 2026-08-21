@@ -25,7 +25,7 @@ export default async function ChatPage() {
           Gerenciar base de conhecimento
         </Link>
       </div>
-      <ChatApp conversasIniciais={conversas} usoInicial={uso} />
+      <ChatApp conversasIniciais={conversas} usoInicial={uso} perfilIdAtual={usuario.perfil.id} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { LinkButton } from "@/components/ui/button";
 import { NovoContratoHonorarioDialog } from "@/components/app/novo-contrato-honorario-dialog";
 import { ContratoHonorarioCard, type ContratoHonorarioComRelacoes } from "@/components/app/contrato-honorario-card";
 import { sincronizarParcelasAtrasadas } from "@/app/app/financeiro/actions";
+import { calcularResumoFinanceiro } from "@/lib/financeiro/resumo";
 import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 import { BarChart } from "@/components/app/charts/bar-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
@@ -76,14 +77,10 @@ export default async function FinanceiroPage() {
   const todasParcelas = contratos.flatMap((contrato) => contrato.parcelas);
 
   const mesAtual = new Date().toISOString().slice(0, 7);
-  const recebidoNoMes = todasParcelas
-    .filter((p) => p.status === "pago" && (p.pago_em ?? "").startsWith(mesAtual))
-    .reduce((soma, p) => soma + p.valor, 0);
-  const aReceberNoMes = todasParcelas
-    .filter((p) => p.status !== "pago" && p.vencimento.startsWith(mesAtual))
-    .reduce((soma, p) => soma + p.valor, 0);
-  const parcelasAtrasadas = todasParcelas.filter((p) => p.status === "atrasado");
-  const totalAtrasado = parcelasAtrasadas.reduce((soma, p) => soma + p.valor, 0);
+  const { recebidoNoMes, aReceberNoMes, totalAtrasado, parcelasAtrasadasCount } = calcularResumoFinanceiro(
+    todasParcelas,
+    mesAtual,
+  );
 
   const usoIaMesAtual = (usoRows ?? []).filter((linha) => linha.mes_ref === mesAtual);
   const chamadasIaNoMes = usoIaMesAtual.length;
@@ -116,7 +113,10 @@ export default async function FinanceiroPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <LinkButton href="/app/financeiro/inadimplencia" variant="secondary" size="sm">
-            Inadimplência{parcelasAtrasadas.length > 0 ? ` (${parcelasAtrasadas.length})` : ""}
+            Inadimplência{parcelasAtrasadasCount > 0 ? ` (${parcelasAtrasadasCount})` : ""}
+          </LinkButton>
+          <LinkButton href="/app/financeiro/projecao-exito" variant="secondary" size="sm">
+            Projeção de êxito
           </LinkButton>
           <LinkButton href="/api/financeiro/export?periodo=mes" variant="secondary" size="sm">
             Exportar CSV (mês)
@@ -139,12 +139,12 @@ export default async function FinanceiroPage() {
         </Card>
 
         <Card
-          className={`transition-transform duration-150 ease-out active:scale-[0.98] ${parcelasAtrasadas.length > 0 ? "border-red-500/30" : ""}`}
+          className={`transition-transform duration-150 ease-out active:scale-[0.98] ${parcelasAtrasadasCount > 0 ? "border-red-500/30" : ""}`}
         >
           <p className="text-xs font-medium uppercase tracking-wide text-muted">Em atraso</p>
           <p className="mt-2 font-display text-3xl font-bold text-red-400">{formatarMoeda(totalAtrasado)}</p>
           <p className="mt-2 text-xs text-muted">
-            {parcelasAtrasadas.length} parcela(s) vencida(s) sem pagamento.
+            {parcelasAtrasadasCount} parcela(s) vencida(s) sem pagamento.
           </p>
         </Card>
       </div>

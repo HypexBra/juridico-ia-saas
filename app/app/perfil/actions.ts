@@ -1,9 +1,17 @@
 "use server";
 
 import { z } from "zod";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
+import {
+  criarCheckoutSession,
+  criarPortalSessionUrl,
+  obterAppUrl,
+  StripeNaoConfiguradoError,
+} from "@/lib/billing/stripe-client";
+import type { Assinatura } from "@/lib/types";
 
 // Formato NÚMERO/UF (ex: "123456/SP") — é o que a API do DJEN espera como
 // numeroOab + ufOab (ver lib/djen/cliente.ts), então valida aqui na origem
@@ -51,4 +59,99 @@ export async function atualizarOabAction(
     error: null,
     sucesso: `OAB ${parsed.data} salva. As intimações novas serão importadas automaticamente 1x/dia como propostas de prazo para você aprovar.`,
   };
+}
+
+export type AssinaturaActionState = { error: string | null };
+
+/**
+ * Inicia o upgrade para o plano Pro (Checkout Session do Stripe). Sempre
+ * redireciona ao final (sucesso vai para a `url` do Stripe, erro fica na
+ * própria página com o state) — nunca retorna sem redirect ou sem error
+ * setado, para o form não ficar "pendurado" sem feedback.
+ */
+export async function iniciarCheckoutAction(
+  _prev: AssinaturaActionState,
+  _formData: FormData,
+): Promise<AssinaturaActionState> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { error: "Sessão expirada. Faça login novamente." };
+  if (usuario.perfil.role !== "owner") {
+    return { error: "Só o titular (owner) do escritório pode iniciar uma assinatura." };
+  }
+  if (usuario.perfil.escritorio.plano === "pro") {
+    return { error: "Este escritório já está no plano Pro." };
+  }
+
+  const priceId = process.env.STRIPE_PRICE_ID_PRO_MENSAL;
+  if (!priceId) return { error: "Billing ainda não configurado neste ambiente." };
+
+  const appUrl = obterAppUrl();
+  let url: string;
+  try {
+    const supabase = await createClient();
+    const { data: assinaturaExistente, error: erroAssinaturaExistente } = await supabase
+      .from("assinaturas")
+      .select("stripe_customer_id")
+      .eq("escritorio_id", usuario.perfil.escritorio_id)
+      .maybeSingle<Pick<Assinatura, "stripe_customer_id">>();
+    if (erroAssinaturaExistente) {
+      // Não é fatal para o checkout (segue sem reaproveitar `stripe_customer_id`,
+      // Stripe cria um customer novo), mas engolir sem logar escondia
+      // problemas reais de schema/RLS na tabela `assinaturas`.
+      console.error(
+        "[perfil/iniciarCheckoutAction] Falha ao buscar assinatura existente:",
+        erroAssinaturaExistente,
+      );
+    }
+
+    ({ url } = await criarCheckoutSession({
+      escritorioId: usuario.perfil.escritorio_id,
+      priceId,
+      customerEmail: usuario.email ?? "",
+      successUrl: `${appUrl}/app/perfil?checkout=sucesso`,
+      cancelUrl: `${appUrl}/app/perfil?checkout=cancelado`,
+      stripeCustomerId: assinaturaExistente?.stripe_customer_id ?? null,
+    }));
+  } catch (erro) {
+    if (erro instanceof StripeNaoConfiguradoError) return { error: erro.message };
+    console.error("[perfil/iniciarCheckoutAction] Falha ao criar checkout session:", erro);
+    return { error: "Falha ao iniciar checkout." };
+  }
+
+  redirect(url);
+}
+
+/** Abre o Customer Portal do Stripe para o escritório já assinante gerenciar cartão/cancelamento. */
+export async function abrirPortalAction(
+  _prev: AssinaturaActionState,
+  _formData: FormData,
+): Promise<AssinaturaActionState> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { error: "Sessão expirada. Faça login novamente." };
+  if (usuario.perfil.role !== "owner") {
+    return { error: "Só o titular (owner) do escritório pode gerenciar a assinatura." };
+  }
+
+  const appUrl = obterAppUrl();
+  let url: string;
+  try {
+    const supabase = await createClient();
+    const { data: assinatura } = await supabase
+      .from("assinaturas")
+      .select("stripe_customer_id")
+      .eq("escritorio_id", usuario.perfil.escritorio_id)
+      .maybeSingle<Pick<Assinatura, "stripe_customer_id">>();
+
+    if (!assinatura?.stripe_customer_id) {
+      return { error: "Nenhuma assinatura Stripe encontrada para este escritório." };
+    }
+
+    url = await criarPortalSessionUrl(assinatura.stripe_customer_id, `${appUrl}/app/perfil`);
+  } catch (erro) {
+    if (erro instanceof StripeNaoConfiguradoError) return { error: erro.message };
+    console.error("[perfil/abrirPortalAction] Falha ao criar portal session:", erro);
+    return { error: "Falha ao abrir portal de assinatura." };
+  }
+
+  redirect(url);
 }

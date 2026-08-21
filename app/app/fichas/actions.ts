@@ -7,12 +7,9 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
-import {
-  formatarDataHojeMailMerge,
-  formatarValorCausaMailMerge,
-  resolverMailMerge,
-} from "@/lib/peticoes/mail-merge";
-import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
+import { montarNovaTeseCaso, montarAtualizacaoStatusTese, montarTeseCasoDaAnaliseIa } from "@/lib/casos/teses";
+import { AREAS_DIREITO, LIMITE_MENSAGENS_FREE, type StatusTeseCaso, type TeseCaso } from "@/lib/types";
 
 const criarFichaSchema = z.object({
   nomeCliente: z.string().trim().min(1, "Informe o nome do cliente."),
@@ -88,12 +85,59 @@ export async function marcarFichaLidaAction(
   return { ok: true };
 }
 
+const STATUS_PROCESSUAL_VALIDOS = ["em_andamento", "ganho", "acordo", "perdido", "arquivado"] as const;
+
+/**
+ * Atualiza o andamento/resultado do processo (`status_processual`, migration
+ * 0011) — usado pela ficha de caso e consumido pela projeção de recebíveis
+ * de êxito em `/app/financeiro/projecao-exito` (um caso "ganho"/"acordo"
+ * confirma a expectativa de honorário de êxito mesmo antes de as parcelas
+ * serem geradas; "perdido"/"arquivado" a zera).
+ */
+export async function atualizarStatusProcessualAction(
+  fichaId: string,
+  statusProcessual: string,
+): Promise<AcaoFichaResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  if (!STATUS_PROCESSUAL_VALIDOS.includes(statusProcessual as (typeof STATUS_PROCESSUAL_VALIDOS)[number])) {
+    return { ok: false, error: "Status processual inválido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("fichas_caso")
+    .update({ status_processual: statusProcessual, status_processual_atualizado_em: new Date().toISOString() })
+    .eq("id", fichaId);
+
+  if (error) {
+    return { ok: false, error: "Não foi possível atualizar o status do caso. Tente novamente." };
+  }
+
+  revalidatePath("/app/fichas");
+  revalidatePath(`/app/fichas/${fichaId}`);
+  revalidatePath("/app/financeiro/projecao-exito");
+  return { ok: true };
+}
+
+/**
+ * Soft-delete (migration 0022): marca `deletado_em` em vez de fazer DELETE
+ * físico. Um DELETE cascateava para `contratos_honorario` e todo o resto do
+ * histórico financeiro/jurídico do caso — risco de perda de dado real que o
+ * soft-delete elimina, já que a policy RLS de SELECT filtra
+ * `deletado_em is null` por padrão (a ficha simplesmente some das listagens
+ * normais, sem apagar nada).
+ */
 export async function excluirFichaAction(fichaId: string): Promise<AcaoFichaResultado> {
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("fichas_caso").delete().eq("id", fichaId);
+  const { error } = await supabase
+    .from("fichas_caso")
+    .update({ deletado_em: new Date().toISOString() })
+    .eq("id", fichaId);
 
   if (error) {
     return { ok: false, error: "Não foi possível excluir a ficha. Tente novamente." };
@@ -183,6 +227,32 @@ ${MARCADOR_ESTRATEGIA}
 
   if (erroUpdate) return { ok: false, error: "A IA respondeu, mas houve um erro ao salvar a análise." };
 
+  // Além de manter `resumo_ia`/`questoes_ia`/`estrategia_ia` na própria
+  // ficha (compatibilidade com o restante do app: página da ficha,
+  // classificação de risco, indexação RAG), cada geração também grava uma
+  // linha nova em `teses_caso` — nenhuma tese anterior é sobrescrita, o
+  // histórico de teses avaliadas para o caso fica completo e auditável.
+  const novaTese = montarTeseCasoDaAnaliseIa({
+    areaDireito: ficha.area_direito,
+    estrategiaIa,
+    questoesIa,
+  });
+  if (novaTese) {
+    const { error: erroInsertTese } = await supabase.from("teses_caso").insert(
+      montarNovaTeseCaso({
+        escritorioId: usuario.perfil.escritorio_id,
+        fichaCasoId: fichaId,
+        tese: novaTese.tese,
+        fundamentacao: novaTese.fundamentacao,
+      }),
+    );
+    if (erroInsertTese) {
+      console.error("[fichas/gerarAnaliseIaAction] Falha ao registrar nova tese do caso:", erroInsertTese, {
+        fichaId,
+      });
+    }
+  }
+
   await supabase.from("uso_ia").insert({
     escritorio_id: usuario.perfil.escritorio_id,
     tokens_in: respostaIa.tokensIn,
@@ -260,85 +330,107 @@ export async function gerarPeticaoDeModeloAction(
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
 
-  if (!modeloId) return { ok: false, error: "Selecione um modelo para gerar a petição." };
-
   const supabase = await createClient();
-
-  const { data: modelo, error: erroModelo } = await supabase
-    .from("modelos")
-    .select("id, conteudo")
-    .eq("id", modeloId)
-    .maybeSingle<{ id: string; conteudo: string }>();
-
-  if (erroModelo || !modelo) return { ok: false, error: "Modelo não encontrado." };
-
-  const { data: ficha, error: erroFicha } = await supabase
-    .from("fichas_caso")
-    .select("id, nome_cliente, area_direito, cliente_id")
-    .eq("id", fichaId)
-    .maybeSingle<{ id: string; nome_cliente: string | null; area_direito: string | null; cliente_id: string | null }>();
-
-  if (erroFicha || !ficha) return { ok: false, error: "Ficha não encontrada." };
-
-  // `fichas_caso.nome_cliente` é preenchido na triagem, mas nem toda ficha
-  // tem esse campo direto — quando ausente, busca o nome via `cliente_id`
-  // (contrato documentado na migration 0010, comentário do `{{nome_cliente}}`).
-  let nomeCliente = ficha.nome_cliente;
-  if (!nomeCliente && ficha.cliente_id) {
-    const { data: cliente } = await supabase
-      .from("clientes")
-      .select("nome")
-      .eq("id", ficha.cliente_id)
-      .maybeSingle<{ nome: string | null }>();
-    nomeCliente = cliente?.nome ?? null;
-  }
-
-  // Uma ficha pode ter vários prazos; usa o mais recente que já tenha número
-  // de processo CNJ preenchido (nem todo prazo tem, ex: prazos internos sem
-  // processo formal ainda distribuído).
-  const { data: prazoComProcesso } = await supabase
-    .from("prazos")
-    .select("numero_processo_cnj")
-    .eq("ficha_caso_id", fichaId)
-    .not("numero_processo_cnj", "is", null)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ numero_processo_cnj: string | null }>();
-
-  // Idem para contrato de honorário: pega o mais recente vinculado à ficha.
-  const { data: contrato } = await supabase
-    .from("contratos_honorario")
-    .select("valor_total")
-    .eq("ficha_caso_id", fichaId)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ valor_total: number | null }>();
-
-  const dadosResolvidos = {
-    nome_cliente: nomeCliente,
-    numero_processo: prazoComProcesso?.numero_processo_cnj ?? null,
-    area_direito: ficha.area_direito,
-    valor_causa: formatarValorCausaMailMerge(contrato?.valor_total ?? null),
-    data_hoje: formatarDataHojeMailMerge(),
-  };
-
-  const resultado = resolverMailMerge(modelo.conteudo, dadosResolvidos);
-
-  const { error: erroInsercao } = await supabase.from("peticoes_geradas").insert({
-    escritorio_id: usuario.perfil.escritorio_id,
-    modelo_id: modelo.id,
-    ficha_caso_id: fichaId,
-    gerado_por: usuario.perfil.id,
-    variaveis_usadas: resultado.variaveisUsadas,
+  const resultado = await gerarDocumentoDaFicha(supabase, {
+    fichaId,
+    modeloId,
+    escritorioId: usuario.perfil.escritorio_id,
+    perfilId: usuario.perfil.id,
   });
 
-  if (erroInsercao) {
-    console.error("[fichas/gerarPeticaoDeModeloAction] Falha ao registrar petição gerada:", erroInsercao, {
-      fichaId,
-      modeloId,
-    });
-    return { ok: false, error: "A petição foi gerada, mas houve um erro ao registrar a auditoria. Tente novamente." };
+  if (!resultado.ok) return resultado;
+
+  return {
+    ok: true,
+    textoFinal: resultado.resultado.textoFinal,
+    variaveisNaoResolvidas: resultado.resultado.variaveisNaoResolvidas,
+  };
+}
+
+export type ListarTesesCasoResultado = { ok: true; teses: TeseCaso[] } | { ok: false; error: string };
+
+/**
+ * Lista todas as teses jurídicas já registradas para o caso (`teses_caso`,
+ * migration 0025), mais recentes primeiro — inclui as adotadas, descartadas
+ * e em avaliação, já que o histórico completo (não só a tese "vigente") é o
+ * ponto do "Caso Inteligente". A policy RLS de `teses_caso` já restringe ao
+ * escritório do usuário autenticado.
+ */
+export async function listarTesesCasoAction(fichaCasoId: string): Promise<ListarTesesCasoResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("teses_caso")
+    .select("*")
+    .eq("ficha_caso_id", fichaCasoId)
+    .order("criado_em", { ascending: false });
+
+  if (error) {
+    return { ok: false, error: "Não foi possível carregar as teses do caso. Tente novamente." };
   }
 
-  return { ok: true, textoFinal: resultado.textoFinal, variaveisNaoResolvidas: resultado.variaveisNaoResolvidas };
+  return { ok: true, teses: (data ?? []) as TeseCaso[] };
+}
+
+const STATUS_TESE_VALIDOS: readonly StatusTeseCaso[] = ["em_avaliacao", "adotada", "descartada"];
+
+export type AtualizarStatusTeseResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * "Adota"/"descarta" (ou devolve para avaliação) uma tese já existente.
+ * Nunca sobrescreve `tese`/`fundamentacao` — busca o estado atual, monta o
+ * novo `status` + o append de `historico` via `montarAtualizacaoStatusTese`
+ * (lógica pura testada em `lib/casos/teses.test.ts`) e grava só essas duas
+ * colunas, preservando a trilha completa de decisão do caso.
+ */
+export async function atualizarStatusTeseAction(
+  teseId: string,
+  novoStatus: string,
+): Promise<AtualizarStatusTeseResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  if (!STATUS_TESE_VALIDOS.includes(novoStatus as StatusTeseCaso)) {
+    return { ok: false, error: "Status de tese inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data: teseAtual, error: erroBusca } = await supabase
+    .from("teses_caso")
+    .select("id, ficha_caso_id, status, historico")
+    .eq("id", teseId)
+    .single();
+
+  if (erroBusca || !teseAtual) {
+    return { ok: false, error: "Tese não encontrada." };
+  }
+
+  let atualizacao;
+  try {
+    atualizacao = montarAtualizacaoStatusTese({
+      statusAtual: teseAtual.status as StatusTeseCaso,
+      historicoAtual: teseAtual.historico ?? [],
+      novoStatus: novoStatus as StatusTeseCaso,
+    });
+  } catch (erro) {
+    return { ok: false, error: erro instanceof Error ? erro.message : "Não foi possível atualizar a tese." };
+  }
+
+  const { error: erroUpdate } = await supabase
+    .from("teses_caso")
+    .update({
+      status: atualizacao.status,
+      historico: atualizacao.historico,
+      atualizado_em: new Date().toISOString(),
+    })
+    .eq("id", teseId);
+
+  if (erroUpdate) {
+    return { ok: false, error: "Não foi possível atualizar o status da tese. Tente novamente." };
+  }
+
+  revalidatePath(`/app/fichas/${teseAtual.ficha_caso_id}`);
+  return { ok: true };
 }

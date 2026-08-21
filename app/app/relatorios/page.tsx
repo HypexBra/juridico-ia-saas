@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart } from "@/components/app/charts/bar-chart";
+import { planoTemAcesso } from "@/lib/planos/gating";
+import { calcularRelatorioAvancado } from "@/lib/relatorios/avancado";
 
 export const metadata = { title: "Relatórios — Jurídico IA" };
 
@@ -168,6 +170,45 @@ export default async function RelatoriosPage() {
     return !conversaParaAdvogado.get(ficha.conversa_id);
   }).length;
 
+  // Relatório avançado (realization rate + breakdown por caso/área) é
+  // feature premium (`relatorios_avancados`) — só busca os dados extras
+  // (nome_cliente/area_direito das fichas) quando o escritório tem acesso,
+  // pra não gastar round-trip à toa no plano free.
+  const temAcessoRelatorioAvancado = planoTemAcesso(usuario.perfil.escritorio, "relatorios_avancados");
+  let relatorioAvancado: ReturnType<typeof calcularRelatorioAvancado> | null = null;
+  if (temAcessoRelatorioAvancado) {
+    const [{ data: fichasDetalhadas }, { data: contratosDetalhados }] = await Promise.all([
+      supabase
+        .from("fichas_caso")
+        .select("id, nome_cliente, area_direito")
+        .eq("escritorio_id", escritorioId)
+        .returns<{ id: string; nome_cliente: string | null; area_direito: string | null }[]>(),
+      supabase
+        .from("contratos_honorario")
+        .select("id, ficha_caso_id, valor_total")
+        .eq("escritorio_id", escritorioId)
+        .returns<{ id: string; ficha_caso_id: string; valor_total: number | null }[]>(),
+    ]);
+
+    relatorioAvancado = calcularRelatorioAvancado(
+      (fichasDetalhadas ?? []).map((ficha) => ({
+        id: ficha.id,
+        nomeCliente: ficha.nome_cliente ?? "Cliente sem nome",
+        areaDireito: ficha.area_direito,
+      })),
+      (contratosDetalhados ?? []).map((contrato) => ({
+        contratoId: contrato.id,
+        fichaCasoId: contrato.ficha_caso_id,
+        valorTotal: contrato.valor_total,
+      })),
+      listaParcelas.map((parcela) => ({
+        contratoId: parcela.contrato_id,
+        valor: parcela.valor,
+        status: parcela.status,
+      })),
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -241,6 +282,114 @@ export default async function RelatoriosPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {temAcessoRelatorioAvancado && relatorioAvancado ? (
+        <Card>
+          <CardTitle className="mb-1">Relatório avançado (Pro)</CardTitle>
+          <p className="mb-4 text-xs text-muted">
+            Realization rate (recebido / contratado) e breakdown financeiro por caso e por área do direito.
+            {relatorioAvancado.quantidadeIndeterminada > 0 &&
+              ` ${relatorioAvancado.quantidadeIndeterminada} caso(s) sem valor de contrato cadastrado ficam fora do cálculo.`}
+          </p>
+
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Contratado</p>
+              <p className="mt-1 font-display text-lg font-semibold text-silver-2">
+                {formatarMoeda(relatorioAvancado.valorContratadoTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Recebido</p>
+              <p className="mt-1 font-display text-lg font-semibold text-ice">
+                {formatarMoeda(relatorioAvancado.valorRecebidoTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Realization rate</p>
+              <p className="mt-1 font-display text-lg font-semibold text-green">
+                {relatorioAvancado.realizationRateGeral === null
+                  ? "—"
+                  : `${(relatorioAvancado.realizationRateGeral * 100).toFixed(1)}%`}
+              </p>
+            </div>
+          </div>
+
+          {relatorioAvancado.porArea.length > 0 && (
+            <div className="mb-5 overflow-x-auto">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Por área do direito</p>
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 pr-3 font-medium">Área</th>
+                    <th className="pb-2 pr-3 font-medium">Casos</th>
+                    <th className="pb-2 pr-3 font-medium">Contratado</th>
+                    <th className="pb-2 pr-3 font-medium">Recebido</th>
+                    <th className="pb-2 font-medium">Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {relatorioAvancado.porArea.map((linha) => (
+                    <tr key={linha.areaDireito}>
+                      <td className="py-2 pr-3 text-ice">{linha.areaDireito}</td>
+                      <td className="py-2 pr-3 text-muted">{linha.totalCasos}</td>
+                      <td className="py-2 pr-3 text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
+                      <td className="py-2 pr-3 text-ice">{formatarMoeda(linha.valorRecebido)}</td>
+                      <td className="py-2 text-muted">
+                        {linha.realizationRate === null ? "—" : `${(linha.realizationRate * 100).toFixed(1)}%`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {relatorioAvancado.porCaso.length > 0 && (
+            <div className="overflow-x-auto">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Por caso</p>
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wide text-muted">
+                    <th className="pb-2 pr-3 font-medium">Cliente</th>
+                    <th className="pb-2 pr-3 font-medium">Área</th>
+                    <th className="pb-2 pr-3 font-medium">Contratado</th>
+                    <th className="pb-2 pr-3 font-medium">Recebido</th>
+                    <th className="pb-2 pr-3 font-medium">Pendente/Atrasado</th>
+                    <th className="pb-2 font-medium">Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {relatorioAvancado.porCaso.map((linha) => (
+                    <tr key={linha.fichaCasoId}>
+                      <td className="py-2 pr-3 text-ice">{linha.nomeCliente}</td>
+                      <td className="py-2 pr-3 text-muted">{linha.areaDireito}</td>
+                      <td className="py-2 pr-3 text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
+                      <td className="py-2 pr-3 text-ice">{formatarMoeda(linha.valorRecebido)}</td>
+                      <td className="py-2 pr-3 text-muted">{formatarMoeda(linha.valorPendenteOuAtrasado)}</td>
+                      <td className="py-2 text-muted">
+                        {linha.realizationRate === null ? "—" : `${(linha.realizationRate * 100).toFixed(1)}%`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      ) : (
+        <Card>
+          <CardTitle className="mb-1">Relatório avançado</CardTitle>
+          <p className="text-sm text-muted">
+            Realization rate e breakdown financeiro por caso/área do direito é uma feature do{" "}
+            <span className="font-medium text-ice">Plano Pro</span>. Assine em{" "}
+            <a href="/app/perfil" className="text-ice underline underline-offset-2">
+              Meu perfil
+            </a>{" "}
+            para liberar.
+          </p>
+        </Card>
       )}
 
       <Card>

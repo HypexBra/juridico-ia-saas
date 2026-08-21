@@ -31,12 +31,19 @@ export type UsuarioAtual = {
 export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
   const supabase = await createClient();
 
-  // O middleware já validou a sessão e expôs o id via header — evita repetir
-  // aqui o round-trip de rede que `auth.getUser()` faz para o Supabase Auth.
-  const userIdDoHeader = (await headers()).get("x-user-id");
+  // O middleware já validou a sessão e expôs id+email via header — evita
+  // repetir aqui o round-trip de rede que `auth.getUser()` faz para o
+  // Supabase Auth. Sem o e-mail neste fast path, `usuario.email` ficava
+  // sempre `null` em toda request normal (a única que roda `auth.getUser()`
+  // de fato é a que não tem os headers do middleware) — quebrava, por
+  // exemplo, o preenchimento de `customer_email` no Stripe Checkout Session
+  // (`app/app/perfil/actions.ts`).
+  const requestHeaders = await headers();
+  const userIdDoHeader = requestHeaders.get("x-user-id");
+  const userEmailDoHeader = requestHeaders.get("x-user-email");
 
   let user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null =
-    userIdDoHeader ? { id: userIdDoHeader } : null;
+    userIdDoHeader ? { id: userIdDoHeader, email: userEmailDoHeader } : null;
 
   if (!user) {
     const { data } = await supabase.auth.getUser();
