@@ -4,7 +4,7 @@ import type {
   NivelCertezaAnaliseProcesso,
   ResultadoComparacaoDocumento,
   TipoMudancaClausulaComparada,
-} from "@/lib/document-intelligence/tipos";
+} from "@/lib/analise-documento/tipos";
 
 const TIPO_MUDANCA_TONE: Record<TipoMudancaClausulaComparada, "green" | "red" | "amber" | "muted"> = {
   adicionada: "green",

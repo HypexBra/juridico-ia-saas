@@ -4,7 +4,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import { Card, CardTitle } from "@/components/ui/card";
 import { DocumentoLoteForm } from "@/components/app/documento-lote-form";
-import { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "../constantes";
+import { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "@/lib/analise-documento/analisar";
 
 export const metadata = { title: "Analisar em lote — Jurídico IA" };
 

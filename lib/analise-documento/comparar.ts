@@ -113,7 +113,7 @@ export async function compararDocumentos({
       maxOutputTokens: MAX_OUTPUT_TOKENS_COMPARACAO_DOCUMENTO,
       thinkingBudget: THINKING_BUDGET_COMPARACAO_DOCUMENTO,
       cadeiaModelos: [MODELO_COMPARACAO_DOCUMENTO, MODELO_FALLBACK_QUOTA_COMPARACAO_DOCUMENTO],
-      logPrefixo: "[document-intelligence/comparar]",
+      logPrefixo: "[analise-documento/comparar]",
     });
 
     const resultado = parsearRespostaComparacaoDocumento(jsonBruto);
@@ -127,7 +127,7 @@ export async function compararDocumentos({
 
     return { ok: true, resultado, modeloIaUsado: MODELO_COMPARACAO_DOCUMENTO };
   } catch (erro) {
-    console.error("[document-intelligence/comparar] Falha ao comparar documentos:", erro);
+    console.error("[analise-documento/comparar] Falha ao comparar documentos:", erro);
     return {
       ok: false,
       erro: erro instanceof Error ? erro.message : "Erro desconhecido ao comparar os documentos.",

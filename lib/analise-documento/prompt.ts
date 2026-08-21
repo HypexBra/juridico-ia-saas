@@ -222,7 +222,7 @@ const MARCADOR_FIM = "===FIM DO DOCUMENTO===";
 /**
  * Monta o bloco de texto do documento (PDF/DOCX já extraídos por página) a
  * ser enviado à IA — nunca a imagem, que é anexada separadamente como parte
- * `inlineData` por `lib/document-intelligence/analisar.ts`. O texto do
+ * `inlineData` por `lib/analise-documento/analisar.ts`. O texto do
  * documento é conteúdo NÃO CONFIÁVEL do ponto de vista de prompt injection
  * (documento de terceiro, upload de qualquer usuário autenticado) — isolado
  * num bloco delimitado por marcadores explícitos e tratado como DADO, nunca
@@ -246,7 +246,7 @@ export type ParametrosPromptAnaliseDocumento =
  * quando `tipo: "imagem"`, a imagem em si é anexada como outra `Part` pelo
  * caller, esta função só produz o texto de acompanhamento). Função PURA (sem
  * I/O), testável sem mockar Gemini — quem chama a IA é
- * `lib/document-intelligence/analisar.ts`.
+ * `lib/analise-documento/analisar.ts`.
  */
 export function montarPromptAnaliseDocumento(parametros: ParametrosPromptAnaliseDocumento): string {
   const cabecalho = `Analise o documento abaixo e devolva a análise estruturada pedida, seguindo as regras já definidas.\n\nNome do arquivo: ${parametros.nomeArquivo}`;

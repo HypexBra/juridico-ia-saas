@@ -6,7 +6,7 @@ import type {
   CitacaoAnaliseProcesso,
   ResultadoAnaliseDocumento,
   VereditoClausulaDoc,
-} from "@/lib/document-intelligence/tipos";
+} from "@/lib/analise-documento/tipos";
 
 const CERTEZA_TONE: Record<CitacaoAnaliseProcesso["certeza"], "green" | "silver" | "muted"> = {
   confirmado: "green",

@@ -7,7 +7,7 @@ import { TIPOS_MUDANCA_CLAUSULA_COMPARADA, type ResultadoComparacaoDocumento } f
 /**
  * System prompt do comparador de documentos A×B (ADR 0011, seção 5) —
  * extensão do guardrail anti-alucinação de
- * `lib/document-intelligence/prompt.ts` (que por sua vez segue o padrão do
+ * `lib/analise-documento/prompt.ts` (que por sua vez segue o padrão do
  * ADR 0004) para 2 documentos simultâneos: dobra a superfície de prompt
  * injection (2 documentos de terceiros em vez de 1), então o texto de guarda
  * é reforçado citando os dois marcadores nominalmente.
@@ -211,7 +211,7 @@ export type ParametrosPromptComparacaoDocumento = {
  * Monta o prompt final de instrução com os 2 documentos delimitados por
  * marcadores distintos (`===INÍCIO DOCUMENTO A===`/`===FIM DOCUMENTO A===` e
  * equivalente B). Função PURA (sem I/O), testável sem mockar Gemini — quem
- * chama a IA é `lib/document-intelligence/comparar.ts`. Ambos os documentos
+ * chama a IA é `lib/analise-documento/comparar.ts`. Ambos os documentos
  * chegam como texto extraído (comparação não aceita imagem — ADR 0011 não
  * cobre esse caso; decisão registrada no relatório da Onda 1).
  */

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FieldError, Label } from "@/components/ui/input";
 import type { AnaliseDocumento, StatusAnaliseDocumento } from "@/lib/types";
 import { analisarDocumentosLoteAction } from "@/app/app/documentos/actions";
-import { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "@/app/app/documentos/constantes";
+import { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "@/lib/analise-documento/constantes";
 
 const ACCEPT_DOCUMENTO =
   ".pdf,.docx,.jpg,.jpeg,.png,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,image/webp";

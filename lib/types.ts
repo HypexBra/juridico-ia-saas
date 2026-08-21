@@ -1,5 +1,5 @@
 import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
-import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/document-intelligence/tipos";
+import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -587,7 +587,7 @@ export type AnaliseDocumento = {
   tamanho_bytes: number;
   status: StatusAnaliseDocumento;
   /**
-   * Estrutura `ResultadoAnaliseDocumento` (`lib/document-intelligence/tipos.ts`,
+   * Estrutura `ResultadoAnaliseDocumento` (`lib/analise-documento/tipos.ts`,
    * entregue na Onda 1 do ADR 0011). `null` enquanto `status = "processando"`.
    */
   resultado_analise: ResultadoAnaliseDocumento | null;
@@ -613,7 +613,7 @@ export type ComparacaoDocumento = {
   analise_documento_b_id: string | null;
   status: StatusAnaliseDocumento;
   /**
-   * Estrutura `ResultadoComparacaoDocumento` (`lib/document-intelligence/tipos.ts`,
+   * Estrutura `ResultadoComparacaoDocumento` (`lib/analise-documento/tipos.ts`,
    * entregue na Onda 1 do ADR 0011). `null` enquanto `status = "processando"`.
    */
   resultado_comparacao: ResultadoComparacaoDocumento | null;

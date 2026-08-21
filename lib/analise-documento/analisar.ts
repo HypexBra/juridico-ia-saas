@@ -20,6 +20,16 @@ export const TIPOS_ARQUIVO_ANALISE_DOCUMENTO = ["pdf", "docx", "imagem"] as cons
 export type TipoArquivoAnaliseDocumento = (typeof TIPOS_ARQUIVO_ANALISE_DOCUMENTO)[number];
 
 /**
+ * Reexportado de `./constantes` (módulo sem `import "server-only"`) para
+ * quem já consome este arquivo em contexto server (actions/Server
+ * Components) — ver o comentário em `lib/analise-documento/constantes.ts`
+ * para o motivo de não estar definida diretamente aqui. Client Components
+ * (ex: `components/app/documento-lote-form.tsx`) devem importar direto de
+ * `@/lib/analise-documento/constantes`, nunca deste arquivo.
+ */
+export { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "./constantes";
+
+/**
  * Modelo isolado desta feature — mesmo racional de
  * `lib/analise-processo/analisar.ts` (ver ADR 0004 seção 6 e ADR 0011): não
  * reaproveita as constantes de `lib/ia/gemini.ts` (chat) para não acoplar o
@@ -108,7 +118,7 @@ export async function analisarDocumento({
       maxOutputTokens: MAX_OUTPUT_TOKENS_DOCUMENT_INTELLIGENCE,
       thinkingBudget: THINKING_BUDGET_DOCUMENT_INTELLIGENCE,
       cadeiaModelos: [MODELO_DOCUMENT_INTELLIGENCE, MODELO_FALLBACK_QUOTA_DOCUMENT_INTELLIGENCE],
-      logPrefixo: "[document-intelligence/analisar]",
+      logPrefixo: "[analise-documento/analisar]",
     });
 
     const resultado = parsearRespostaAnaliseDocumento(jsonBruto);
@@ -122,7 +132,7 @@ export async function analisarDocumento({
 
     return { ok: true, resultado, modeloIaUsado: MODELO_DOCUMENT_INTELLIGENCE };
   } catch (erro) {
-    console.error("[document-intelligence/analisar] Falha ao analisar documento:", erro);
+    console.error("[analise-documento/analisar] Falha ao analisar documento:", erro);
     return {
       ok: false,
       erro: erro instanceof Error ? erro.message : "Erro desconhecido ao analisar o documento.",

@@ -69,7 +69,7 @@ export type RiscoAnaliseDocumento = CitacaoAnaliseProcesso & {
 
 /**
  * Resultado completo da análise individual de um documento avulso — pedido
- * ao Gemini via `RESPONSE_SCHEMA` (`lib/document-intelligence/prompt.ts`) e
+ * ao Gemini via `RESPONSE_SCHEMA` (`lib/analise-documento/prompt.ts`) e
  * persistido em `analises_documento.resultado_analise` (jsonb). `clausulas`
  * pode vir vazio quando o documento não tem estrutura clausular (ex: uma
  * petição) — a IA decide isso a partir do `tipoDocumento` classificado, sem
@@ -100,7 +100,7 @@ export type TipoMudancaClausulaComparada = (typeof TIPOS_MUDANCA_CLAUSULA_COMPAR
  * um único `trechoOriginal`/`pagina` (padrão de 1 documento), carrega um PAR
  * (`trechoA`/`paginaA`, `trechoB`/`paginaB`) — a obrigatoriedade de cada lado
  * depende de `tipoMudanca` (ver `.refine()` em
- * `lib/document-intelligence/prompt-comparacao.ts`):
+ * `lib/analise-documento/prompt-comparacao.ts`):
  * - "adicionada": `trechoA: null`, `trechoB` preenchido;
  * - "removida": `trechoB: null`, `trechoA` preenchido;
  * - "alterada" / "inalterada_relevante": ambos preenchidos.
@@ -124,7 +124,7 @@ export type ClausulaComparadaComRisco = ClausulaComparada & {
 
 /**
  * Resultado completo da comparação de 2 documentos — pedido ao Gemini via
- * `RESPONSE_SCHEMA` (`lib/document-intelligence/prompt-comparacao.ts`) e
+ * `RESPONSE_SCHEMA` (`lib/analise-documento/prompt-comparacao.ts`) e
  * persistido em `comparacoes_documento.resultado_comparacao` (jsonb).
  * `recomendacoes` é sem citação, mesmo papel de `informacoesAusentes`/
  * `proximasAcoes` da Fase 2.

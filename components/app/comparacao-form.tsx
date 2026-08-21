@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldError, Label } from "@/components/ui/input";
 import { compararDocumentosAction } from "@/app/app/documentos/actions";
-import type { ResultadoComparacaoDocumento } from "@/lib/document-intelligence/tipos";
+import type { ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
 import { ComparacaoResultado } from "./comparacao-resultado";
 
 const ACCEPT_COMPARACAO =

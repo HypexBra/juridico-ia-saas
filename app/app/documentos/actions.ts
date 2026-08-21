@@ -8,16 +8,16 @@ import { createClient } from "@/lib/supabase/server";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import {
   analisarDocumento,
+  MAX_ARQUIVOS_LOTE_DOCUMENTO,
   TIPOS_ARQUIVO_ANALISE_DOCUMENTO,
   type TipoArquivoAnaliseDocumento,
-} from "@/lib/document-intelligence/analisar";
+} from "@/lib/analise-documento/analisar";
 import {
   compararDocumentos,
   TIPOS_ARQUIVO_COMPARACAO_DOCUMENTO,
   type TipoArquivoComparacaoDocumento,
-} from "@/lib/document-intelligence/comparar";
+} from "@/lib/analise-documento/comparar";
 import type { AnaliseDocumento, ComparacaoDocumento } from "@/lib/types";
-import { MAX_ARQUIVOS_LOTE_DOCUMENTO } from "./constantes";
 
 /** Mesmo teto de `app/app/base-conhecimento/actions.ts` / Fase 2 (ADR 0011, seção 7). */
 const MAX_TAMANHO_ARQUIVO_DOCUMENTO = 15 * 1024 * 1024;
@@ -38,7 +38,7 @@ const MIME_POR_TIPO_DOCUMENTO: Record<string, string[]> = {
  * Decide o `tipo_arquivo` a partir do MIME type e/ou extensão do arquivo
  * enviado, restrito ao subconjunto de tipos permitido pelo caller (análise
  * individual/lote aceita os 3 tipos; comparação só pdf/docx — ver
- * `lib/document-intelligence/comparar.ts`). Mesma tolerância de
+ * `lib/analise-documento/comparar.ts`). Mesma tolerância de
  * `inferirTipoArquivoAnaliseProcesso` (Fase 2). Devolve `null` quando o
  * arquivo não bate com nenhum tipo permitido.
  */
@@ -96,6 +96,47 @@ async function analiseDocumentoExisteEVisivel(supabase: SupabaseServerClient, an
     return false;
   }
   return data !== null;
+}
+
+/**
+ * Janela de tolerância para considerar um lote "em processamento" (achado de
+ * segurança da revisão da Fase 3): sem isso, nada impede um escritório de
+ * disparar vários lotes em paralelo (múltiplas abas, duplo-clique, script),
+ * saturando o pool de chaves de IA compartilhado entre todos os tenants
+ * (`lib/ia/chaves/pool.ts`). 10 minutos cobre timeout de rede/loop sequencial
+ * sem travar o usuário indefinidamente caso uma linha antiga fique presa
+ * (ex: processo do servidor derrubado no meio do loop). Sem lock
+ * distribuído/Redis — checagem simples por `count`, suficiente para este
+ * volume (mesmo racional de "sem fila" já usado no ADR 0011, seção 8).
+ */
+const JANELA_LOTE_EM_PROCESSAMENTO_MINUTOS = 10;
+
+/** Confirma se já existe alguma análise `status = 'processando'` para este
+ * escritório criada dentro da janela de tolerância — usado para rejeitar um
+ * novo lote enquanto o anterior ainda está rodando. */
+async function existeLoteEmProcessamento(supabase: SupabaseServerClient, escritorioId: string): Promise<boolean> {
+  const limite = new Date(Date.now() - JANELA_LOTE_EM_PROCESSAMENTO_MINUTOS * 60_000).toISOString();
+  const { count, error } = await supabase
+    .from("analises_documento")
+    .select("id", { count: "exact", head: true })
+    .eq("escritorio_id", escritorioId)
+    .eq("status", "processando")
+    .gt("criado_em", limite);
+
+  if (error) {
+    console.error("[documentos/actions/existeLoteEmProcessamento] Falha ao verificar lote em processamento:", error, {
+      escritorioId,
+    });
+    // Fail-closed em relação ao pool compartilhado seria bloquear tudo em
+    // caso de erro de leitura — mas isso travaria a feature inteira por uma
+    // falha transitória de rede/infra do Supabase. Preferimos não bloquear
+    // (mesmo racional de outros guards best-effort deste arquivo) e deixar o
+    // rate-limit real (índice + política do provedor de IA) como última
+    // linha de defesa.
+    return false;
+  }
+
+  return (count ?? 0) > 0;
 }
 
 /** Lê e valida `fichaCasoId` opcional de um `FormData` — string vazia/ausente vira `null`. */
@@ -258,6 +299,10 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
   const { fichaCasoId } = fichaResolvida;
 
   const { escritorio_id: escritorioId, id: perfilId } = usuario.perfil;
+
+  if (await existeLoteEmProcessamento(supabase, escritorioId)) {
+    return { ok: false, error: "Já há um lote em processamento, aguarde terminar." };
+  }
 
   type ItemLote = { arquivo: File; tipoArquivo: TipoArquivoAnaliseDocumento | null; erroValidacao: string | null };
   const itens: ItemLote[] = arquivos.map((arquivo) => {
