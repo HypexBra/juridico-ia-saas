@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-type IconProps = SVGProps<SVGSVGElement>;
+export type IconProps = SVGProps<SVGSVGElement>;
 
 const base = {
   viewBox: "0 0 24 24",
@@ -11,6 +11,18 @@ const base = {
   strokeLinejoin: "round" as const,
 };
 
+/** Bespoke Geometric Monogram / Editorial Legal Brand Mark */
+export function IconLogoMark(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.3} />
+      <path d="M7 8h10" strokeWidth={1.3} />
+      <path d="M12 8v8a3 3 0 0 1-3 3" strokeWidth={1.4} />
+      <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconScale(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -20,6 +32,112 @@ export function IconScale(props: IconProps) {
       <path d="M19 7l-3 6a3.2 3.2 0 0 0 6 0Z" />
       <path d="M5 7h14" />
       <path d="M12 3l3 4H9Z" />
+    </svg>
+  );
+}
+
+export function IconDossier(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+      <path d="M8 13h8" />
+      <path d="M8 16h5" />
+    </svg>
+  );
+}
+
+export function IconFileText(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M16 13H8" />
+      <path d="M16 17H8" />
+      <path d="M10 9H8" />
+    </svg>
+  );
+}
+
+export function IconFileAudit(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="m9 15 2 2 4-4" strokeWidth={1.8} />
+    </svg>
+  );
+}
+
+export function IconAdversarial(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M14.5 4h5.5v5.5" />
+      <path d="M20 4 12 12" />
+      <path d="M9.5 20H4v-5.5" />
+      <path d="M4 20l8-8" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function IconWorkflow(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="3" width="6" height="6" rx="1" />
+      <rect x="15" y="3" width="6" height="6" rx="1" />
+      <rect x="9" y="15" width="6" height="6" rx="1" />
+      <path d="M6 9v3a2 2 0 0 0 2 2h1" />
+      <path d="M18 9v3a2 2 0 0 1-2 2h-1" />
+      <path d="M12 14v1" />
+    </svg>
+  );
+}
+
+export function IconProactive(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v4" />
+      <circle cx="12" cy="16" r="0.8" fill="currentColor" />
+      <path d="M12 3v1" />
+      <path d="M12 20v1" />
+      <path d="M3 12h1" />
+      <path d="M20 12h1" />
+    </svg>
+  );
+}
+
+export function IconMemory(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" />
+      <path d="M9 4v16" />
+      <path d="M4 9h5" />
+      <path d="M4 14h5" />
+      <circle cx="14" cy="10" r="1.5" />
+      <circle cx="14" cy="15" r="1.5" />
+      <path d="M14 11.5v2" />
+    </svg>
+  );
+}
+
+export function IconSearchFilter(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+      <path d="M8 11h6" />
+      <path d="M11 8v6" />
+    </svg>
+  );
+}
+
+export function IconLockSecure(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      <circle cx="12" cy="15.5" r="1.2" fill="currentColor" />
     </svg>
   );
 }
@@ -105,6 +223,15 @@ export function IconArrowRight(props: IconProps) {
     <svg {...base} {...props}>
       <path d="M4 12h16" />
       <path d="M14 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export function IconArrowUpRight(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 17L17 7" />
+      <path d="M7 7h10v10" />
     </svg>
   );
 }

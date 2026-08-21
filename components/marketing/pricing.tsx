@@ -1,145 +1,190 @@
+"use client";
+
 import Link from "next/link";
-import { LightBeam } from "./light-beam";
 import { Reveal } from "./reveal";
-import { IconCheck, IconDash } from "./icons";
-import { BorderGlow } from "@/components/ui/border-glow/border-glow";
+import { IconCheck, IconDash, IconLockSecure } from "./icons";
 
 interface PlanFeature {
   label: string;
   included: boolean;
 }
 
-/** Preço exibido aqui é só cópia/UI — a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx). */
 const PRECO_PRO_MENSAL = "R$ 149";
 
 const FREE_FEATURES: PlanFeature[] = [
-  { label: "Uso mensal de IA limitado", included: true },
-  { label: "Chat jurídico (petições, contratos, pareceres)", included: true },
-  { label: "Triagem de clientes", included: true },
-  { label: "Controle de prazos", included: true },
-  { label: "Exportação em DOCX/PDF", included: true },
-  { label: "Biblioteca de modelos", included: false },
-  { label: "Múltiplos advogados no time", included: false },
+  { label: "Uso mensal inicial de IA", included: true },
+  { label: "Chat jurídico fundamentado (CPC/CC/CF)", included: true },
+  { label: "Triagem de clientes via link público", included: true },
+  { label: "Controle manual de prazos", included: true },
+  { label: "Exportação em DOCX e PDF formatados", included: true },
+  { label: "Varredura automática diária do DJEN", included: false },
+  { label: "Auditoria pré-assinatura de conformidade", included: false },
+  { label: "Múltiplos advogados na mesma banca", included: false },
 ];
 
 const PRO_FEATURES: PlanFeature[] = [
-  { label: "Tudo do plano Free, sem limite mensal de IA", included: true },
-  { label: "Redação assistida: IA redige a peça inteira, não só responde", included: true },
-  { label: "Análise de risco contratual cláusula-por-cláusula (redline)", included: true },
-  { label: "Relatórios avançados: realization rate e breakdown financeiro", included: true },
-  { label: "Mail-merge condicional (automação de documento avançada)", included: true },
-  { label: "API/integrações abertas", included: true },
-  { label: "Portal do cliente rico: chat bidirecional e notificação em tempo real", included: true },
-  { label: "Múltiplos advogados no time", included: true },
+  { label: "Tudo do Free, com IA ilimitada para casos", included: true },
+  { label: "Varredura automática diária do DJEN (PJe)", included: true },
+  { label: "Auditoria pré-assinatura e red-teaming de teses", included: true },
+  { label: "Portal do Cliente com consulta segura via CPF", included: true },
+  { label: "Disparos automáticos e lembretes via WhatsApp", included: true },
+  { label: "Gestão financeira de honorários e parcelas", included: true },
+  { label: "Assinatura eletrônica com validade jurídica", included: true },
+  { label: "Suporte prioritário via WhatsApp com especialista", included: true },
+];
+
+const FIRM_FEATURES: PlanFeature[] = [
+  { label: "Tudo do Plano Pro para toda a equipe", included: true },
+  { label: "Múltiplos advogados com controle de permissões", included: true },
+  { label: "Memória institucional e cofre de teses da banca", included: true },
+  { label: "Relatórios de produtividade e faturamento por sócio", included: true },
+  { label: "Onboarding personalizado e migração de dados", included: true },
+  { label: "Acordo de Nível de Serviço (SLA) dedicado", included: true },
 ];
 
 export function Pricing() {
   return (
-    <section id="precos" className="relative overflow-hidden py-24 sm:py-32">
-      <LightBeam angle={16} origin="top-right" className="-z-10" />
-      <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <div className="mb-16 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
-            Planos
-          </p>
-          <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
-            Comece sem custo, cresça quando precisar
-          </h2>
-          <p className="mt-4 text-muted">
-            Assine quando quiser, cancele quando quiser — sem fidelidade.
-          </p>
+    <section id="precos" className="relative overflow-hidden border-t border-silver/10 bg-[#090f1a] py-24 sm:py-32">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="max-w-2xl">
+          <Reveal>
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+              14 · Planos e Investimento
+            </span>
+          </Reveal>
+          <Reveal delayMs={100}>
+            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+              Transparência absoluta. <br />
+              <span className="font-normal italic text-silver-2">
+                Sem taxas ocultas ou fidelidade.
+              </span>
+            </h2>
+          </Reveal>
+          <Reveal delayMs={200}>
+            <p className="mt-5 text-base leading-relaxed text-muted sm:text-lg">
+              Comece gratuitamente para testar o sistema no seu ritmo.
+              Evolua para o plano Pro quando quiser automatizar sua rotina.
+            </p>
+          </Reveal>
         </div>
 
-        {/* Colunas com largura e deslocamento vertical assimétricos — o card
-            Pro é mais largo e desce (md:mt-10), quebrando o par de cards
-            idênticos lado a lado. */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.1fr] md:items-start">
-          <Reveal>
-            <div className="flex h-full flex-col rounded-md border border-white/10 bg-navy-2/50 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
-              <h3 className="font-display text-lg font-bold text-ice">Free</h3>
-              <p className="mt-1.5 text-sm text-muted">
-                Para advogados autônomos testarem o copiloto no dia a dia.
+        {/* 3 Plans Grid */}
+        <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
+          {/* FREE PLAN */}
+          <div className="flex flex-col justify-between rounded-md border border-silver/15 bg-black/30 p-6 sm:p-8">
+            <div>
+              <span className="font-mono text-xs text-silver uppercase font-semibold">FREE</span>
+              <h3 className="mt-2 font-display text-xl font-bold text-ice">Para Experimentar</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">
+                Ideal para advogados autônomos conhecerem a precisão do copiloto.
               </p>
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-ice">
-                  R$ 0
-                </span>
-                <span className="text-sm text-muted">/mês</span>
+              <div className="mt-6 flex items-baseline gap-1 border-b border-silver/10 pb-6">
+                <span className="font-display text-3xl font-black text-ice">R$ 0</span>
+                <span className="text-xs text-muted">/mês</span>
               </div>
-              <ul className="mt-7 flex flex-1 flex-col gap-3">
-                {FREE_FEATURES.map((feature) => (
+              <ul className="mt-6 space-y-3 text-xs">
+                {FREE_FEATURES.map((feat) => (
                   <li
-                    key={feature.label}
-                    className={`flex items-center gap-2.5 text-sm ${
-                      feature.included ? "text-ice-2" : "text-muted/60"
+                    key={feat.label}
+                    className={`flex items-start gap-2.5 ${
+                      feat.included ? "text-ice-2" : "text-muted/40"
                     }`}
                   >
-                    {feature.included ? (
-                      <IconCheck className="h-4 w-4 shrink-0 text-silver" />
+                    {feat.included ? (
+                      <IconCheck className="h-4 w-4 shrink-0 text-silver mt-0.5" />
                     ) : (
-                      <IconDash className="h-4 w-4 shrink-0 text-muted/60" />
+                      <IconDash className="h-4 w-4 shrink-0 text-muted/30 mt-0.5" />
                     )}
-                    {feature.label}
+                    <span>{feat.label}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/cadastro"
-                className="mt-8 rounded-sm border border-white/15 px-5 py-3 text-center text-sm font-semibold text-ice transition-colors hover:border-white/30 hover:bg-white/5"
-              >
-                Criar conta grátis
-              </Link>
             </div>
-          </Reveal>
-
-          <Reveal delayMs={100} className="md:mt-10">
-            <BorderGlow
-              className="h-full transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
-              backgroundColor="#24466f"
-              borderRadius={10}
-              glowColor="42 80 72"
-              glowRadius={44}
-              glowIntensity={1.1}
-              coneSpread={30}
-              colors={["#c7d2e8", "#24466f", "#f5f8fc"]}
-              fillOpacity={0.35}
+            <Link
+              href="/cadastro"
+              className="mt-8 block rounded-sm border border-silver/20 bg-white/[0.03] py-3 text-center text-xs font-semibold text-ice hover:border-silver/40 hover:bg-white/[0.08] transition-all"
             >
-              <div className="relative flex h-full flex-col overflow-hidden p-8">
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-silver to-silver-2"
-                />
-              <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-silver to-silver-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
-                Mais popular
-              </span>
-              <h3 className="font-display text-lg font-bold text-ice">Pro</h3>
-              <p className="mt-1.5 text-sm text-muted">
-                Para escritórios com mais de um advogado e volume maior de
-                peças por mês.
-              </p>
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-ice">
-                  {PRECO_PRO_MENSAL}
+              Criar Conta Gratuita
+            </Link>
+          </div>
+
+          {/* PRO PLAN (HIGHLIGHTED) */}
+          <div className="relative flex flex-col justify-between rounded-md border border-silver bg-[#0e172a] p-6 sm:p-8 shadow-[0_12px_40px_rgba(199,210,232,0.12)]">
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-silver via-white to-silver"
+            />
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-silver uppercase font-semibold">PRO</span>
+                <span className="font-mono text-[10px] text-navy bg-silver px-2.5 py-0.5 rounded font-bold uppercase">
+                  MAIS ESCOLHIDO
                 </span>
-                <span className="text-sm text-muted">/mês</span>
               </div>
-              <ul className="mt-7 flex flex-1 flex-col gap-3">
-                {PRO_FEATURES.map((feature) => (
-                  <li key={feature.label} className="flex items-center gap-2.5 text-sm text-ice-2">
-                    <IconCheck className="h-4 w-4 shrink-0 text-silver" />
-                    {feature.label}
+              <h3 className="mt-2 font-display text-xl font-bold text-ice">Para o Dia a Dia</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">
+                Automação completa de prazos, petições e atendimento para bancas ágeis.
+              </p>
+              <div className="mt-6 flex items-baseline gap-1 border-b border-silver/10 pb-6">
+                <span className="font-display text-3xl font-black text-ice">{PRECO_PRO_MENSAL}</span>
+                <span className="text-xs text-muted">/mês</span>
+              </div>
+              <ul className="mt-6 space-y-3 text-xs">
+                {PRO_FEATURES.map((feat) => (
+                  <li key={feat.label} className="flex items-start gap-2.5 text-ice-2">
+                    <IconCheck className="h-4 w-4 shrink-0 text-silver mt-0.5" />
+                    <span>{feat.label}</span>
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/cadastro"
-                className="mt-8 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-5 py-3 text-center text-sm font-semibold text-navy transition-transform hover:-translate-y-0.5"
-              >
-                Assinar Plano Pro
-              </Link>
+            </div>
+            <Link
+              href="/cadastro"
+              className="mt-8 block rounded-sm bg-gradient-to-br from-silver to-silver-2 py-3 text-center text-xs font-bold text-navy shadow-[0_4px_16px_rgba(199,210,232,0.2)] hover:opacity-90 transition-all"
+            >
+              Assinar Plano Pro
+            </Link>
+          </div>
+
+          {/* FIRM PLAN */}
+          <div className="flex flex-col justify-between rounded-md border border-silver/15 bg-black/30 p-6 sm:p-8">
+            <div>
+              <span className="font-mono text-xs text-silver uppercase font-semibold">FIRM</span>
+              <h3 className="mt-2 font-display text-xl font-bold text-ice">Para Bancas & Equipes</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">
+                Gestão centralizada, cofre de teses e múltiplos advogados com perfis dedicados.
+              </p>
+              <div className="mt-6 flex items-baseline gap-1 border-b border-silver/10 pb-6">
+                <span className="font-display text-2xl font-bold text-ice">Sob Consulta</span>
               </div>
-            </BorderGlow>
-          </Reveal>
+              <ul className="mt-6 space-y-3 text-xs">
+                {FIRM_FEATURES.map((feat) => (
+                  <li key={feat.label} className="flex items-start gap-2.5 text-ice-2">
+                    <IconCheck className="h-4 w-4 shrink-0 text-silver mt-0.5" />
+                    <span>{feat.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <a
+              href="mailto:contato@juridico-ia.com.br?subject=Plano%20Firm%20-%20Jurídico%20IA"
+              className="mt-8 block rounded-sm border border-silver/20 bg-white/[0.03] py-3 text-center text-xs font-semibold text-ice hover:border-silver/40 hover:bg-white/[0.08] transition-all"
+            >
+              Falar com Especialista
+            </a>
+          </div>
+        </div>
+
+        {/* Micro-guarantee */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted">
+          <span className="flex items-center gap-1.5">
+            <IconLockSecure className="h-3.5 w-3.5 text-silver" />
+            Cancele a qualquer momento com 1 clique
+          </span>
+          <span>·</span>
+          <span>Emissão imediata de Nota Fiscal</span>
+          <span>·</span>
+          <span>Atendimento 100% brasileiro</span>
         </div>
       </div>
     </section>

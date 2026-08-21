@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { Textarea, Select } from "@/components/ui/input";
 import { MarkdownLite } from "./markdown-lite";
 import { PropostaAcaoCard } from "./proposta-acao-card";
 import {
@@ -77,6 +77,7 @@ export function ChatApp({
   const [conversaId, setConversaId] = useState<string | null>(conversasIniciais[0]?.id ?? null);
   const [mensagens, setMensagens] = useState<MensagemLocal[]>([]);
   const [texto, setTexto] = useState("");
+  const [providerSelecionado, setProviderSelecionado] = useState<"auto" | "gemini" | "groq">("auto");
   const [erro, setErro] = useState<string | null>(null);
   const [avisoConversas, setAvisoConversas] = useState<string | null>(null);
   const [uso, setUso] = useState(usoInicial);
@@ -183,7 +184,11 @@ export function ChatApp({
     setTexto("");
 
     startTransition(async () => {
-      const resultado = await enviarMensagemAction({ conversaId, texto: textoEnviado });
+      const resultado = await enviarMensagemAction({
+        conversaId,
+        texto: textoEnviado,
+        provider: providerSelecionado === "auto" ? undefined : providerSelecionado,
+      });
       if (!resultado.ok) {
         setErro(resultado.error);
         setMensagens((prev) => prev.filter((m) => m.id !== mensagemOtimista.id));
@@ -388,24 +393,42 @@ export function ChatApp({
           <div className="border-t border-red-500/30 bg-red-950/30 px-4 py-2 text-xs text-red-300">{erro}</div>
         )}
 
-        <form onSubmit={enviar} className="flex items-end gap-3 border-t border-white/10 p-4">
-          <Textarea
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                enviar(e);
-              }
-            }}
-            placeholder="Descreva o caso ou peça uma minuta…"
-            rows={2}
-            className="flex-1"
-            disabled={limiteAtingido}
-          />
-          <Button type="submit" disabled={isPending || !texto.trim() || limiteAtingido}>
-            Enviar
-          </Button>
+        <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-white/10 p-4">
+          <div className="flex items-center justify-end gap-2">
+            <label htmlFor="chat-provider-ia" className="text-[11px] uppercase tracking-wide text-muted">
+              Modelo
+            </label>
+            <Select
+              id="chat-provider-ia"
+              value={providerSelecionado}
+              onChange={(e) => setProviderSelecionado(e.target.value as "auto" | "gemini" | "groq")}
+              className="w-auto py-1.5 text-xs"
+              title="Escolha manualmente o provedor de IA ou deixe em Automático (Gemini com fallback para Groq)."
+            >
+              <option value="auto">Automático</option>
+              <option value="gemini">Gemini</option>
+              <option value="groq">Groq</option>
+            </Select>
+          </div>
+          <div className="flex items-end gap-3">
+            <Textarea
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  enviar(e);
+                }
+              }}
+              placeholder="Descreva o caso ou peça uma minuta…"
+              rows={2}
+              className="flex-1"
+              disabled={limiteAtingido}
+            />
+            <Button type="submit" disabled={isPending || !texto.trim() || limiteAtingido}>
+              Enviar
+            </Button>
+          </div>
         </form>
       </div>
     </div>

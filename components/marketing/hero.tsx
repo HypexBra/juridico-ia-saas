@@ -1,133 +1,79 @@
 import Link from "next/link";
-import { HeroVisual } from "./hero-visual";
-import { IconArrowRight, IconClock } from "./icons";
-import { LightBeam } from "./light-beam";
+import { HeroCaseEngine } from "./hero-case-engine";
+import { IconArrowRight, IconLockSecure } from "./icons";
 import { Reveal } from "./reveal";
-import { TextReveal } from "./text-reveal";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
-      <LightBeam angle={26} origin="top-right" className="-z-10" />
+    <section className="relative overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-40 lg:pb-32">
+      {/* Subtle architectural grid lines */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 15% 0%, rgba(199,210,232,.10) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 100% 30%, rgba(22,42,82,.9) 0%, transparent 65%)",
-        }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(199,210,232,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(199,210,232,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
       />
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-5 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-10">
-        {/* Coluna de texto — alinhada à esquerda, sem centralização de hero genérico */}
-        <div>
-          <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-silver/30 bg-silver/8 px-3.5 py-1.5 text-xs font-medium text-silver-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-green" />
-              Fundamentação legal verificável · CF, CC, CPC, STF, STJ
-            </span>
-          </Reveal>
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-14">
+          {/* Left Editorial Column */}
+          <div>
+            <Reveal>
+              <div className="inline-flex items-center gap-2.5 rounded-sm border border-silver/20 bg-silver/5 px-3 py-1 text-[11px] font-mono font-medium text-silver-2 uppercase tracking-wider">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Sistema Operacional para Advocacia</span>
+              </div>
+            </Reveal>
 
-          <TextReveal
-            as="h1"
-            delayMs={150}
-            className="mt-6 block max-w-xl font-display text-4xl font-black leading-[1.08] text-ice sm:text-5xl lg:text-[3.4rem]"
-          >
-            O associado que revisa cada petição antes de você assinar.
-          </TextReveal>
+            <Reveal delayMs={100}>
+              <h1 className="mt-6 font-display text-4xl font-black leading-[1.08] tracking-tight text-ice sm:text-5xl lg:text-[3.8rem]">
+                Menos operação. <br />
+                <span className="italic font-normal text-silver-2">Mais advocacia.</span>
+              </h1>
+            </Reveal>
 
-          <Reveal delayMs={480}>
-            <p className="mt-6 max-w-md text-base leading-relaxed text-muted sm:text-lg">
-              Jurídico IA gera petições, contratos e pareceres com fundamentação
-              legal real, faz a triagem dos seus clientes e controla os prazos
-              do escritório — em um único painel, não em três sistemas soltos.
-            </p>
-          </Reveal>
+            <Reveal delayMs={200}>
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+                Casos, documentos, prazos do DJEN, redação jurídica fundamentada e portal do cliente
+                em um ambiente único e sincronizado. A tecnologia cuida da operação; você decide a estratégia.
+              </p>
+            </Reveal>
 
-          <Reveal delayMs={620}>
-            <div className="mt-9 flex flex-wrap items-center gap-4">
-              <Link
-                href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_8px_32px_rgba(199,210,232,.25)] transition-transform duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0"
-              >
-                Criar conta grátis
-                <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="#como-funciona"
-                className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-6 py-3.5 text-sm font-medium text-ice transition-all duration-150 ease-out hover:border-white/30 hover:bg-white/5 active:scale-[0.97] active:bg-white/10"
-              >
-                Ver como funciona
-              </a>
-            </div>
-          </Reveal>
+            <Reveal delayMs={300}>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Link
+                  href="/cadastro"
+                  className="group inline-flex items-center gap-2 rounded-sm border border-silver/60 bg-gradient-to-br from-silver to-silver-2 px-6 py-3.5 text-sm font-semibold text-navy shadow-[0_4px_20px_rgba(199,210,232,0.2)] transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(199,210,232,0.3)] active:translate-y-0 active:scale-[0.98]"
+                >
+                  Começar gratuitamente
+                  <IconArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
+                </Link>
+                <a
+                  href="#caso-sistema"
+                  className="inline-flex items-center gap-2 rounded-sm border border-silver/20 bg-white/[0.03] px-6 py-3.5 text-sm font-medium text-ice-2 transition-all duration-150 hover:border-silver/40 hover:bg-white/[0.07] active:scale-[0.98]"
+                >
+                  Explorar o sistema
+                </a>
+              </div>
+            </Reveal>
 
-          <Reveal delayMs={720}>
-            <p className="mt-5 text-xs text-muted">
-              Sem cartão de crédito · Plano Free com limite mensal de uso de IA
-            </p>
+            <Reveal delayMs={400}>
+              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted">
+                <span className="flex items-center gap-1.5">
+                  <IconLockSecure className="h-3.5 w-3.5 text-silver/70" />
+                  Isolamento total de dados
+                </span>
+                <span>·</span>
+                <span>Sem cartão de crédito</span>
+                <span>·</span>
+                <span>Fundamentação legal verificável</span>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* Right Hero Visual Engine */}
+          <Reveal delayMs={150}>
+            <HeroCaseEngine />
           </Reveal>
         </div>
-
-        {/* Coluna visual — mock de produto, não é screenshot real */}
-        <HeroVisual>
-          <div className="relative mx-auto w-full max-w-md lg:mx-0">
-            <div
-              aria-hidden
-              className="absolute -inset-10 -z-10 rounded-full opacity-70 blur-3xl"
-              style={{ background: "radial-gradient(circle, rgba(199,210,232,.14), transparent 70%)" }}
-            />
-
-            <div className="overflow-hidden rounded-lg border border-silver/20 bg-navy-2/90 shadow-[0_40px_80px_rgba(0,0,0,.5)]">
-              <div className="flex items-center gap-2 border-b border-silver/10 bg-black/20 px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                <span className="ml-auto text-[11px] tracking-wide text-muted">
-                  Novo caso · Trabalhista
-                </span>
-              </div>
-
-              <div className="space-y-4 p-5">
-                <div className="ml-auto max-w-[85%] rounded-md rounded-tr-sm border border-silver/20 bg-silver/10 px-4 py-3 text-[13px] leading-relaxed text-silver-3">
-                  Cliente dispensado sem justa causa após 3 anos, horas extras
-                  não pagas e FGTS em atraso há 6 meses. Salário de R$ 4.200.
-                </div>
-
-                <div className="max-w-[92%] rounded-md rounded-tl-sm border border-white/8 bg-white/[.04] px-4 py-3 text-[13px] leading-relaxed text-ice-2">
-                  <p className="mb-2 font-semibold text-ice">
-                    Questões jurídicas identificadas
-                  </p>
-                  <ul className="space-y-1 text-ice-2/90">
-                    <li>Horas extras habituais (art. 59, CLT)</li>
-                    <li>FGTS em atraso — multa de 40% (Lei 8.036/90)</li>
-                    <li>Verbas rescisórias (art. 477, §8º, CLT)</li>
-                  </ul>
-                  <p className="mt-3 text-muted">
-                    Gerando petição inicial com pedido de tutela de urgência
-                    <span className="ml-1 inline-block h-3 w-[2px] animate-pulse bg-silver align-middle" />
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Widget flutuante — prazos, mostra que o produto vai além do chat */}
-            <div className="absolute -bottom-6 -left-6 hidden w-56 rounded-md border border-silver/25 bg-navy-3/95 p-4 shadow-2xl sm:block">
-              <div className="mb-2 flex items-center gap-2 text-silver">
-                <IconClock className="h-4 w-4" />
-                <span className="text-[11px] font-semibold uppercase tracking-wide">
-                  Prazos
-                </span>
-              </div>
-              <p className="text-xs leading-snug text-ice-2">
-                Contestação · Proc. 0004521-33
-              </p>
-              <p className="mt-1 text-xs font-semibold text-silver-2">
-                Vence em 3 dias
-              </p>
-            </div>
-          </div>
-        </HeroVisual>
       </div>
     </section>
   );

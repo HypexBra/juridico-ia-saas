@@ -1,39 +1,38 @@
 const AREAS = [
-  "Cível",
-  "Trabalhista",
-  "Penal",
-  "Tributário",
-  "Constitucional",
-  "Consumidor",
-  "Família",
-  "Administrativo",
-  "Empresarial",
-  "Previdenciário",
-  "LGPD",
-  "Imobiliário",
+  "Direito Cível & Contratos",
+  "Direito do Trabalho & CLT",
+  "Direito Tributário & Fiscal",
+  "Direito Empresarial & Societário",
+  "Direito Imobiliário & Urbanístico",
+  "Direito de Família & Sucessões",
+  "Direito do Consumidor",
+  "Direito Previdenciário",
+  "Direito Administrativo & Público",
+  "Proteção de Dados & LGPD",
+  "Direito Bancário & Financeiro",
+  "Recursos nos Tribunais Superiores",
 ];
 
 export function TrustStrip() {
   return (
-    <section className="relative border-y border-silver/10 bg-navy-2/25 py-14">
+    <section className="relative border-y border-silver/10 bg-[#070c16] py-10">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <p className="max-w-xl font-display text-xl italic leading-snug text-ice-2 sm:text-2xl">
-          Feito para escritórios que não têm tempo a perder — do advogado
-          autônomo à banca com equipe de várias áreas.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-silver/10 pb-4">
+          <span className="font-mono text-xs font-semibold uppercase tracking-[0.16em] text-silver">
+            COBERTURA DE PRÁTICA JURÍDICA
+          </span>
+          <span className="font-mono text-[11px] text-muted">
+            FUNDAMENTAÇÃO ADAPTADA AOS PRINCIPAIS RAMOS FORENSES
+          </span>
+        </div>
 
-        {/*
-          Marquee contínuo em CSS puro (translate3d, GPU-accelerated) — sem
-          JS, sem ScrollTrigger: é decoração ambiente, não algo ligado à
-          posição de scroll. `motion-reduce:animate-none` desliga o loop para
-          quem pediu menos movimento.
-        */}
-        <div className="mt-7 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)]">
-          <div className="flex w-max animate-[marquee_34s_linear_infinite] gap-2.5 motion-reduce:animate-none">
+        {/* Continuous Marquee */}
+        <div className="mt-5 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+          <div className="flex w-max animate-[marquee_40s_linear_infinite] gap-3 motion-reduce:animate-none">
             {[...AREAS, ...AREAS].map((area, index) => (
               <span
                 key={`${area}-${index}`}
-                className="shrink-0 rounded-full border border-silver/20 bg-silver/5 px-3.5 py-1.5 text-xs text-ice-2/90"
+                className="shrink-0 rounded-sm border border-silver/15 bg-silver/5 px-4 py-1.5 font-mono text-xs text-silver-2"
               >
                 {area}
               </span>

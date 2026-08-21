@@ -32,6 +32,7 @@
   --color-green: var(--color-green);
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 /* `scroll-behavior: smooth` was removed on purpose: it's GSAP's own

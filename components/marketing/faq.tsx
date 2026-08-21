@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Reveal } from "./reveal";
 import { IconPlus } from "./icons";
 
 interface FaqEntry {
@@ -10,34 +11,34 @@ interface FaqEntry {
 
 const FAQ_ENTRIES: FaqEntry[] = [
   {
-    question: "A IA inventa artigos de lei ou jurisprudência?",
+    question: "O sistema inventa artigos de lei, acórdãos ou súmulas?",
     answer:
-      "Não. O sistema é instruído a nunca inventar leis, súmulas ou precedentes. Quando não há certeza sobre um ponto, ele sinaliza isso claramente em vez de preencher a lacuna com algo inventado.",
+      "Não. O Jurídico IA foi desenhado com restrição estrita contra alucinações jurídicas. Quando não houver certeza probatória ou precedente consolidado sobre uma tese, o sistema sinaliza a lacuna para o advogado em vez de preenchê-la com dados inventados.",
   },
   {
-    question: "As peças geradas substituem a revisão do advogado?",
+    question: "A inteligência artificial substitui a revisão e assinatura do advogado?",
     answer:
-      "Não. O Jurídico IA produz a minuta e a fundamentação, mas a responsabilidade pela revisão, pelos ajustes e pela assinatura continua sendo do advogado — como acontece com qualquer associado.",
+      "Nunca. O Jurídico IA atua como um associado sênior incansável que organiza o contexto, redige minutas e audita a coerência técnica. A responsabilidade técnica, a decisão estratégica e a assinatura da peça continuam sob o controle soberano do advogado.",
   },
   {
-    question: "O plano Free tem limite de uso de IA?",
+    question: "Como funciona o monitoramento diário de prazos no DJEN?",
     answer:
-      "Sim. O Free inclui um limite mensal de uso de IA suficiente para testar o produto no dia a dia. O plano Pro, ainda em construção, trará um limite ampliado para escritórios com maior volume.",
+      "O sistema realiza varreduras periódicas nos diários oficiais vinculados aos processos cadastrados no seu escritório, identifica intimações de despacho e sentença, calcula o prazo fatal em dias úteis (descontando feriados forenses) e adiciona o evento à sua pauta de prioridades.",
   },
   {
-    question: "Consigo exportar as peças em Word ou PDF?",
+    question: "Consigo exportar as peças diretamente para Word (DOCX) e PDF?",
     answer:
-      "Sim. Qualquer petição, contrato ou parecer gerado no chat pode ser exportado em DOCX ou PDF, já formatado, direto do painel.",
+      "Sim. Todas as peças, contratos, pareceres e relatórios gerados podem ser exportados em formato DOCX (Word editável) ou PDF de alta resolução, já diagramados e prontos para assinatura e protocolo.",
   },
   {
-    question: "Consigo convidar outros advogados do escritório?",
+    question: "Meus documentos ou teses são usados para treinar modelos públicos de IA?",
     answer:
-      "O convite de múltiplos advogados para o mesmo escritório é uma funcionalidade do plano Pro, que está em fase de lista de espera no momento.",
+      "Não. Seus arquivos, nomes de clientes, estratégias e documentos permanecem confidenciais em um cofre de dados segregado por escritório (multi-tenant) e nunca são compartilhados ou utilizados para treinamento de modelos de terceiros.",
   },
   {
-    question: "Meus dados e os dos meus clientes ficam seguros?",
+    question: "Existe fidelidade ou carência no plano Pro?",
     answer:
-      "Sim. Cada escritório opera em um ambiente isolado (multi-tenant) e os dados de casos e clientes não são usados para treinar modelos de IA de terceiros.",
+      "Nenhuma fidelidade. Você pode assinar o plano Pro para automatizar seus prazos e atendimento e cancelar a qualquer momento diretamente no seu painel com apenas um clique.",
   },
 ];
 
@@ -45,43 +46,50 @@ export function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative py-24 sm:py-32">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8">
-        <div className="mb-14 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
-            Dúvidas
-          </p>
-          <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
-            Perguntas frequentes
-          </h2>
+    <section id="faq" className="relative overflow-hidden border-t border-silver/10 bg-[#090f1a] py-24 sm:py-32">
+      <div className="mx-auto max-w-4xl px-5 sm:px-8">
+        <div className="max-w-2xl">
+          <Reveal>
+            <span className="font-mono text-xs font-semibold uppercase tracking-[0.2em] text-silver">
+              16 · Perguntas Frequentes
+            </span>
+          </Reveal>
+          <Reveal delayMs={100}>
+            <h2 className="mt-3 font-display text-3xl font-bold leading-tight text-ice sm:text-4xl lg:text-5xl">
+              Respostas diretas para <br />
+              <span className="font-normal italic text-silver-2">
+                quem valoriza precisão.
+              </span>
+            </h2>
+          </Reveal>
         </div>
 
-        <div className="divide-y divide-silver/10 overflow-hidden rounded-md border border-silver/10">
+        {/* Accordion */}
+        <div className="mt-14 divide-y divide-silver/10 overflow-hidden rounded-md border border-silver/15 bg-[#0b1322]">
           {FAQ_ENTRIES.map((entry, index) => {
             const isOpen = openIndex === index;
             return (
-              <div key={entry.question} className="bg-navy-2">
+              <div key={entry.question} className="transition-colors">
                 <button
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => setOpenIndex(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-medium text-ice transition-colors hover:text-silver-2 sm:px-6 sm:text-base"
+                  className="flex w-full items-center justify-between gap-4 p-5 sm:p-6 text-left text-xs sm:text-sm font-semibold text-ice transition-colors hover:text-silver-2"
                 >
-                  {entry.question}
-                  <IconPlus
-                    className={`h-4 w-4 shrink-0 text-silver transition-transform duration-300 ${
-                      isOpen ? "rotate-45" : ""
-                    }`}
-                  />
+                  <span>{entry.question}</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-silver/20 bg-silver/5 text-silver">
+                    <IconPlus
+                      className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                        isOpen ? "rotate-45" : ""
+                      }`}
+                    />
+                  </span>
                 </button>
-                <div
-                  className={`grid overflow-hidden px-5 text-sm leading-relaxed text-muted transition-all duration-300 sm:px-6 ${
-                    isOpen ? "grid-rows-[1fr] pb-5 opacity-100" : "grid-rows-[0fr] opacity-0"
-                  }`}
-                  style={{ display: "grid" }}
-                >
-                  <div className="overflow-hidden">{entry.answer}</div>
-                </div>
+                {isOpen && (
+                  <div className="px-5 pb-6 sm:px-6 text-xs sm:text-sm leading-relaxed text-muted border-t border-silver/5 pt-2">
+                    {entry.answer}
+                  </div>
+                )}
               </div>
             );
           })}

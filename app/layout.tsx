@@ -1,24 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
 const playfair = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "700", "900"],
+  weight: ["400", "600", "700", "900"],
 });
 
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Jurídico IA — Copiloto jurídico para escritórios de advocacia",
+  title: "Jurídico IA — Sistema Operacional Inteligente para Escritórios de Advocacia",
   description:
-    "Petições, contratos e triagem de clientes com IA, prazos e financeiro em um só lugar. Comece grátis.",
+    "Gestão de casos, análise documental com fundamentação legal verificável, prazos automáticos via DJEN, portal do cliente e memória institucional em uma plataforma única.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -32,15 +38,18 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#13294b",
+  themeColor: "#0b101b",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${playfair.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-navy text-ice font-sans">
+    <html
+      lang="pt-BR"
+      className={`${playfair.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-navy text-ice font-sans selection:bg-silver/20 selection:text-ice">
         <PwaRegister />
         {children}
       </body>

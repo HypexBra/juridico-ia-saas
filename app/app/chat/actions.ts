@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { gerarResposta, type ChatTurno } from "@/lib/ia/provider";
+import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from "@/lib/ia/provider";
 import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
@@ -188,6 +188,10 @@ export async function contarUsoIaMesAction(): Promise<{ usados: number; limite: 
 const enviarMensagemSchema = z.object({
   conversaId: z.string().uuid().nullable(),
   texto: z.string().trim().min(1, "Digite uma mensagem.").max(MAX_TAMANHO_MENSAGEM, "Mensagem muito longa."),
+  // Switch manual do seletor de provider no chat (components/app/chat-app.tsx):
+  // ausente/undefined = "Automático" (fluxo atual Gemini -> fallback Groq);
+  // presente = usuário escolheu explicitamente, sem fallback cross-provider.
+  provider: z.enum(["gemini", "groq"]).optional(),
 });
 
 export type EnviarMensagemResultado =
@@ -330,8 +334,25 @@ export async function enviarMensagemAction(
     respostaIa = await gerarResposta(historico, {
       contextoRag,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
+      providerOverride: parsed.data.provider ? { provider: parsed.data.provider } : undefined,
     });
   } catch (erro) {
+    if (erro instanceof TodosProvidersIndisponiveisError) {
+      // Log estruturado DISTINTO do genérico abaixo — diferencia
+      // esgotamento real do pool de chaves (ambos os providers sem cota)
+      // de erro de configuração (ex: env var faltando), que antes ficavam
+      // indistinguíveis porque só o erro (mascarado) do Groq era logado.
+      console.error(
+        JSON.stringify({
+          evento: "pool_llm_esgotado",
+          causaGemini: erro.causaGemini instanceof Error ? erro.causaGemini.message : String(erro.causaGemini),
+          causaGroq: erro.causaGroq instanceof Error ? erro.causaGroq.message : String(erro.causaGroq),
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
+    }
+
     // Loga a causa real no servidor (ex: "GEMINI_API_KEY não configurada",
     // 404 de nome de modelo inválido, 429 de quota) — a UI sempre mostra só
     // a mensagem amigável abaixo, mas sem este log o operador não tem como

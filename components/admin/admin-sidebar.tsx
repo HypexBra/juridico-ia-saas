@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/usuarios", label: "Usuários" },
   { href: "/admin/conversas", label: "Conversas" },
   { href: "/admin/administradores", label: "Administradores" },
+  { href: "/admin/ia-chaves", label: "Chaves de IA" },
   { href: "/admin/logs", label: "Logs" },
   { href: "/admin/configuracoes", label: "Configurações" },
 ];
