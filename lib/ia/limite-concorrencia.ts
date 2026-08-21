@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Mensagem de erro compartilhada por todas as features de IA pesada
  * (análise de processo, análise/lote de documento, comparação de documentos,
- * auditoria de peça) quando o gate de concorrência por escritório barra uma
+ * auditoria de peça, advogado do contra) quando o gate de concorrência por escritório barra uma
  * nova chamada — achado ALTO repetido em 2 revisões de segurança (Document
  * Intelligence, Auditor de Peças): sem isso, nada impede um único escritório
  * de disparar várias dessas chamadas simultaneamente (múltiplas abas,
@@ -41,12 +41,13 @@ const TABELAS_PROCESSAMENTO_IA = [
   "analises_documento",
   "comparacoes_documento",
   "auditorias_peca",
+  "analises_advogado_contra",
 ] as const;
 
 /**
  * Verifica se o escritório já tem QUALQUER processamento de IA pesada em
  * andamento (`status = "processando"` criado dentro da janela de tolerância),
- * somando as 4 tabelas que hoje modelam esse tipo de job. Generalização do
+ * somando as 5 tabelas que hoje modelam esse tipo de job. Generalização do
  * gate pontual que existia só para o lote de Document Intelligence
  * (`existeLoteEmProcessamento`): o objetivo é impedir qualquer COMBINAÇÃO de
  * features pesadas rodando ao mesmo tempo para o mesmo tenant, não apenas a
@@ -57,7 +58,7 @@ const TABELAS_PROCESSAMENTO_IA = [
  * autenticado é suficiente aqui, e usar admin seria escopo maior que o
  * necessário para uma simples contagem.
  *
- * 4 `count` queries em paralelo (`Promise.all`) em vez de 1 query só — as 4
+ * 5 `count` queries em paralelo (`Promise.all`) em vez de 1 query só — as 5
  * tabelas não têm uma view/union já pronta e o volume é baixo o suficiente
  * para não justificar criar uma. Fail-open (retorna `false`) em caso de erro
  * de leitura em qualquer uma das tabelas: mesmo racional já usado em

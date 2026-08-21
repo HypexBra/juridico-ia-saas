@@ -11,8 +11,9 @@ import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 import { DonutChart } from "@/components/app/charts/donut-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
 import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
+import { TarefaDashboardItem } from "@/components/app/tarefa-dashboard-item";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
-import type { FichaCaso, Prazo } from "@/lib/types";
+import type { FichaCaso, Prazo, TarefaCaso } from "@/lib/types";
 
 /** Quantas propostas pendentes renderizar direto no dashboard antes de "e mais N". */
 const LIMITE_PROPOSTAS_INBOX = 5;
@@ -71,6 +72,7 @@ export default async function DashboardPage() {
     propostasPendentesRes,
     totalPropostasPendentesRes,
     parcelasRes,
+    tarefasRes,
   ] = await Promise.all([
     supabase
       .from("prazos")
@@ -121,6 +123,20 @@ export default async function DashboardPage() {
       .from("parcelas_honorario")
       .select("valor, vencimento, status, pago_em")
       .returns<ParcelaResumoInput[]>(),
+    // Tarefas internas do caso (Fase 1 — distinto de `prazos`, que é
+    // processual). Fase 19 do roadmap: dashboard mostrava só prazos, nunca
+    // tarefas — advogado tinha que abrir cada ficha pra ver o checklist.
+    // Sem responsável definido entra pra todo mundo ver (equipe pequena);
+    // com responsável, só aparece pra quem foi atribuído — evita lista
+    // lotada de tarefas de colegas.
+    supabase
+      .from("tarefas_caso")
+      .select("*")
+      .neq("status", "concluida")
+      .or(`responsavel_perfil_id.is.null,responsavel_perfil_id.eq.${usuario.perfil.id}`)
+      .order("prazo_opcional", { ascending: true, nullsFirst: false })
+      .limit(6)
+      .returns<TarefaCaso[]>(),
   ]);
 
   const prazos = prazosRes.data ?? [];
@@ -134,6 +150,7 @@ export default async function DashboardPage() {
   const propostasExtras = Math.max(0, totalPropostasPendentes - propostasPendentes.length);
 
   const resumoFinanceiro = calcularResumoFinanceiro(parcelasRes.data ?? [], mesRef);
+  const tarefas = tarefasRes.data ?? [];
 
   const distribuicaoPrazos = { vencidos: 0, urgentes: 0, semana: 0, futuros: 0 };
   for (const prazo of todosPrazosRes.data ?? []) {
@@ -314,7 +331,22 @@ export default async function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <CardTitle>Minhas tarefas</CardTitle>
+          </div>
+          {tarefas.length === 0 ? (
+            <p className="text-sm text-muted">Nenhuma tarefa pendente. Você está em dia.</p>
+          ) : (
+            <ul className="space-y-3">
+              {tarefas.map((tarefa) => (
+                <TarefaDashboardItem key={tarefa.id} tarefa={tarefa} />
+              ))}
+            </ul>
+          )}
+        </Card>
+
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <CardTitle>Próximos prazos</CardTitle>

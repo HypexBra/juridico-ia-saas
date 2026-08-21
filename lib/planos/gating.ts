@@ -55,6 +55,18 @@ export const FEATURES_PREMIUM = [
    * docs/adrs/0012-auditor-de-pecas.md, seção 7.
    */
   "auditoria_peca",
+  /**
+   * (11) Advogado do Contra — a IA assume a perspectiva da parte adversária
+   * de uma tese/petição (colada, upload ou tese já cadastrada em
+   * `teses_caso`) e produz argumentos contrários, fragilidades,
+   * contradições, precedentes contrários PROVÁVEIS (hipótese da IA, nunca
+   * citação jurídica verificada), pontos que precisam de prova, perguntas
+   * difíceis e recomendações de reforço — sem notas numéricas agregadas
+   * (migration 0039, `analises_advogado_contra`). Pro-only sem tier
+   * gratuito parcial, mesmo padrão das demais features de análise
+   * estruturada por IA. Ver docs/adrs/0013-advogado-do-contra.md.
+   */
+  "advogado_do_contra",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
