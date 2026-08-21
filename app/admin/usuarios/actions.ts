@@ -6,6 +6,7 @@ import { getAdminAtual } from "@/lib/admin/auth";
 import { registrarLogAdmin } from "@/lib/admin/log";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { obterAppUrl } from "@/lib/app/url";
 import type { Role } from "@/lib/types";
 
 export type AdminActionResultado = { ok: true; mensagem: string } | { ok: false; error: string };
@@ -222,7 +223,9 @@ export async function redefinirSenhaUsuarioAction(perfilId: string): Promise<Adm
     return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY não configurada." };
   }
 
-  const { error } = await adminClient.auth.resetPasswordForEmail(alvo.email);
+  const { error } = await adminClient.auth.resetPasswordForEmail(alvo.email, {
+    redirectTo: `${obterAppUrl()}/auth/callback?next=/auth/definir-senha`,
+  });
   if (error) {
     console.error("[admin/usuarios] Falha ao enviar e-mail de redefinição de senha:", error);
     return { ok: false, error: "Não foi possível enviar o e-mail de redefinição de senha." };

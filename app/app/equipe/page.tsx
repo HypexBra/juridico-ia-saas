@@ -5,6 +5,8 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConvidarForm } from "@/components/app/convidar-form";
 import { MembroLinhaAcoes } from "@/components/app/membro-linha-acoes";
+import { CancelarConviteButton } from "@/components/app/cancelar-convite-button";
+import { listarConvitesPendentesAction } from "@/app/app/equipe/actions";
 import type { Perfil, Role } from "@/lib/types";
 
 export const metadata = { title: "Equipe — Jurídico IA" };
@@ -34,6 +36,8 @@ export default async function EquipePage() {
 
   const lista = perfis ?? [];
   const souGestor = usuario.perfil.role === "owner" || usuario.perfil.role === "admin";
+  const convitesResultado = souGestor ? await listarConvitesPendentesAction() : null;
+  const convitesPendentes = convitesResultado?.ok ? convitesResultado.convites : [];
 
   return (
     <div className="space-y-6">
@@ -46,6 +50,28 @@ export default async function EquipePage() {
         <CardTitle className="mb-4">Convidar novo membro</CardTitle>
         <ConvidarForm />
       </Card>
+
+      {souGestor && convitesPendentes.length > 0 && (
+        <Card>
+          <CardTitle className="mb-4">Convites pendentes ({convitesPendentes.length})</CardTitle>
+          <ul className="divide-y divide-white/5">
+            {convitesPendentes.map((convite) => (
+              <li key={convite.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="text-sm font-medium text-ice">
+                    {convite.nome} <span className="text-xs font-normal text-muted">({convite.email})</span>
+                  </p>
+                  <p className="text-xs text-muted">
+                    {ROLE_LABEL[convite.role]} · expira em{" "}
+                    {new Date(convite.expira_em).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <CancelarConviteButton conviteId={convite.id} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">

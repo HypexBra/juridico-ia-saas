@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ConviteEquipe, Escritorio } from "@/lib/types";
 
 const TAGS_PADRAO = [
   { nome: "Trabalhista", cor: "#3b82f6" },
@@ -103,6 +104,88 @@ export async function criarEscritorioEPerfil(
     console.error("[onboarding/criarEscritorioEPerfil] Falha ao ler escritório recém-criado:", erroLeitura, {
       authUserId,
       escritorioId,
+    });
+    throw erroLeitura;
+  }
+
+  return escritorio;
+}
+
+/**
+ * Onboarding alternativo: em vez de criar um escritório novo (fluxo acima),
+ * JUNTA o usuário recém-confirmado a um escritório existente via convite de
+ * equipe pendente (migration 0038). Chamado por `lib/app/current-user.ts`
+ * ANTES do fluxo de metadata `nome_escritorio` — um usuário convidado nunca
+ * tem esse metadata, então cairia em onboarding "sem dados" e ficaria preso
+ * sem perfil se este caminho não existisse.
+ *
+ * Usa o client normal (respeitando RLS, nunca `service_role`): a policy
+ * `convites_equipe_select_proprio` (migration 0038) já garante que só o
+ * convite pendente/válido do PRÓPRIO e-mail (via `auth.jwt()`) é visível, e
+ * `perfis_insert` só aceita este INSERT se ele bater exatamente
+ * `escritorio_id`/`role` de um convite pendente no mesmo formato — dupla
+ * checagem client+RLS, mas a garantia real contra escalada cross-tenant é a
+ * RLS.
+ *
+ * Retorna `null` (sem lançar) quando não há convite pendente para o e-mail
+ * da sessão — caller decide o próximo fallback (onboarding normal ou erro).
+ */
+export async function aceitarConviteEquipeSePendente(
+  supabase: SupabaseClient,
+  authUserId: string,
+): Promise<Escritorio | null> {
+  const { data: convite, error: erroConvite } = await supabase
+    .from("convites_equipe")
+    .select("*")
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle<ConviteEquipe>();
+
+  if (erroConvite) {
+    console.error("[onboarding/aceitarConviteEquipeSePendente] Falha ao buscar convite pendente:", erroConvite, {
+      authUserId,
+    });
+    return null;
+  }
+  if (!convite) return null;
+
+  const { error: erroPerfil } = await supabase.from("perfis").insert({
+    auth_user_id: authUserId,
+    escritorio_id: convite.escritorio_id,
+    nome: convite.nome,
+    role: convite.role,
+  });
+  if (erroPerfil) {
+    console.error("[onboarding/aceitarConviteEquipeSePendente] Falha ao criar perfil via convite:", erroPerfil, {
+      authUserId,
+      conviteId: convite.id,
+    });
+    throw erroPerfil;
+  }
+
+  const { error: erroAceite } = await supabase
+    .from("convites_equipe")
+    .update({ status: "aceito", aceito_em: new Date().toISOString() })
+    .eq("id", convite.id);
+  if (erroAceite) {
+    // Perfil já foi criado com sucesso (não é revertido) — o convite ficar
+    // "pendente" indevidamente é só cosmético na tela de equipe, não bloqueia
+    // o usuário. Loga para eventual limpeza manual.
+    console.error("[onboarding/aceitarConviteEquipeSePendente] Perfil criado, mas falha ao marcar convite aceito:", erroAceite, {
+      authUserId,
+      conviteId: convite.id,
+    });
+  }
+
+  const { data: escritorio, error: erroLeitura } = await supabase
+    .from("escritorios")
+    .select()
+    .eq("id", convite.escritorio_id)
+    .single();
+  if (erroLeitura) {
+    console.error("[onboarding/aceitarConviteEquipeSePendente] Falha ao ler escritório do convite:", erroLeitura, {
+      authUserId,
+      conviteId: convite.id,
     });
     throw erroLeitura;
   }

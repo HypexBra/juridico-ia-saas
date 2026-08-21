@@ -31,6 +31,21 @@ export type Perfil = {
   criado_em: string;
 };
 
+export type StatusConviteEquipe = "pendente" | "aceito" | "cancelado" | "expirado";
+
+export type ConviteEquipe = {
+  id: string;
+  escritorio_id: string;
+  email: string;
+  nome: string;
+  role: Extract<Role, "admin" | "advogado">;
+  status: StatusConviteEquipe;
+  criado_por: string;
+  criado_em: string;
+  expira_em: string;
+  aceito_em: string | null;
+};
+
 export type Cliente = {
   id: string;
   escritorio_id: string;

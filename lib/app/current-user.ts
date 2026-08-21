@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { criarEscritorioEPerfil } from "@/lib/onboarding";
+import { criarEscritorioEPerfil, aceitarConviteEquipeSePendente } from "@/lib/onboarding";
 import type { Escritorio, Perfil } from "@/lib/types";
 
 export type PerfilAtual = Perfil & { escritorio: Escritorio };
@@ -78,10 +78,18 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
 
     const nomeUsuario = user.user_metadata?.nome_usuario as string | undefined;
     const nomeEscritorio = user.user_metadata?.nome_escritorio as string | undefined;
-    if (!nomeUsuario || !nomeEscritorio) return null;
 
     try {
-      await criarEscritorioEPerfil(supabase, user.id, nomeUsuario, nomeEscritorio);
+      // Convite de equipe (migration 0038) tem prioridade: um usuário
+      // convidado por `auth.admin.inviteUserByEmail` nunca tem
+      // `nome_usuario`/`nome_escritorio` no metadata (esses só existem no
+      // fluxo de cadastro normal) — sem este passo, ele ficaria preso sem
+      // perfil algum após definir a senha.
+      const escritorioViaConvite = await aceitarConviteEquipeSePendente(supabase, user.id);
+      if (!escritorioViaConvite && (!nomeUsuario || !nomeEscritorio)) return null;
+      if (!escritorioViaConvite) {
+        await criarEscritorioEPerfil(supabase, user.id, nomeUsuario!, nomeEscritorio!);
+      }
     } catch (erro) {
       // Não deixa o onboarding adiado derrubar o layout inteiro com um erro
       // não tratado (contrato documentado desta função é retornar `null`

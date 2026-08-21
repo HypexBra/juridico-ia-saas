@@ -34,25 +34,11 @@ export function stripeEstaConfigurado(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }
 
-/**
- * URL pública da aplicação usada nos `success_url`/`cancel_url`/`return_url`
- * enviados ao Stripe. Sem `NEXT_PUBLIC_APP_URL`, cai para `localhost` — o que
- * é inofensivo para ABRIR o checkout (Stripe aceita qualquer URL válida),
- * mas quebra silenciosamente o retorno pós-pagamento em produção. Loga um
- * warning (em vez de um fallback 100% silencioso) para esse caso aparecer
- * nos logs do servidor em vez de exigir reproduzir o pagamento pra descobrir.
- */
-export function obterAppUrl(): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    console.warn(
-      "[billing] NEXT_PUBLIC_APP_URL não configurada — usando http://localhost:3000 como fallback " +
-        "para success_url/cancel_url/return_url do Stripe. Em produção isso quebra o redirect pós-checkout.",
-    );
-    return "http://localhost:3000";
-  }
-  return appUrl;
-}
+// `obterAppUrl` virou utilitário genérico em lib/app/url.ts (usado também
+// pelo redirect de e-mail do Supabase Auth — convite de equipe/redefinição
+// de senha, sem relação com billing) — reexportado aqui pra não quebrar os
+// callers existentes deste módulo.
+export { obterAppUrl } from "@/lib/app/url";
 
 export type CriarCheckoutSessionParams = {
   escritorioId: string;
