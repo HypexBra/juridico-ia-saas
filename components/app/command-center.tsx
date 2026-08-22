@@ -37,6 +37,7 @@ const COMANDOS: Comando[] = [
   { id: "contra", rotulo: "Testar tese (Advogado do Contra)", href: "/app/advogado-contra/novo", grupo: "Análises IA" },
   { id: "redline", rotulo: "Analisar risco contratual (Redline)", href: "/app/redline", grupo: "Análises IA" },
   { id: "modelos", rotulo: "Modelos de documentos", href: "/app/modelos", grupo: "Gestão" },
+  { id: "workflows", rotulo: "Workflows / automação de rotinas", href: "/app/workflows", grupo: "Gestão", descricao: "Cadeia de etapas por caso, com aprovação humana" },
   { id: "financeiro", rotulo: "Financeiro / honorários", href: "/app/financeiro", grupo: "Gestão" },
   { id: "relatorios", rotulo: "Relatórios", href: "/app/relatorios", grupo: "Gestão" },
   { id: "equipe", rotulo: "Equipe", href: "/app/equipe", grupo: "Gestão" },

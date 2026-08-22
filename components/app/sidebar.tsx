@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/app/prazos", label: "Prazos", icon: "clock" as const },
   { href: "/app/calculadoras", label: "Calculadoras", icon: "chart" as const },
   { href: "/app/modelos", label: "Modelos", icon: "layout" as const },
+  { href: "/app/workflows", label: "Workflows", icon: "workflow" as const },
   { href: "/app/redline", label: "Redline", icon: "shield" as const },
   { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
   { href: "/app/auditor", label: "Auditor de Peças", icon: "auditor" as const },
@@ -51,6 +52,14 @@ const ICONS: Record<string, React.ReactNode> = {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <line x1="3" y1="9" x2="21" y2="9" />
       <line x1="9" y1="21" x2="9" y2="9" />
+    </>
+  ),
+  // Workflow Engine (Fase 8): dois nós ligados por um caminho — a cadeia de etapas.
+  workflow: (
+    <>
+      <rect x="3" y="3" width="8" height="8" rx="2" />
+      <rect x="13" y="13" width="8" height="8" rx="2" />
+      <path d="M7 11v4a2 2 0 0 0 2 2h4" />
     </>
   ),
   chart: (

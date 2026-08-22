@@ -94,6 +94,16 @@ export const FEATURES_PREMIUM = [
    * o sustenta; a conferência humana é parte do fluxo.
    */
   "calculo_assistido_sentenca",
+  /**
+   * (15) Workflow Engine — definição e execução de cadeias ordenadas de
+   * etapas por caso (criar tarefa/prazo, gerar documento, mensagem ao
+   * cliente, aprovação humana) (migration 0044). Pro-only sem tier gratuito
+   * parcial: é a feature que mais escreve em tabelas operacionais do
+   * produto (tarefas_caso/prazos/mensagens_portal_cliente/documentos), o
+   * que a torna o recurso mais "de produção" do plano. Ver
+   * docs/adrs/0016-workflow-engine.md.
+   */
+  "workflows_automacao",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];

@@ -13,6 +13,7 @@
 5. `supabase/migrations/0041_estrategia_caso.sql` — Fase 6 (Estrategista)
 6. `supabase/migrations/0042_pesquisa_juridica_stj.sql` — Fase 7 (Pesquisa Jurídica)
 7. `supabase/migrations/0043_tarefas_prioridade.sql` — prioridade em tarefas
+8. `supabase/migrations/0044_workflows.sql` — Fase 8 (Workflow Engine)
 
 ## Depois das migrations (2 minutos)
 
