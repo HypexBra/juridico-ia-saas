@@ -32,3 +32,8 @@ export function FieldError({ children }: { children?: string | null }) {
   if (!children) return null;
   return <p className="mt-1.5 text-xs text-red-400">{children}</p>;
 }
+
+export function Checkbox(props: InputHTMLAttributes<HTMLInputElement>) {
+  const { className = "", ...rest } = props;
+  return <input type="checkbox" className={`h-4 w-4 accent-silver ${className}`} {...rest} />;
+}

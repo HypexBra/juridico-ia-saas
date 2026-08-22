@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/app/chat", label: "Chat IA", icon: "chat" as const },
   { href: "/app/fichas", label: "Fichas", icon: "file" as const },
   { href: "/app/prazos", label: "Prazos", icon: "clock" as const },
+  { href: "/app/calculadoras", label: "Calculadoras", icon: "chart" as const },
   { href: "/app/modelos", label: "Modelos", icon: "layout" as const },
   { href: "/app/redline", label: "Redline", icon: "shield" as const },
   { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
