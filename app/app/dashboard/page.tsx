@@ -12,6 +12,8 @@ import { DonutChart } from "@/components/app/charts/donut-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
 import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
 import { TarefaDashboardItem } from "@/components/app/tarefa-dashboard-item";
+import { RadarHoje } from "@/components/app/radar-hoje";
+import { coletarSinaisRadar, classificarSinais } from "@/lib/radar/radar";
 import { limiteMensagensIaPara } from "@/lib/types";
 import type { FichaCaso, Prazo, TarefaCaso } from "@/lib/types";
 
@@ -61,7 +63,13 @@ export default async function DashboardPage() {
 
   // Recalcula pendente -> atrasado antes de agregar o card financeiro (mesma
   // garantia usada em app/app/financeiro/page.tsx antes de qualquer leitura).
-  await sincronizarParcelasAtrasadas(usuario.perfil.escritorio_id);
+  // Radar Jurídico (Fase 10/11): sinais determinísticos coletados na mesma
+  // rodada de carregamento — a seção "O que preciso saber hoje" nunca espera
+  // rede extra nem depende de IA para existir.
+  const [sinaisRadar] = await Promise.all([
+    coletarSinaisRadar(supabase),
+    sincronizarParcelasAtrasadas(usuario.perfil.escritorio_id).then(() => undefined as void),
+  ]);
 
   const [
     prazosRes,
@@ -179,6 +187,8 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-muted">Visão geral do escritório {usuario.perfil.escritorio.nome}.</p>
       </div>
+
+      <RadarHoje sinaisIniciais={classificarSinais(sinaisRadar)} />
 
       {alertasPrazo.length > 0 && (
         <Card className="border-red-500/30 bg-red-950/10">
