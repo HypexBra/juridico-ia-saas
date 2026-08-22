@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/app/documentos", label: "Documentos", icon: "documentos" as const },
   { href: "/app/auditor", label: "Auditor de Peças", icon: "auditor" as const },
   { href: "/app/advogado-contra", label: "Advogado do Contra", icon: "advogadoContra" as const },
+  { href: "/app/pesquisa", label: "Pesquisa Jurídica", icon: "layout" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },

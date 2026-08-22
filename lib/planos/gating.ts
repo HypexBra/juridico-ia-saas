@@ -78,6 +78,15 @@ export const FEATURES_PREMIUM = [
    * sem tier gratuito parcial. Ver docs/adrs/0014-estrategista-caso.md.
    */
   "estrategista_caso",
+  /**
+   * (13) Pesquisa Jurídica Avançada — a síntese da IA no Comparador de
+   * Decisões (Fase 7). A BUSCA em si (lexical + semântica sobre jurisprudência)
+   * e a verificação de citações são livres para todo escritório — dados
+   * públicos (CC-BY STJ) não se cobram. O que se cobra é o trabalho caro de
+   * IA: comparação analítica multi-decisões (teses em comum, divergências,
+   * tendência, riscos).
+   */
+  "pesquisa_juridica_avancada",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
