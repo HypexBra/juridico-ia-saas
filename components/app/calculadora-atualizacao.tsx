@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/input";
 import type { ResultadoAtualizacao } from "@/lib/calculadoras/atualizacao-monetaria";
+import { ExtracaoSentenca } from "./extracao-sentenca";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -24,6 +25,22 @@ export function CalculadoraAtualizacao() {
 
   function parseValor(texto: string): number {
     return Number.parseFloat(texto.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+
+  function aplicarExtracao(dados: {
+    valorOriginalTexto: string;
+    dataInicial: string;
+    dataFinal: string;
+    indice: "ipca" | "selic";
+    jurosMensalTexto: string;
+    tipoJuros: "simples" | "compostos";
+  }) {
+    setValor(dados.valorOriginalTexto);
+    setDataInicial(dados.dataInicial);
+    setDataFinal(dados.dataFinal);
+    setIndice(dados.indice);
+    setJurosMensal(dados.jurosMensalTexto);
+    setTipoJuros(dados.tipoJuros);
   }
 
   function calcular() {
@@ -98,10 +115,11 @@ export function CalculadoraAtualizacao() {
         </div>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 flex flex-wrap items-center gap-4">
         <Button size="sm" onClick={calcular} disabled={isPending || !dataInicial || !dataFinal}>
           {isPending ? "Calculando com índices oficiais…" : "Calcular"}
         </Button>
+        <ExtracaoSentenca aoAplicar={aplicarExtracao} />
       </div>
 
       {erro ? (

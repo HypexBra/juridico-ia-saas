@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { getUsuarioAtual } from "@/lib/app/current-user";
+import { createClient } from "@/lib/supabase/server";
 import {
   calcularAtualizacaoMonetaria,
   type ResultadoAtualizacao,
@@ -10,6 +11,8 @@ import { buscarSerieIndice, type IndiceDisponivel } from "@/lib/calculadoras/ind
 import { calcularSucumbenciaisArt85 } from "@/lib/calculadoras/honorarios-sucumbenciais";
 import { calcularPrazoProcessual } from "@/lib/calculadoras/dias-uteis";
 import { calcularPrescricao, type TipoPrescricao } from "@/lib/calculadoras/prescricao";
+import { extrairDadosDeSentenca, type DadosExtraidosSentenca } from "@/lib/calculadoras/extrair-sentenca";
+import { planoTemAcesso } from "@/lib/planos/gating";
 
 const dataSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida.");
 
@@ -160,4 +163,45 @@ export async function calcularPrescricaoAction(
   } catch (erro) {
     return { ok: false, error: erro instanceof Error ? erro.message : "Erro no cálculo." };
   }
+}
+
+const extracaoSchema = z.object({
+  texto: z.string().trim().min(50, "Cole o trecho da sentença/acordo (mín. 50 caracteres).").max(60_000),
+});
+
+/**
+ * Fase 16 avançada — extração assistida por IA de sentença → parâmetros do
+ * cálculo (feature Pro: `calculo_assistido_sentenca`). Cada campo extraído
+ * vem com o TRECHO LITERAL que o sustenta; a revisão humana é obrigatória
+ * por design (a UI preenche o formulário, nunca calcula sozinha).
+ */
+export async function extrairDadosSentencaAction(
+  input: z.infer<typeof extracaoSchema>,
+): Promise<ResultadoCalculadora<DadosExtraidosSentenca>> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  if (!planoTemAcesso(usuario.perfil.escritorio, "calculo_assistido_sentenca")) {
+    return { ok: false, error: "A extração assistida por IA está disponível no plano Pro." };
+  }
+
+  const parsed = extracaoSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Texto inválido." };
+
+  try {
+    const resultado = await extrairDadosDeSentenca(parsed.data.texto);
+    // Contagem de uso mensal — mesma política das demais features de IA.
+    await supabaseUsoInsert(usuario.perfil.escritorio.id);
+    return { ok: true, resultado };
+  } catch (erro) {
+    console.error("[calculadoras/extrair-sentenca] Falha:", erro);
+    return { ok: false, error: "Não foi possível extrair os dados agora. Tente novamente em instantes." };
+  }
+}
+
+async function supabaseUsoInsert(escritorioId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    mes_ref: new Date().toISOString().slice(0, 7),
+  });
 }

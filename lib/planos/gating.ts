@@ -87,6 +87,13 @@ export const FEATURES_PREMIUM = [
    * tendência, riscos).
    */
   "pesquisa_juridica_avancada",
+  /**
+   * (14) Cálculo assistido — extração por IA de valor/datas/índice/juros
+   * direto do trecho de sentença/acordo para preencher a Calculadora de
+   * atualização (Fase 16 avançada). Cada campo vem com o trecho literal que
+   * o sustenta; a conferência humana é parte do fluxo.
+   */
+  "calculo_assistido_sentenca",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];
