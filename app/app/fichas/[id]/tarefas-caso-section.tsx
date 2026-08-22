@@ -4,7 +4,9 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, FieldError } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import type { StatusTarefaCaso, TarefaCaso } from "@/lib/types";
+import type { PrioridadeTarefaCaso, StatusTarefaCaso, TarefaCaso } from "@/lib/types";
+import { compararTarefasPorUrgencia } from "@/lib/casos/tarefas";
+import { atualizarPrioridadeTarefaCasoAction } from "./tarefas-actions";
 import {
   criarTarefaCasoAction,
   atualizarStatusTarefaCasoAction,
@@ -26,6 +28,23 @@ const STATUS_TONE: Record<StatusTarefaCaso, "silver" | "blue" | "green"> = {
 
 const STATUS_OPCOES: StatusTarefaCaso[] = ["pendente", "em_andamento", "concluida"];
 
+const PRIORIDADE_LABEL: Record<PrioridadeTarefaCaso, string> = {
+  alta: "Alta",
+  media: "Média",
+  baixa: "Baixa",
+};
+
+const PRIORIDADE_TONE: Record<PrioridadeTarefaCaso, "red" | "amber" | "silver"> = {
+  alta: "red",
+  media: "amber",
+  baixa: "silver",
+};
+
+const PRIORIDADES: PrioridadeTarefaCaso[] = ["alta", "media", "baixa"];
+
+type FiltroStatus = "todas" | StatusTarefaCaso;
+type FiltroPrioridade = "todas" | PrioridadeTarefaCaso;
+
 export function TarefasCasoSection({
   fichaCasoId,
   tarefasIniciais,
@@ -39,6 +58,9 @@ export function TarefasCasoSection({
   const [titulo, setTitulo] = useState("");
   const [responsavelNovo, setResponsavelNovo] = useState("");
   const [prazoOpcional, setPrazoOpcional] = useState("");
+  const [prioridadeNova, setPrioridadeNova] = useState<PrioridadeTarefaCaso>("media");
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>("todas");
+  const [filtroPrioridade, setFiltroPrioridade] = useState<FiltroPrioridade>("todas");
   const [erro, setErro] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -58,6 +80,7 @@ export function TarefasCasoSection({
         titulo,
         responsavelPerfilId: responsavelNovo || null,
         prazoOpcional: prazoOpcional || null,
+        prioridade: prioridadeNova,
       });
       if (!resultado.ok) {
         setErro(resultado.error);
@@ -79,6 +102,20 @@ export function TarefasCasoSection({
         return;
       }
       setTarefas((atual) => atual.map((t) => (t.id === tarefaId ? { ...t, status: novoStatus } : t)));
+    });
+  }
+
+  function alterarPrioridade(tarefaId: string, novaPrioridade: PrioridadeTarefaCaso) {
+    setErro(null);
+    startTransition(async () => {
+      const resultado = await atualizarPrioridadeTarefaCasoAction(tarefaId, novaPrioridade);
+      if (!resultado.ok) {
+        setErro(resultado.error);
+        return;
+      }
+      setTarefas((atual) =>
+        atual.map((t) => (t.id === tarefaId ? { ...t, prioridade: novaPrioridade } : t)),
+      );
     });
   }
 
@@ -110,12 +147,25 @@ export function TarefasCasoSection({
     });
   }
 
+  // Filtro + ordenação canônica (prioridade desc, prazo próximo primeiro) —
+  // a lista reflete "o que fazer primeiro", não a ordem de cadastro.
+  const tarefasFiltradas = tarefas
+    .filter((t) => (filtroStatus === "todas" ? true : t.status === filtroStatus))
+    .filter((t) => (filtroPrioridade === "todas" ? true : (t.prioridade ?? "media") === filtroPrioridade))
+    .sort((a, b) => compararTarefasPorUrgencia(a, b));
+
   return (
     <div className="space-y-4">
-      <h3 className="font-display text-base font-semibold text-ice">Tarefas do caso ({tarefas.length})</h3>
+      <h3 className="font-display text-base font-semibold text-ice">
+        Tarefas do caso ({tarefas.length}
+        {filtroStatus !== "todas" || filtroPrioridade !== "todas"
+          ? ` · ${tarefasFiltradas.length} no filtro`
+          : ""}
+        )
+      </h3>
 
       <div className="rounded-lg border border-white/10 bg-navy/40 p-4">
-        <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
             <Label htmlFor="tarefa-titulo">Título</Label>
             <Input
@@ -149,6 +199,20 @@ export function TarefasCasoSection({
               onChange={(e) => setPrazoOpcional(e.target.value)}
             />
           </div>
+          <div>
+            <Label htmlFor="tarefa-prioridade">Prioridade</Label>
+            <Select
+              id="tarefa-prioridade"
+              value={prioridadeNova}
+              onChange={(e) => setPrioridadeNova(e.target.value as PrioridadeTarefaCaso)}
+            >
+              {PRIORIDADES.map((prioridade) => (
+                <option key={prioridade} value={prioridade}>
+                  {PRIORIDADE_LABEL[prioridade]}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
 
         <FieldError>{erro}</FieldError>
@@ -160,13 +224,47 @@ export function TarefasCasoSection({
         </div>
       </div>
 
-      {tarefas.length === 0 ? (
+      {tarefas.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtros de tarefas">
+          <span className="text-xs text-muted">Filtrar:</span>
+          <Select
+            aria-label="Filtrar por status"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value as FiltroStatus)}
+            className="w-auto py-1.5 text-xs"
+          >
+            <option value="todas">Todos os status</option>
+            {STATUS_OPCOES.map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABEL[status]}
+              </option>
+            ))}
+          </Select>
+          <Select
+            aria-label="Filtrar por prioridade"
+            value={filtroPrioridade}
+            onChange={(e) => setFiltroPrioridade(e.target.value as FiltroPrioridade)}
+            className="w-auto py-1.5 text-xs"
+          >
+            <option value="todas">Todas as prioridades</option>
+            {PRIORIDADES.map((prioridade) => (
+              <option key={prioridade} value={prioridade}>
+                {PRIORIDADE_LABEL[prioridade]}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+
+      {tarefasFiltradas.length === 0 ? (
         <p className="text-sm text-muted">
-          Nenhuma tarefa cadastrada ainda. Use o formulário acima para criar o checklist operacional do caso.
+          {tarefas.length === 0
+            ? "Nenhuma tarefa cadastrada ainda. Use o formulário acima para criar o checklist operacional do caso."
+            : "Nenhuma tarefa corresponde aos filtros selecionados."}
         </p>
       ) : (
         <ul className="divide-y divide-white/5">
-          {tarefas.map((tarefa) => (
+          {tarefasFiltradas.map((tarefa) => (
             <li key={tarefa.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -178,6 +276,9 @@ export function TarefasCasoSection({
                     {tarefa.titulo}
                   </p>
                   <Badge tone={STATUS_TONE[tarefa.status]}>{STATUS_LABEL[tarefa.status]}</Badge>
+                  <Badge tone={PRIORIDADE_TONE[tarefa.prioridade ?? "media"]}>
+                    {PRIORIDADE_LABEL[tarefa.prioridade ?? "media"]}
+                  </Badge>
                 </div>
                 <p className="mt-0.5 text-xs text-muted">
                   {nomeResponsavel(tarefa.responsavel_perfil_id)
@@ -199,6 +300,19 @@ export function TarefasCasoSection({
                   {STATUS_OPCOES.map((status) => (
                     <option key={status} value={status}>
                       {STATUS_LABEL[status]}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  aria-label="Prioridade da tarefa"
+                  value={tarefa.prioridade ?? "media"}
+                  disabled={isPending}
+                  onChange={(e) => alterarPrioridade(tarefa.id, e.target.value as PrioridadeTarefaCaso)}
+                  className="w-auto py-1.5 text-xs"
+                >
+                  {PRIORIDADES.map((prioridade) => (
+                    <option key={prioridade} value={prioridade}>
+                      {PRIORIDADE_LABEL[prioridade]}
                     </option>
                   ))}
                 </Select>

@@ -43,10 +43,17 @@ export function TarefaDashboardItem({ tarefa }: { tarefa: TarefaCaso }) {
     <li className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 last:border-0 last:pb-0">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-ice">{tarefa.titulo}</p>
-        <p className="text-xs text-muted">
-          {tarefa.status === "em_andamento" ? "Em andamento" : "Pendente"}
-          {tarefa.prazo_opcional ? ` · até ${formatarData(tarefa.prazo_opcional)}` : ""}
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted">
+            {tarefa.status === "em_andamento" ? "Em andamento" : "Pendente"}
+            {tarefa.prazo_opcional ? ` · até ${formatarData(tarefa.prazo_opcional)}` : ""}
+          </span>
+          {(tarefa.prioridade ?? "media") === "alta" ? (
+            <Badge tone="red">Prioridade alta</Badge>
+          ) : (tarefa.prioridade ?? "media") === "baixa" ? (
+            <Badge tone="muted">Baixa</Badge>
+          ) : null}
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {tarefa.prazo_opcional && (

@@ -1,6 +1,7 @@
-import type { StatusTarefaCaso } from "@/lib/types";
+import type { PrioridadeTarefaCaso, StatusTarefaCaso } from "@/lib/types";
 
 const STATUS_TAREFA_VALIDOS: readonly StatusTarefaCaso[] = ["pendente", "em_andamento", "concluida"];
+const PRIORIDADES_VALIDAS: readonly PrioridadeTarefaCaso[] = ["baixa", "media", "alta"];
 
 const TAMANHO_MAXIMO_TITULO = 255;
 
@@ -9,12 +10,36 @@ export function statusTarefaCasoEhValido(status: string): status is StatusTarefa
   return (STATUS_TAREFA_VALIDOS as readonly string[]).includes(status);
 }
 
+/** Type guard puro de prioridade (migration 0043) — mesmo check constraint do banco. */
+export function prioridadeTarefaEhValida(prioridade: string): prioridade is PrioridadeTarefaCaso {
+  return (PRIORIDADES_VALIDAS as readonly string[]).includes(prioridade);
+}
+
+/**
+ * Ordenação canônica do trabalho do dia: prioridade (alta primeiro) e,
+ * dentro dela, prazo mais próximo primeiro; sem prazo vai pro fim.
+ */
+export function compararTarefasPorUrgencia(
+  a: { prioridade: PrioridadeTarefaCaso; prazo_opcional: string | null },
+  b: { prioridade: PrioridadeTarefaCaso; prazo_opcional: string | null },
+): number {
+  const pesoPrioridade = { alta: 0, media: 1, baixa: 2 } as const;
+  const diferencaPrioridade = pesoPrioridade[a.prioridade] - pesoPrioridade[b.prioridade];
+  if (diferencaPrioridade !== 0) return diferencaPrioridade;
+  if (a.prazo_opcional === b.prazo_opcional) return 0;
+  if (!a.prazo_opcional) return 1;
+  if (!b.prazo_opcional) return -1;
+  return a.prazo_opcional < b.prazo_opcional ? -1 : 1;
+}
+
 export type NovaTarefaCasoInput = {
   escritorioId: string;
   fichaCasoId: string;
   titulo: string;
   responsavelPerfilId?: string | null;
   prazoOpcional?: string | null;
+  /** Migration 0043 — default "media" quando ausente/inválida (fail-safe). */
+  prioridade?: string | null;
   criadoPor?: string | null;
 };
 
@@ -24,6 +49,7 @@ export type NovaTarefaCasoPayload = {
   titulo: string;
   responsavel_perfil_id: string | null;
   status: "pendente";
+  prioridade: PrioridadeTarefaCaso;
   prazo_opcional: string | null;
   criado_por: string | null;
 };
@@ -44,15 +70,27 @@ export function montarNovaTarefaCaso(input: NovaTarefaCasoInput): NovaTarefaCaso
     throw new Error(`O título da tarefa não pode ter mais de ${TAMANHO_MAXIMO_TITULO} caracteres.`);
   }
 
+  const prioridade =
+    input.prioridade && prioridadeTarefaEhValida(input.prioridade) ? input.prioridade : "media";
+
   return {
     escritorio_id: input.escritorioId,
     ficha_caso_id: input.fichaCasoId,
     titulo,
     responsavel_perfil_id: input.responsavelPerfilId?.trim() || null,
     status: "pendente",
+    prioridade,
     prazo_opcional: input.prazoOpcional?.trim() || null,
     criado_por: input.criadoPor ?? null,
   };
+}
+
+/** Valida e monta o payload de mudança de prioridade (migration 0043). */
+export function montarAtualizacaoPrioridadeTarefa(novaPrioridade: string): { prioridade: PrioridadeTarefaCaso } {
+  if (!prioridadeTarefaEhValida(novaPrioridade)) {
+    throw new Error("Prioridade inválida.");
+  }
+  return { prioridade: novaPrioridade };
 }
 
 export type AtualizarStatusTarefaInput = {

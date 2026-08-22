@@ -238,6 +238,9 @@ export type CasoJurisprudenciaCitada = {
 /** "Caso Inteligente" (Fase 1, migration 0027) — tarefa operacional do caso (distinta de `Prazo`, que é processual/legal). */
 export type StatusTarefaCaso = "pendente" | "em_andamento" | "concluida";
 
+/** Prioridade operacional (migration 0043) — ordena o trabalho do dia. */
+export type PrioridadeTarefaCaso = "baixa" | "media" | "alta";
+
 export type TarefaCaso = {
   id: string;
   escritorio_id: string;
@@ -245,6 +248,7 @@ export type TarefaCaso = {
   titulo: string;
   responsavel_perfil_id: string | null;
   status: StatusTarefaCaso;
+  prioridade: PrioridadeTarefaCaso;
   prazo_opcional: string | null;
   criado_por: string | null;
   criado_em: string;

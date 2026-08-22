@@ -14,6 +14,7 @@ import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
 import { TarefaDashboardItem } from "@/components/app/tarefa-dashboard-item";
 import { RadarHoje } from "@/components/app/radar-hoje";
 import { coletarSinaisRadar, classificarSinais } from "@/lib/radar/radar";
+import { compararTarefasPorUrgencia } from "@/lib/casos/tarefas";
 import { limiteMensagensIaPara } from "@/lib/types";
 import type { FichaCaso, Prazo, TarefaCaso } from "@/lib/types";
 
@@ -162,7 +163,7 @@ export default async function DashboardPage() {
   const propostasExtras = Math.max(0, totalPropostasPendentes - propostasPendentes.length);
 
   const resumoFinanceiro = calcularResumoFinanceiro(parcelasRes.data ?? [], mesRef);
-  const tarefas = tarefasRes.data ?? [];
+  const tarefas = [...(tarefasRes.data ?? [])].sort((a, b) => compararTarefasPorUrgencia(a, b));
 
   const distribuicaoPrazos = { vencidos: 0, urgentes: 0, semana: 0, futuros: 0 };
   for (const prazo of todosPrazosRes.data ?? []) {
