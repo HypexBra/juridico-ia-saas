@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
+import { CommandCenter } from "./command-center";
 import { MobileTabBar } from "./mobile-tab-bar";
 import { PageTransition } from "./page-transition";
 import { PullToRefresh } from "./pull-to-refresh";
@@ -45,6 +46,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen">
+      <CommandCenter />
       <Sidebar
         nomeEscritorio={nomeEscritorio}
         nomeUsuario={nomeUsuario}
