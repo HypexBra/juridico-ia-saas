@@ -17,6 +17,7 @@ import { GerarPeticaoCard, type ModeloParaSelecao } from "@/components/app/gerar
 import { RedacaoAssistidaCard } from "@/components/app/redacao-assistida-card";
 import { AutomacaoCondicionalCard } from "@/components/app/automacao-condicional-card";
 import { listarModelosCondicionaisAction } from "./mail-merge-condicional-actions";
+import { CATALOGO_VARIAVEIS_CASO } from "@/lib/mailmerge-condicional/catalogo-variaveis";
 import { ChatClienteCard } from "@/components/app/chat-cliente-card";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import { listarPessoasCasoAction } from "./pessoas-actions";
@@ -287,6 +288,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
                   fichaId={ficha.id}
                   modelos={modelosCondicionais}
                   temAcesso={planoTemAcesso(usuario.perfil.escritorio, "automacao_documento_condicional")}
+                  // Catálogo estático puro (zero I/O) — a UI documenta exatamente
+                  // as chaves que o motor resolve, garantido por teste.
+                  catalogoVariaveis={CATALOGO_VARIAVEIS_CASO}
                 />
 
                 <Card>

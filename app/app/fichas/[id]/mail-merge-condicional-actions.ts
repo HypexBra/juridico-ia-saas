@@ -16,6 +16,14 @@ import {
   type ParcelaParaTemplate,
   type PrazoParaTemplate,
 } from "@/lib/mailmerge-condicional/montar-dados";
+import {
+  montarContextoCaso,
+  type EstrategiaProntaParaContexto,
+  type EventoCasoParaContexto,
+  type PessoaCasoParaContexto,
+  type TarefaCasoParaContexto,
+  type TeseCasoParaContexto,
+} from "@/lib/mailmerge-condicional/contexto-caso";
 
 export type ModeloCondicional = { id: string; nome: string; conteudo: string };
 
@@ -26,6 +34,22 @@ export type GerarDocumentoCondicionalResultado =
 type ModeloRow = { id: string; nome: string; conteudo: string };
 type FichaRow = { id: string; nome_cliente: string | null; area_direito: string | null; cliente_id: string | null };
 type ContratoRow = { id: string } & ContratoParaTemplate;
+
+/**
+ * Falha ao carregar uma fonte do Caso Inteligente (pessoas/eventos/teses/
+ * tarefas/estratégia) NÃO pode quebrar a geração do documento: o contexto
+ * base (ficha/prazos/contratos/parcelas) já veio completo e as variáveis do
+ * caso são um enriquecimento — se faltarem, viram "não informado"/coleção
+ * vazia no motor, que é exatamente o comportamento de dado ausente previsto
+ * para templates. Logamos para diagnóstico e seguimos com o que temos
+ * (resiliência > rigidez).
+ */
+function logarFalhaContextoCaso(fonte: string, erro: { message: string } | null): void {
+  console.error(
+    `[fichas/mail-merge-condicional-actions] Falha ao carregar "${fonte}" do Caso Inteligente — seguindo sem essa parte do contexto:`,
+    erro?.message ?? erro,
+  );
+}
 
 /**
  * Lista, para a ficha, só os modelos cujo `conteudo` de fato usa a sintaxe
@@ -62,6 +86,11 @@ export async function listarModelosCondicionaisAction(): Promise<ModeloCondicion
  * contratos e TODAS as parcelas vinculados à ficha (não só o mais recente
  * de cada), porque `{{#cada parcelas}}` precisa da coleção inteira para
  * iterar (ex: listar cada parcela em atraso).
+ *
+ * Fase 9 (auto-fill do Caso Inteligente): além disso carrega pessoas,
+ * eventos, teses, tarefas e a estratégia mais recente pronta da ficha
+ * (`lib/mailmerge-condicional/contexto-caso.ts`) e mescla no contexto antes
+ * do resolver — falhas nessas queries extras não quebram a geração.
  *
  * Gate de plano é a PRIMEIRA coisa checada, antes de qualquer busca de
  * dados — nunca gastar round-trips de banco para depois descobrir que o
@@ -150,9 +179,86 @@ export async function gerarDocumentoCondicionalAction(
     parcelas,
   });
 
+  // ── Fase 9: contexto do Caso Inteligente (auto-fill) ───────────────────
+  // Enriquece o contexto com pessoas/eventos/teses/tarefas + estratégia mais
+  // recente PRONTA da ficha. Cada query é tolerante a falha individual (ver
+  // `logarFalhaContextoCaso`): erro em uma fonte não derruba as demais nem a
+  // geração — pior caso, o modelo resolve aquelas variáveis como "não
+  // informado", mesmo contrato de dado ausente do resto do sistema.
+  // RLS por escritorio_id já restringe cada tabela; o filtro por
+  // `ficha_caso_id` segue o mesmo padrão das queries de prazos acima.
+  const [
+    { data: pessoasData, error: erroPessoas },
+    { data: eventosData, error: erroEventos },
+    { data: tesesData, error: erroTeses },
+    { data: tarefasData, error: erroTarefas },
+    { data: estrategiasData, error: erroEstrategias },
+  ] = await Promise.all([
+    supabase
+      .from("pessoas_caso")
+      .select("nome, tipo, documento, contato, papel_processual")
+      .eq("ficha_caso_id", fichaId)
+      // Ordem de cadastro = ordem estável para {{#cada pessoas}}.
+      .order("criado_em", { ascending: true })
+      .returns<PessoaCasoParaContexto[]>(),
+    supabase
+      .from("eventos_caso")
+      .select("tipo_evento, descricao, data_evento, origem")
+      .eq("ficha_caso_id", fichaId)
+      // A ordenação final por data é refeita no módulo puro; aqui já alinha
+      // com o índice composto (ficha_caso_id, data_evento) da migration 0024.
+      .order("data_evento", { ascending: true })
+      .returns<EventoCasoParaContexto[]>(),
+    supabase
+      .from("teses_caso")
+      .select("id, tese, fundamentacao, status")
+      .eq("ficha_caso_id", fichaId)
+      // Mais recentemente tocadas primeiro (mesmo critério de priorização do
+      // Estrategista, ADR 0014 seção 4).
+      .order("atualizado_em", { ascending: false })
+      .returns<TeseCasoParaContexto[]>(),
+    supabase
+      .from("tarefas_caso")
+      .select("titulo, status, prioridade, prazo_opcional")
+      .eq("ficha_caso_id", fichaId)
+      // A ordenação "pendentes primeiro / prioridade / prazo" é regra de
+      // apresentação do template → vive no módulo puro (contexto-caso.ts).
+      .order("criado_em", { ascending: true })
+      .returns<TarefaCasoParaContexto[]>(),
+    supabase
+      .from("estrategias_caso")
+      // Apenas a MAIS RECENTE concluída ('pronto') — 'processando'/'erro' não
+      // têm resultado utilizável (coluna jsonb null), e nunca bloquear a
+      // geração esperando processamento em andamento.
+      .select("resultado_estrategia")
+      .eq("ficha_caso_id", fichaId)
+      .eq("status", "pronto")
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle<EstrategiaProntaParaContexto>(),
+  ]);
+
+  if (erroPessoas) logarFalhaContextoCaso("pessoas_caso", erroPessoas);
+  if (erroEventos) logarFalhaContextoCaso("eventos_caso", erroEventos);
+  if (erroTeses) logarFalhaContextoCaso("teses_caso", erroTeses);
+  if (erroTarefas) logarFalhaContextoCaso("tarefas_caso", erroTarefas);
+  if (erroEstrategias) logarFalhaContextoCaso("estrategias_caso", erroEstrategias);
+
+  const contextoCaso = montarContextoCaso({
+    pessoas: pessoasData ?? [],
+    eventos: eventosData ?? [],
+    teses: tesesData ?? [],
+    tarefas: tarefasData ?? [],
+    estrategia: estrategiasData ?? null,
+  });
+
   let resultado: ResultadoMailMergeCondicional;
   try {
-    resultado = resolverMailMergeCondicional(modelo.conteudo, dados);
+    // Merge por espalhamento: chaves novas do caso NUNCA sobrescrevem as pré-
+    // existentes (nome_cliente etc.) — os prefixos distintos (total_/estrategia_/
+    // coleções próprias) tornam colisão impossível hoje, e o spread mantém o
+    // contexto base vencedor se isso mudar no futuro.
+    resultado = resolverMailMergeCondicional(modelo.conteudo, { ...dados, ...contextoCaso });
   } catch (erro) {
     if (erro instanceof MotorTemplateCondicionalError) {
       return { ok: false, error: `Erro na sintaxe do modelo: ${erro.message}` };

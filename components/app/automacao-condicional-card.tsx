@@ -8,6 +8,91 @@ import {
   gerarDocumentoCondicionalAction,
   type ModeloCondicional,
 } from "@/app/app/fichas/[id]/mail-merge-condicional-actions";
+import type { GrupoVariaveisCatalogo } from "@/lib/mailmerge-condicional/catalogo-variaveis";
+
+/**
+ * Seção colapsável "Variáveis disponíveis": documenta TODAS as chaves que o
+ * motor resolve para uma ficha (ficha + prazos + contratos + parcelas +
+ * Caso Inteligente). O catálogo é um array estático puro
+ * (`CATALOGO_VARIAVEIS_CASO`) montado na page server e repassado como prop —
+ * zero I/O, zero risco de divergência (os testes garantem que ele cobre
+ * exatamente as chaves produzidas pelos módulos de montagem).
+ *
+ * Tem filtro por texto simples (chave ou descrição) porque são ~40 variáveis;
+ * grupos sem correspondência somem enquanto o filtro está ativo.
+ */
+function SecaoVariaveisDisponiveis({ catalogo }: { catalogo: ReadonlyArray<GrupoVariaveisCatalogo> }) {
+  const [aberta, setAberta] = useState(false);
+  const [filtro, setFiltro] = useState("");
+  const termo = filtro.trim().toLowerCase();
+
+  const gruposVisiveis = catalogo
+    .map((grupo) => ({
+      ...grupo,
+      variaveis: grupo.variaveis.filter(
+        (variavel) =>
+          termo.length === 0 ||
+          variavel.chave.toLowerCase().includes(termo) ||
+          variavel.descricao.toLowerCase().includes(termo),
+      ),
+    }))
+    .filter((grupo) => grupo.variaveis.length > 0);
+
+  return (
+    <div className="rounded-lg border border-white/10">
+      <button
+        type="button"
+        onClick={() => setAberta((valor) => !valor)}
+        aria-expanded={aberta}
+        aria-controls="catalogo-variaveis-condicional"
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-medium text-ice transition-colors hover:bg-white/5"
+      >
+        Variáveis disponíveis
+        <span className="text-xs text-silver-2">{aberta ? "ocultar ▲" : "mostrar ▼"}</span>
+      </button>
+
+      {aberta && (
+        <div id="catalogo-variaveis-condicional" className="space-y-4 border-t border-white/10 px-3 py-3">
+          <input
+            type="search"
+            value={filtro}
+            onChange={(evento) => setFiltro(evento.target.value)}
+            placeholder="Filtrar por nome ou descrição…"
+            aria-label="Filtrar variáveis"
+            className="w-full rounded-md border border-white/10 bg-navy-2 px-3 py-1.5 text-sm text-ice placeholder:text-silver-2 focus:border-gold focus:outline-none"
+          />
+
+          {gruposVisiveis.length === 0 ? (
+            <p className="text-sm text-muted">Nenhuma variável corresponde a &quot;{filtro}&quot;.</p>
+          ) : (
+            gruposVisiveis.map((grupo) => (
+              <div key={grupo.grupo}>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-silver-2">
+                  {grupo.grupo}
+                  {grupo.colecao && (
+                    <code className="ml-2 rounded bg-white/10 px-1 py-0.5 text-[11px] normal-case tracking-normal text-ice-2">
+                      {`{{#cada ${grupo.colecao}}}…{{/${grupo.colecao}}}`}
+                    </code>
+                  )}
+                </p>
+                <ul className="space-y-1">
+                  {grupo.variaveis.map((variavel) => (
+                    <li key={variavel.chave} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                      <code className="rounded bg-white/10 px-1 py-0.5 text-ice">
+                        {grupo.colecao === null ? `{{${variavel.chave}}}` : variavel.chave}
+                      </code>
+                      <span className="text-muted">{variavel.descricao}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * "Automação de documento com lógica condicional (Pro)": evolução do
@@ -15,7 +100,8 @@ import {
  * free, só substitui `{{variavel}}` literal). Aqui o modelo pode ter blocos
  * `{{#se ...}}`/`{{#cada ...}}` (ver `lib/mailmerge-condicional/motor.ts`
  * para a sintaxe completa) resolvidos contra a ficha + TODOS os
- * contratos/parcelas/prazos vinculados — não só o mais recente de cada.
+ * contratos/parcelas/prazos vinculados + os dados do Caso Inteligente
+ * (pessoas, linha do tempo, teses, tarefas, estratégia — fase 9).
  *
  * Só lista modelos que de fato usam a sintaxe condicional
  * (`modeloUsaLogicaCondicional`, filtrado no servidor por
@@ -26,10 +112,13 @@ export function AutomacaoCondicionalCard({
   fichaId,
   modelos,
   temAcesso,
+  catalogoVariaveis,
 }: {
   fichaId: string;
   modelos: ModeloCondicional[];
   temAcesso: boolean;
+  /** Catálogo estático importado pela page server (ver `catalogo-variaveis.ts`). */
+  catalogoVariaveis: ReadonlyArray<GrupoVariaveisCatalogo>;
 }) {
   const [modeloSelecionadoId, setModeloSelecionadoId] = useState(modelos[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
@@ -78,6 +167,11 @@ export function AutomacaoCondicionalCard({
           <code className="rounded bg-white/10 px-1 py-0.5 text-xs">{"{{#cada parcelas}}...{{/cada}}"}</code> para
           criar um.
         </p>
+        {/* Catálogo visível também sem modelos: é justamente na autoria do
+            primeiro modelo que a lista de variáveis é mais necessária. */}
+        <div className="mt-3">
+          <SecaoVariaveisDisponiveis catalogo={catalogoVariaveis} />
+        </div>
       </Card>
     );
   }
@@ -167,9 +261,14 @@ export function AutomacaoCondicionalCard({
       </div>
 
       <p className="mb-4 text-sm text-muted">
-        O modelo escolhido tem blocos condicionais ou de repetição — o documento é montado com base na ficha e em
-        TODOS os contratos, parcelas e prazos vinculados ao caso (não só o mais recente).
+        O modelo escolhido tem blocos condicionais ou de repetição — o documento é montado com base na ficha, em TODOS
+        os contratos, parcelas e prazos vinculados ao caso (não só o mais recente) e nos dados do Caso Inteligente
+        (pessoas, linha do tempo, teses, tarefas e estratégia).
       </p>
+
+      <div className="mb-4">
+        <SecaoVariaveisDisponiveis catalogo={catalogoVariaveis} />
+      </div>
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3">
