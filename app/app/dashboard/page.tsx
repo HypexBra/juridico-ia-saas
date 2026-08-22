@@ -12,7 +12,7 @@ import { DonutChart } from "@/components/app/charts/donut-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
 import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
 import { TarefaDashboardItem } from "@/components/app/tarefa-dashboard-item";
-import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { limiteMensagensIaPara } from "@/lib/types";
 import type { FichaCaso, Prazo, TarefaCaso } from "@/lib/types";
 
 /** Quantas propostas pendentes renderizar direto no dashboard antes de "e mais N". */
@@ -143,7 +143,11 @@ export default async function DashboardPage() {
   const alertasPrazo = alertasPrazoRes.data ?? [];
   const fichas = fichasRes.data ?? [];
   const usoMes = usoRes.data?.length ?? 0;
-  const percentualUso = Math.min(100, Math.round((usoMes / LIMITE_MENSAGENS_FREE) * 100));
+// BUG do círculo "/25": o denominador era sempre LIMITE_MENSAGENS_FREE (25),
+  // mesmo para escritório Pro (limite 300) — um Pro com 25 usos aparecia com
+  // anel em 100% cheio. Agora usa o limite REAL do plano do escritório.
+  const limiteIaEscritorio = limiteMensagensIaPara(usuario.perfil.escritorio.plano);
+  const percentualUso = Math.min(100, Math.round((usoMes / limiteIaEscritorio) * 100));
 
   const propostasPendentes = propostasPendentesRes.data ?? [];
   const totalPropostasPendentes = totalPropostasPendentesRes.count ?? propostasPendentes.length;
@@ -285,7 +289,7 @@ export default async function DashboardPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Uso de IA no mês</p>
               <p className="mt-1 font-display text-lg font-bold text-ice">
                 {usoMes}
-                <span className="text-sm font-normal text-muted"> / {LIMITE_MENSAGENS_FREE}</span>
+                <span className="text-sm font-normal text-muted"> / {limiteIaEscritorio}</span>
               </p>
             </div>
           </div>

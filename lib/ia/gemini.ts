@@ -6,6 +6,7 @@ import { RAG_TOOLING_PROMPT } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
 import { selecionarChave, registrarFalhaQuota } from "@/lib/ia/chaves/pool";
 import { QuotaExcedidaError } from "@/lib/ia/erros";
+import { mensagemTrivial } from "./gate-trivialidade";
 
 export { QuotaExcedidaError };
 
@@ -68,6 +69,81 @@ function maxOutputTokensPara(modelo: string): number {
 
 function thinkingBudgetPara(modelo: string): number {
   return modelo === MODELO_PRO ? THINKING_BUDGET_PRO : THINKING_BUDGET_FLASH;
+}
+
+/**
+ * Opções de geração compartilhadas entre o fluxo one-shot (`gerarResposta
+ * Gemini`) e o fluxo streaming (`gerarRespostaGeminiStream`).
+ */
+export type OpcoesGeracao = {
+  contextoRag?: string | null;
+  habilitarFerramentas?: boolean;
+  systemPromptOverride?: string;
+  responseSchema?: Schema;
+  /**
+   * Modo rápido (mensagens triviais — ver lib/ia/gate-trivialidade.ts):
+   * desliga pesquisa web (grounding googleSearch) e zera o budget de
+   * "thinking" da resposta. NUNCA usar em mensagem com conteúdo jurídico:
+   * sem grounding, leis/súmulas citadas saem só da memória do modelo.
+   */
+  modoRapido?: boolean;
+};
+
+/**
+ * Config de tools/thinking derivada das opções — única para os dois fluxos,
+ * para que streaming e one-shot tenham SEMPRE o mesmo comportamento.
+ */
+export function configPara(opcoes: OpcoesGeracao, modelo: string) {
+  const usaSchema = Boolean(opcoes.responseSchema);
+  const trivial = Boolean(opcoes.modoRapido);
+  const systemInstruction = opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`;
+  const maxOutputTokens = maxOutputTokensPara(modelo);
+  // Trivial: zero thinking — a resposta é curta e não há raciocínio a fazer;
+  // cada token de thinking é latência pura pro usuário esperando "oi".
+  const thinkingBudget = trivial ? 0 : thinkingBudgetPara(modelo);
+
+  if (usaSchema) {
+    return {
+      systemInstruction,
+      tools: undefined,
+      toolConfig: undefined,
+      maxOutputTokens,
+      thinkingConfig: { thinkingBudget },
+      responseMimeType: "application/json" as const,
+      responseSchema: opcoes.responseSchema,
+    };
+  }
+
+  return {
+    systemInstruction,
+    // `googleSearch` (grounding nativo) fica ligado sempre que tools são
+    // permitidas — EXCETO em modo rápido (trivial), onde busca server-side
+    // é latência de segundos sem nenhum ganho pra "oi"/"obrigado".
+    tools: trivial
+      ? undefined
+      : [
+          { googleSearch: {} },
+          ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
+        ],
+    toolConfig: trivial ? undefined : { includeServerSideToolInvocations: true },
+    maxOutputTokens,
+    thinkingConfig: { thinkingBudget },
+    responseMimeType: undefined,
+    responseSchema: undefined,
+  };
+}
+
+/**
+ * Detecta trivialidade na ÚLTIMA mensagem quando o caller não decidiu
+ * explicitamente. Centralizado aqui para que TODOS os callers do provider
+ * (chat, futuros fluxos) herdem o atalho de graça.
+ */
+export function resolverModoRapido(historico: ChatTurno[], opcoes: OpcoesGeracao): boolean {
+  if (opcoes.modoRapido !== undefined || opcoes.responseSchema || opcoes.systemPromptOverride) {
+    return Boolean(opcoes.modoRapido);
+  }
+  const ultima = historico[historico.length - 1];
+  return ultima ? mensagemTrivial(ultima.conteudo) : false;
 }
 
 const MAX_TENTATIVAS = 3;
@@ -156,18 +232,13 @@ export type RespostaIa = {
  */
 export async function gerarRespostaGemini(
   historico: ChatTurno[],
-  opcoes: {
-    contextoRag?: string | null;
-    habilitarFerramentas?: boolean;
-    systemPromptOverride?: string;
-    responseSchema?: Schema;
-  } = {},
+  opcoes: OpcoesGeracao = {},
 ): Promise<RespostaIa> {
   const ultima = historico[historico.length - 1];
   const anteriores = historico.slice(0, -1);
 
   const modeloEscolhido = escolherModelo(ultima.conteudo);
-  const usaSchema = Boolean(opcoes.responseSchema);
+  const modoRapido = resolverModoRapido(historico, opcoes);
 
   const mensagemFinal = opcoes.contextoRag
     ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
@@ -205,29 +276,7 @@ export async function gerarRespostaGemini(
           role: turno.role === "assistant" ? "model" : "user",
           parts: [{ text: turno.conteudo }],
         })),
-        config: {
-          systemInstruction: opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`,
-          // `googleSearch` (grounding nativo do Gemini) fica ligado sempre que
-          // tools são permitidas — não só quando `habilitarFerramentas`
-          // (propose_*) está ativo — porque o problema que resolve (lei/
-          // súmula desatualizada) independe de haver proposta pendente. Gemini
-          // 3 suporta combinar o tool nativo com functionDeclarations na mesma
-          // chamada (`includeServerSideToolInvocations` habilita essa
-          // combinação); `usaSchema` já desliga tools por completo (JSON
-          // estruturado não aceita tools).
-          tools: usaSchema
-            ? undefined
-            : [
-                { googleSearch: {} },
-                ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
-              ],
-          toolConfig: usaSchema ? undefined : { includeServerSideToolInvocations: true },
-          maxOutputTokens: maxOutputTokensPara(modelo),
-          thinkingConfig: { thinkingBudget: thinkingBudgetPara(modelo) },
-          ...(usaSchema
-            ? { responseMimeType: "application/json", responseSchema: opcoes.responseSchema }
-            : {}),
-        },
+        config: configPara({ ...opcoes, modoRapido }, modelo),
       });
 
       try {
@@ -280,5 +329,142 @@ export async function gerarRespostaGemini(
   // 5xx/rede): sinaliza para lib/ia/provider.ts acionar o fallback
   // cross-provider para Groq, em vez de propagar o erro bruto do SDK do
   // Gemini (bug: 503 nunca acionava o fallback, só 429 acionava).
+  throw new QuotaExcedidaError(ultimoErro);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STREAMING — mesmo pipeline de retry/pool do fluxo one-shot acima, mas
+// emitindo deltas de texto conforme o modelo gera. A percepção de latência
+// do chat cai de "segundos em silêncio" para "primeiro token em ~1s".
+//
+// Contrato do gerador:
+// - Emite `StreamEventoDelta` para cada trecho de texto gerado.
+// - Ao final, emite UM `StreamEventoFim` com o agregado (texto completo,
+//   tokens, functionCalls) — o caller persiste a mensagem e processa
+//   propostas exatamente como no fluxo one-shot.
+// - Erro ANTES do primeiro delta: lança (caller pode tentar fallback
+//   cross-provider com a interface limpa).
+// - Erro DEPOIS do primeiro delta: emite `StreamEventoErro` e encerra — não
+//   dá pra recuperar um stream pela metade; o texto parcial já entregue é
+//   mantido visível com aviso.
+// - Retry/backoff SÓ antes do primeiro delta: depois que tokens começaram a
+//   fluir, repetir duplicaria texto já mostrado ao usuário.
+
+export type StreamEvento =
+  | { tipo: "delta"; texto: string }
+  | { tipo: "fim"; resposta: RespostaIa }
+  | { tipo: "erro"; mensagem: string };
+
+export async function* gerarRespostaGeminiStream(
+  historico: ChatTurno[],
+  opcoes: OpcoesGeracao = {},
+): AsyncGenerator<StreamEvento, void, unknown> {
+  const ultima = historico[historico.length - 1];
+  const anteriores = historico.slice(0, -1);
+
+  const modeloEscolhido = escolherModelo(ultima.conteudo);
+  const modoRapido = resolverModoRapido(historico, opcoes);
+
+  const mensagemFinal = opcoes.contextoRag
+    ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
+    : ultima.conteudo;
+
+  const cadeiaModelos = [modeloEscolhido, MODELO_FALLBACK_QUOTA].filter(
+    (modelo, indice, lista) => lista.indexOf(modelo) === indice,
+  );
+
+  let ultimoErro: unknown;
+  const chamadasColetadas: ChamadaFuncao[] = [];
+
+  for (const modelo of cadeiaModelos) {
+    for (let tentativa = 0; tentativa < MAX_TENTATIVAS; tentativa++) {
+      const cliente = await getClient();
+      if (!cliente) {
+        throw new QuotaExcedidaError(new Error("Pool de chaves Gemini esgotado e GEMINI_API_KEY não configurada."));
+      }
+      const { genAI, chaveId } = cliente;
+
+      const chat = genAI.chats.create({
+        model: modelo,
+        history: anteriores.map((turno) => ({
+          role: turno.role === "assistant" ? "model" : "user",
+          parts: [{ text: turno.conteudo }],
+        })),
+        config: configPara({ ...opcoes, modoRapido }, modelo),
+      });
+
+      let stream;
+      try {
+        // sendMessageStream dispara a requisição já aqui: erros de quota/5xx
+        // na ABERTURA do stream são capturados no bloco abaixo e permitem
+        // retry/fallback com a interface limpa (nenhum token emitido).
+        stream = await chat.sendMessageStream({ message: mensagemFinal });
+      } catch (erro) {
+        ultimoErro = erro;
+        const deQuota = isErroDeQuota(erro);
+        if (deQuota && chaveId) {
+          await registrarFalhaQuota(chaveId, erro instanceof Error ? erro.message : String(erro));
+        }
+        const transiente = isErroTransiente(erro);
+        if (!transiente || tentativa === MAX_TENTATIVAS - 1 || (deQuota && tentativa >= 1)) {
+          break; // tenta próximo modelo da cadeia (ou lança QuotaExcedidaError lá embaixo)
+        }
+        await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
+        continue;
+      }
+
+      let textoCompleto = "";
+      let tokensIn = 0;
+      let tokensOut = 0;
+      let primeiroTokenEmitido = false;
+
+      try {
+        for await (const chunk of stream) {
+          const uso = chunk.usageMetadata;
+          if (uso?.promptTokenCount) tokensIn = uso.promptTokenCount;
+          if (uso?.candidatesTokenCount) tokensOut = uso.candidatesTokenCount;
+          const pedaco = chunk.text ?? "";
+          if (pedaco) {
+            primeiroTokenEmitido = true;
+            textoCompleto += pedaco;
+            yield { tipo: "delta", texto: pedaco };
+          }
+          const chamadas = (chunk.functionCalls ?? []).filter((c) => Boolean(c.name));
+          for (const chamada of chamadas) {
+            chamadasColetadas.push({ name: chamada.name as string, args: chamada.args ?? {} });
+          }
+        }
+
+        yield {
+          tipo: "fim",
+          resposta: { texto: textoCompleto, tokensIn, tokensOut, functionCalls: [...chamadasColetadas] },
+        };
+        return;
+      } catch (erro) {
+        // Falha NO MEIO do stream: sem retry (duplicaria texto já exibido).
+        // Se nenhum token tinha saído ainda, ainda é recuperável: trata como
+        // falha de abertura e segue a cadeia.
+        ultimoErro = erro;
+        if (!primeiroTokenEmitido) {
+          const deQuota = isErroDeQuota(erro);
+          if (deQuota && chaveId) {
+            await registrarFalhaQuota(chaveId, erro instanceof Error ? erro.message : String(erro));
+          }
+          if (tentativa < MAX_TENTATIVAS - 1 && isErroTransiente(erro)) {
+            await delay(deQuota ? BASE_DELAY_MS_QUOTA : BASE_DELAY_MS * 2 ** tentativa);
+            continue;
+          }
+          break;
+        }
+        yield {
+          tipo: "erro",
+          mensagem:
+            "A resposta foi interrompida no meio da geração. O texto parcial acima foi mantido — reenvie a mensagem para continuar.",
+        };
+        return;
+      }
+    }
+  }
+
   throw new QuotaExcedidaError(ultimoErro);
 }

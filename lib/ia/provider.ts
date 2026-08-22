@@ -1,11 +1,19 @@
 import "server-only";
 
 import type { Schema } from "@google/genai";
-import { gerarRespostaGemini, type ChatTurno, type RespostaIa } from "./gemini";
-import { gerarRespostaGroq } from "./groq";
+import {
+  gerarRespostaGemini,
+  gerarRespostaGeminiStream,
+  resolverModoRapido,
+  type ChatTurno,
+  type OpcoesGeracao,
+  type RespostaIa,
+  type StreamEvento,
+} from "./gemini";
+import { gerarRespostaGroq, gerarRespostaGroqStream } from "./groq";
 import { QuotaExcedidaError, TodosProvidersIndisponiveisError } from "@/lib/ia/erros";
 
-export type { ChatTurno, RespostaIa };
+export type { ChatTurno, RespostaIa, StreamEvento, OpcoesGeracao };
 export { TodosProvidersIndisponiveisError };
 
 /**
@@ -78,3 +86,57 @@ export async function gerarResposta(
     throw new TodosProvidersIndisponiveisError(erroGemini, erroGroq);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STREAMING cross-provider — mesma política de fallback do `gerarResposta`:
+// Gemini primeiro; se falhar ANTES do primeiro token (quota/5xx na abertura),
+// o MESMO turno é refeito via Groq. Depois que tokens começam a fluir não há
+// fallback (duplicaria texto já exibido) — erro mid-stream vira evento "erro".
+
+export async function* gerarRespostaStream(
+  historico: ChatTurno[],
+  opcoes: {
+    contextoRag?: string | null;
+    habilitarFerramentas?: boolean;
+    systemPromptOverride?: string;
+    modoRapido?: boolean;
+    providerOverride?: { provider: "gemini" | "groq" };
+  } = {},
+): AsyncGenerator<StreamEvento, void, unknown> {
+  const { providerOverride, ...opcoesGeracao } = opcoes;
+
+  if (providerOverride) {
+    yield* providerOverride.provider === "gemini"
+      ? gerarRespostaGeminiStream(historico, opcoesGeracao)
+      : gerarRespostaGroqStream(historico, opcoesGeracao);
+    return;
+  }
+
+  let erroGemini: unknown;
+  try {
+    yield* gerarRespostaGeminiStream(historico, opcoesGeracao);
+    return;
+  } catch (erro) {
+    if (!(erro instanceof QuotaExcedidaError)) throw erro;
+    erroGemini = erro;
+    console.error(
+      JSON.stringify({
+        evento: "fallback_provider_llm_streaming",
+        de: "gemini",
+        para: "groq",
+        motivo: "quota_excedida",
+        timestamp: new Date().toISOString(),
+      }),
+    );
+  }
+
+  try {
+    yield* gerarRespostaGroqStream(historico, opcoesGeracao);
+  } catch (erroGroq) {
+    throw new TodosProvidersIndisponiveisError(erroGemini, erroGroq);
+  }
+}
+
+/** Reexport para callers decidirem modo rápido sem importar gemini direto. */
+export { mensagemTrivial } from "./gate-trivialidade";
+export { resolverModoRapido };

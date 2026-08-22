@@ -130,3 +130,103 @@ export async function gerarRespostaGroq(
     throw erro;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STREAMING do provider de fallback — mesmo contrato de
+// gerarRespostaGeminiStream (lib/ia/gemini.ts): emite deltas, termina com um
+// evento "fim" agregado, e só lança QuotaExcedidaError quando a falha acontece
+// ANTES do primeiro token (depois disso não há como reexecutar sem duplicar
+// texto já exibido ao usuário).
+
+import type { StreamEvento } from "./gemini";
+import { AIMessageChunk } from "@langchain/core/messages";
+
+export async function* gerarRespostaGroqStream(
+  historico: ChatTurno[],
+  opcoes: {
+    contextoRag?: string | null;
+    habilitarFerramentas?: boolean;
+    systemPromptOverride?: string;
+  } = {},
+): AsyncGenerator<StreamEvento, void, unknown> {
+  const cliente = await getClient();
+  if (!cliente) {
+    throw new QuotaExcedidaError(new Error("Pool de chaves Groq esgotado e GROQ_API_KEY não configurada."));
+  }
+  const { client, chaveId } = cliente;
+
+  const ultima = historico[historico.length - 1];
+  const anteriores = historico.slice(0, -1);
+
+  const mensagemFinal = opcoes.contextoRag
+    ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
+    : ultima.conteudo;
+
+  const mensagens = [
+    new SystemMessage(opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`),
+    ...anteriores.map((turno) =>
+      turno.role === "assistant" ? new AIMessage(turno.conteudo) : new HumanMessage(turno.conteudo),
+    ),
+    new HumanMessage(mensagemFinal),
+  ];
+
+  let stream;
+  try {
+    stream = await client.stream(mensagens, {
+      max_tokens: MAX_OUTPUT_TOKENS_GROQ,
+      reasoning_effort: "low",
+      tools: opcoes.habilitarFerramentas ? montarToolsGroq() : undefined,
+    });
+  } catch (erro) {
+    if (isErroDeQuotaGroq(erro) && chaveId) {
+      await registrarFalhaQuota(chaveId, erro instanceof Error ? erro.message : String(erro));
+      throw new QuotaExcedidaError(erro);
+    }
+    throw erro;
+  }
+
+  let textoCompleto = "";
+  // Acumula TODOS os chunks do stream num único chunk combinado: os
+  // fragmentos de tool call chegam espalhados (`tool_call_chunks`) e só
+  // fazem sentido concatenados — o `.concat()` do LangChain junta texto E
+  // tool calls na ordem original, sem segunda chamada ao provider.
+  let combinado: AIMessageChunk | null = null;
+  try {
+    for await (const chunk of stream) {
+      combinado = combinado ? combinado.concat(chunk) : chunk;
+      const pedaco = typeof chunk.content === "string" ? chunk.content : "";
+      if (pedaco) {
+        textoCompleto += pedaco;
+        yield { tipo: "delta", texto: pedaco };
+      }
+    }
+  } catch (erro) {
+    if (!textoCompleto && chaveId && isErroDeQuotaGroq(erro)) {
+      await registrarFalhaQuota(chaveId, erro instanceof Error ? erro.message : String(erro));
+      throw new QuotaExcedidaError(erro);
+    }
+    yield {
+      tipo: "erro",
+      mensagem:
+        "A resposta foi interrompida no meio da geração. O texto parcial acima foi mantido — reenvie a mensagem para continuar.",
+    };
+    return;
+  }
+
+  // Tool calls completas derivadas dos fragmentos acumulados (vazio quando
+  // o modelo respondeu só com texto — caso comum).
+  let functionCalls: RespostaIa["functionCalls"] = [];
+  if (combinado?.tool_calls?.length) {
+    functionCalls = combinado.tool_calls
+      .filter((chamada) => Boolean(chamada.name))
+      .map((chamada) => ({
+        name: chamada.name,
+        args: (chamada.args ?? {}) as Record<string, unknown>,
+      }));
+  }
+
+  yield {
+    tipo: "fim",
+    resposta: { texto: textoCompleto, tokensIn: 0, tokensOut: 0, functionCalls },
+  };
+}

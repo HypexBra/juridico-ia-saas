@@ -10,40 +10,14 @@ import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara } from "@/lib/types";
 import type { Conversa, Mensagem } from "@/lib/types";
-
-const MAX_HISTORICO = 20;
-const MAX_TAMANHO_MENSAGEM = 8000;
-// Teto de caracteres por TURNO ANTIGO (tudo exceto a mensagem atual) ao
-// montar o histórico enviado ao Gemini. Uma peça/minuta gerada pela IA pode
-// ter até MAX_OUTPUT_TOKENS_PRO (8192 tokens, ~30-32k chars) — sem este
-// corte, cada turno subsequente da MESMA conversa reenvia essa peça inteira
-// de novo (custo de input token crescendo, sem limite, a cada mensagem nova
-// numa conversa longa). Isso é distinto do bug já corrigido do "thinking"
-// (ver erros-corrigidos.md) e do teto de SAÍDA: aqui o custo é de ENTRADA,
-// vindo do próprio histórico armazenado. O texto completo continua salvo no
-// banco e visível na UI — só o que é reenviado como contexto ao modelo é
-// truncado. ~900 chars (~220 tokens) é suficiente para o modelo saber "o que
-// já foi discutido/gerado" sem pagar o custo total de reenviar cada peça
-// anterior por inteiro a cada novo turno.
-const MAX_CHARS_TURNO_ANTIGO = 900;
-
-function truncarTurnoAntigo(turno: ChatTurno): ChatTurno {
-  if (turno.conteudo.length <= MAX_CHARS_TURNO_ANTIGO) return turno;
-  return {
-    ...turno,
-    conteudo: `${turno.conteudo.slice(0, MAX_CHARS_TURNO_ANTIGO)}\n[…turno anterior truncado para economizar tokens; o conteúdo completo continua salvo nesta conversa, só não é reenviado por inteiro ao modelo…]`,
-  };
-}
-
-function tituloDoTexto(texto: string) {
-  const limpo = texto.trim().replace(/\s+/g, " ");
-  return limpo.length > 60 ? `${limpo.slice(0, 60)}…` : limpo;
-}
-
-async function mesRefAtual() {
-  return new Date().toISOString().slice(0, 7);
-}
-
+import {
+  JANELA_DEDUP_MS,
+  MAX_HISTORICO,
+  MAX_TAMANHO_MENSAGEM,
+  mesRefAtual,
+  tituloDoTexto,
+  truncarTurnoAntigo,
+} from "@/lib/app/chat-shared";
 export type ConversaResumo = Pick<Conversa, "id" | "titulo" | "iniciada_em" | "total_msgs" | "criado_por">;
 
 export async function listarConversasAction(): Promise<ConversaResumo[]> {
@@ -266,7 +240,6 @@ export async function enviarMensagemAction(
   // passa de ~19 mensagens — o Gemini passava a receber contexto
   // desatualizado (início da conversa) em vez da troca recente, justamente
   // quando o histórico mais importa. Corrigido buscando desc e revertendo.
-  const JANELA_DEDUP_MS = 15_000;
   const { data: recentesDesc, error: erroHistorico } = await supabase
     .from("mensagens")
     .select("*")

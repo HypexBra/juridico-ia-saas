@@ -9,7 +9,6 @@ import { MarkdownLite } from "./markdown-lite";
 import { PropostaAcaoCard } from "./proposta-acao-card";
 import {
   carregarMensagensAction,
-  enviarMensagemAction,
   excluirConversaAction,
   excluirTodasConversasAction,
   type ConversaResumo,
@@ -184,25 +183,124 @@ export function ChatApp({
     setTexto("");
 
     startTransition(async () => {
-      const resultado = await enviarMensagemAction({
-        conversaId,
-        texto: textoEnviado,
-        provider: providerSelecionado === "auto" ? undefined : providerSelecionado,
-      });
-      if (!resultado.ok) {
-        setErro(resultado.error);
-        setMensagens((prev) => prev.filter((m) => m.id !== mensagemOtimista.id));
+      // STREAMING via SSE (rota /api/chat/mensagem): a resposta aparece
+      // conforme o modelo gera, em vez de esperar a geração inteira em
+      // silêncio. O pipeline de negócio (quota, dedup, RAG, propostas,
+      // persistência) roda server-side na rota — aqui é só transporte.
+      const bolhaAssistenteId = `stream-${Date.now()}`;
+      setMensagens((prev) => [
+        ...prev,
+        { id: bolhaAssistenteId, role: "assistant", conteudo: "", criado_em: new Date().toISOString() },
+      ]);
+
+      let conversaResolvida: string | null = null;
+      let usoFinal: number | null = null;
+      let respostaSalva: MensagemLocal | null = null;
+      let falha: string | null = null;
+
+      try {
+        const resposta = await fetch("/api/chat/mensagem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversaId,
+            texto: textoEnviado,
+            provider: providerSelecionado === "auto" ? undefined : providerSelecionado,
+          }),
+        });
+
+        if (!resposta.ok || !resposta.body) {
+          // Erros HTTP (401/400/500) chegam com JSON {"tipo":"error"}.
+          let mensagem = "Não foi possível enviar a mensagem.";
+          try {
+            const corpo = await resposta.json();
+            if (corpo?.error) mensagem = corpo.error;
+          } catch {
+            /* mantém mensagem genérica */
+          }
+          throw new Error(mensagem);
+        }
+
+        const leitor = resposta.body.getReader();
+        const decodificador = new TextDecoder();
+        let buffer = "";
+
+        for (;;) {
+          const { done, value } = await leitor.read();
+          if (done) break;
+          buffer += decodificador.decode(value, { stream: true });
+          const partes = buffer.split("\n\n");
+          buffer = partes.pop() ?? "";
+          for (const parte of partes) {
+            const linha = parte.trim();
+            if (!linha.startsWith("data:")) continue;
+            let evento: {
+              tipo: string;
+              texto?: string;
+              conversaId?: string;
+              error?: string;
+              mensagem?: MensagemLocal;
+              usoMes?: number;
+              deduplicada?: boolean;
+              interrompida?: boolean;
+            };
+            try {
+              evento = JSON.parse(linha.slice(5).trim());
+            } catch {
+              continue;
+            }
+
+            if (evento.tipo === "meta" && evento.conversaId) {
+              conversaResolvida = evento.conversaId;
+            } else if (evento.tipo === "delta" && evento.texto) {
+              setMensagens((prev) =>
+                prev.map((m) =>
+                  m.id === bolhaAssistenteId ? { ...m, conteudo: m.conteudo + evento.texto } : m,
+                ),
+              );
+            } else if (evento.tipo === "done") {
+              usoFinal = evento.usoMes ?? null;
+              if (evento.mensagem) {
+                respostaSalva = { ...evento.mensagem };
+                // Troca a bolha de streaming pela mensagem persistida.
+                setMensagens((prev) =>
+                  prev.map((m) => (m.id === bolhaAssistenteId ? { ...m, ...respostaSalva } : m)),
+                );
+              }
+              if (evento.interrompida) {
+                setErro("A resposta foi interrompida no meio da geração — o texto parcial foi mantido.");
+              }
+            } else if (evento.tipo === "error") {
+              falha = evento.error ?? "Erro inesperado do servidor.";
+            }
+          }
+        }
+      } catch (erroRede) {
+        falha =
+          erroRede instanceof Error
+            ? erroRede.message
+            : "Não foi possível enviar a mensagem. Verifique sua conexão.";
+      }
+
+      if (falha) {
+        setErro(falha);
+        // Remove bolhas otimistas (user + assistente parcial sem resposta).
+        setMensagens((prev) =>
+          prev.filter(
+            (m) => m.id !== mensagemOtimista.id && !(m.id === bolhaAssistenteId && !respostaSalva),
+          ),
+        );
         return;
       }
 
-      setUso((prev) => ({ ...prev, usados: resultado.usoMes }));
-      setMensagens((prev) => [...prev, resultado.assistente]);
+      if (usoFinal !== null) setUso((prev) => ({ ...prev, usados: usoFinal as number }));
 
-      if (!conversaId) {
-        setConversaId(resultado.conversaId);
+      const conversaFinal = conversaResolvida ?? conversaId;
+      if (!conversaId && conversaFinal) {
+        setConversaId(conversaFinal);
         setConversas((prev) => [
           {
-            id: resultado.conversaId,
+            id: conversaFinal,
             titulo: textoEnviado.slice(0, 60),
             iniciada_em: new Date().toISOString(),
             total_msgs: 2,
@@ -210,9 +308,9 @@ export function ChatApp({
           },
           ...prev,
         ]);
-      } else {
+      } else if (conversaFinal) {
         setConversas((prev) =>
-          prev.map((c) => (c.id === conversaId ? { ...c, total_msgs: c.total_msgs + 2 } : c)),
+          prev.map((c) => (c.id === conversaFinal ? { ...c, total_msgs: c.total_msgs + 2 } : c)),
         );
       }
     });
