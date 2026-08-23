@@ -1,6 +1,6 @@
 # MIGRATIONS PENDENTES — aplicar no Supabase (SQL Editor)
 
-> Estado em 2026-08-22. Verificado via API REST: as tabelas de 0038–0041
+> Estado em 2026-08-23. Verificado via API REST: as tabelas de 0038–0041
 > **não existem** em produção; 0037 é uma alteração de função (aplicar junto).
 > As migrations `0001`–`0036` já foram aplicadas nas sessões anteriores.
 
@@ -14,6 +14,8 @@
 6. `supabase/migrations/0042_pesquisa_juridica_stj.sql` — Fase 7 (Pesquisa Jurídica)
 7. `supabase/migrations/0043_tarefas_prioridade.sql` — prioridade em tarefas
 8. `supabase/migrations/0044_workflows.sql` — Fase 8 (Workflow Engine)
+9. `supabase/migrations/0045_observabilidade_uso.sql` — Fase 27: colunas modelo/duração/origem em uso_ia + índice (NOVA — sessão 6)
+10. `supabase/migrations/0046_memoria_escritorio.sql` — Fase 17: diretrizes_ia/tom_escrita/clausulas_padrao em escritorios (NOVA — sessão 6)
 
 ## Depois das migrations (2 minutos)
 
@@ -35,4 +37,7 @@ select table_name from information_schema.tables
 where table_schema='public' and table_name in
 ('convites_equipe','analises_advogado_contra','estrategias_caso','fontes_stj_sync');
 select prioridade from tarefas_caso limit 1; -- coluna existe?
+-- 0045/0046 (sessão 6):
+select modelo, duracao_ms, origem from uso_ia limit 1; -- colunas existem (linhas antigas: NULL é esperado)
+select diretrizes_ia, tom_escrita, clausulas_padrao from escritorios limit 1; -- colunas existem (default '')
 ```
