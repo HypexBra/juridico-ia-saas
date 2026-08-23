@@ -1,107 +1,149 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { IconClose, IconMenu, IconScale } from "./icons";
+import { useEffect, useState } from "react";
+import { IconClose, IconMenu } from "./icons";
+
+/* Nav editorial "papel-e-tinta": transparente sobre o papel e, depois de
+   24px de scroll, ganha fundo translúcido + hairline. Sem libs novas:
+   listener de scroll passivo com coalescência via requestAnimationFrame.
+   Âncoras seguem a gramática da landing v3 (#produto/#como-funciona/
+   #recursos/#planos) e a rota real de cadastro é /cadastro. */
 
 const NAV_LINKS = [
-  { href: "#funcionalidades", label: "Funcionalidades" },
+  { href: "#produto", label: "Produto" },
   { href: "#como-funciona", label: "Como funciona" },
-  { href: "#precos", label: "Planos" },
-  { href: "#faq", label: "Perguntas" },
-];
+  { href: "#recursos", label: "Recursos" },
+  { href: "#planos", label: "Planos" },
+] as const;
+
+const SIGNUP_HREF = "/cadastro";
+const SCROLL_THRESHOLD_PX = 24;
 
 export function Nav() {
+  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
+  // Estado "rolado": rAF coalesce (no máximo 1 setState por frame) e checagem
+  // inicial dentro do próprio frame — cobre carregamento já rolado sem
+  // chamar setState de forma síncrona no corpo do efeito.
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setScrolled(window.scrollY > SCROLL_THRESHOLD_PX);
+    };
+    const scheduleUpdate = () => {
+      if (frame === 0) frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate);
+      if (frame !== 0) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  // Menu mobile aberto: fecha no Escape e trava o scroll do documento
+  // por trás do painel (restaurando o valor anterior no cleanup).
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.documentElement.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-silver/15 bg-navy/85 backdrop-blur-md">
-      {/* Reading-progress bar: CSS scroll-driven (animation-timeline: scroll(root)),
-          zero JS. Thematic nod to "progresso na leitura do artigo". */}
-      <div
-        aria-hidden
-        className="nav-progress absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-gradient-to-r from-silver to-silver-2"
-      />
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+    <header
+      className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ease-out ${
+        scrolled
+          ? "border-ink/10 bg-paper/90 backdrop-blur-sm"
+          : "border-transparent bg-transparent"
+      }`}
+    >
+      {/* Skip-link: invisível até receber foco via teclado. */}
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[60] focus:border focus:border-ink/20 focus:bg-paper focus:px-4 focus:py-2 focus:font-sans-ed focus:text-sm focus:text-ink"
+      >
+        Pular para o conteúdo
+      </a>
+
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-10">
+        {/* Logo estritamente tipográfico — sem imagem, sem ícone. */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 font-display text-lg font-bold text-ice"
+          className="font-serif-ed text-lg font-semibold tracking-tight text-ink"
           onClick={() => setOpen(false)}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-silver/40 bg-silver/10 text-silver">
-            <IconScale className="h-4 w-4" strokeWidth={1.4} />
-          </span>
           Jurídico IA
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Navegação principal" className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted transition-colors hover:text-ice"
+              className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted transition-colors hover:text-ice"
-          >
-            Entrar
-          </Link>
-          <Link
-            href="/cadastro"
-            className="rounded-sm bg-gradient-to-br from-silver to-silver-2 px-4 py-2 text-sm font-semibold text-navy transition-opacity hover:opacity-85"
-          >
-            Começar grátis
-          </Link>
-        </div>
+        <Link
+          href={SIGNUP_HREF}
+          className="hidden rounded-none bg-ink px-4 py-2 font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90 md:inline-flex"
+        >
+          Começar gratuitamente
+        </Link>
 
         <button
           type="button"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-sm border border-silver/20 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5 md:hidden"
+          aria-controls="menu-mobile"
+          aria-label={open ? "Fechar menu" : "Abrir menu"}
+          onClick={() => setOpen((value) => !value)}
+          className="flex h-10 w-10 items-center justify-center rounded-none border border-ink/15 text-ink transition-colors hover:border-ink/30 md:hidden"
         >
           {open ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
         </button>
       </div>
 
+      {/* Painel mobile: página inteira em papel sob a barra fixa (h-16).
+          Links grandes, fecha ao navegar ou no Escape. */}
       {open ? (
-        <div className="mobile-menu-enter border-t border-silver/15 bg-navy px-5 pb-6 pt-2 md:hidden">
-          <nav className="flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="rounded-sm px-2 py-3 text-sm font-medium text-muted transition-colors duration-150 ease-out hover:bg-white/5 hover:text-ice active:bg-white/10 active:text-ice"
-              >
-                {link.label}
-              </a>
-            ))}
+        <div id="menu-mobile" className="fixed inset-x-0 bottom-0 top-16 z-40 bg-paper md:hidden">
+          <nav aria-label="Menu móvel" className="flex h-full flex-col px-5 pb-10 pt-2">
+            <ul>
+              {NAV_LINKS.map((link) => (
+                <li key={link.href} className="border-b border-ink/10">
+                  <a
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="block py-4 font-serif-ed text-2xl tracking-tight text-ink"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              href={SIGNUP_HREF}
+              onClick={() => setOpen(false)}
+              className="mt-auto rounded-none bg-ink px-4 py-3 text-center font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90"
+            >
+              Começar gratuitamente
+            </Link>
           </nav>
-          <div className="mt-3 flex flex-col gap-2 border-t border-silver/10 pt-4">
-            <Link
-              href="/login"
-              onClick={() => setOpen(false)}
-              className="rounded-sm border border-white/15 px-4 py-2.5 text-center text-sm font-medium text-ice transition-transform duration-150 ease-out active:scale-[0.97] active:bg-white/5"
-            >
-              Entrar
-            </Link>
-            <Link
-              href="/cadastro"
-              onClick={() => setOpen(false)}
-              className="rounded-sm bg-gradient-to-br from-silver to-silver-2 px-4 py-2.5 text-center text-sm font-semibold text-navy transition-transform duration-150 ease-out active:scale-[0.97]"
-            >
-              Começar grátis
-            </Link>
-          </div>
         </div>
       ) : null}
     </header>

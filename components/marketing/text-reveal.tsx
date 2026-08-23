@@ -17,6 +17,12 @@ interface TextRevealProps {
  * staggered translateY + opacity tween (Apple/keynote-style headline entrance).
  * SplitText ships free in the core GSAP bundle (GreenSock/Webflow, 2025).
  *
+ * Theme-neutral by design: this component owns motion only — color comes
+ * entirely from the consumer's `className`. On the paper-and-ink editorial
+ * theme pass `text-ink` for headlines (accent words via `text-lacre` in the
+ * markup that wraps this component); nothing here hardcodes a palette, so
+ * migrating themes never touches this file.
+ *
  * If JS never runs or `prefers-reduced-motion` is set, the heading stays as
  * plain, fully visible text — SplitText is only invoked when an animation
  * will actually play.

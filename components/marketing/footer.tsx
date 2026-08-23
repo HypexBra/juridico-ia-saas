@@ -1,35 +1,94 @@
 import Link from "next/link";
-import { IconScale } from "./icons";
+
+/* Footer minimalista da spec v3: logo serif, três colunas de links e uma
+   linha final mono. Links âncora consistentes com o nav (#como-funciona,
+   #recursos, #planos). Termos/Privacidade/Contato aguardam rotas próprias
+   — apontam "#" até o integrador ligá-las. */
+
+const PRODUCT_LINKS = [
+  { href: "#como-funciona", label: "Como funciona" },
+  { href: "#recursos", label: "Recursos" },
+  { href: "#planos", label: "Planos" },
+] as const;
+
+const LEGAL_LINKS = [
+  { href: "#", label: "Termos" },
+  { href: "#", label: "Privacidade" },
+] as const;
 
 export function Footer() {
-  const year = new Date().getFullYear();
-
   return (
-    <footer className="border-t border-silver/10 bg-navy px-5 py-10 sm:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 text-center sm:flex-row sm:justify-between sm:text-left">
-        <Link href="/" className="flex items-center gap-2 font-display text-base font-bold text-ice">
-          <IconScale className="h-4 w-4 text-silver" strokeWidth={1.4} />
-          Jurídico IA
-        </Link>
-
-        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          <a href="#funcionalidades" className="text-xs text-muted transition-colors hover:text-silver-2">
-            Funcionalidades
-          </a>
-          <a href="#precos" className="text-xs text-muted transition-colors hover:text-silver-2">
-            Planos
-          </a>
-          <a href="#faq" className="text-xs text-muted transition-colors hover:text-silver-2">
-            Perguntas
-          </a>
-          <Link href="/login" className="text-xs text-muted transition-colors hover:text-silver-2">
-            Entrar
+    <footer className="border-t border-ink/10 bg-paper">
+      <div className="mx-auto max-w-6xl px-5 py-14 md:px-10 md:py-16">
+        <div className="flex flex-col gap-12 md:flex-row md:items-start md:justify-between">
+          <Link
+            href="/"
+            className="self-start font-serif-ed text-xl font-semibold tracking-tight text-ink"
+          >
+            Jurídico IA
           </Link>
-        </nav>
 
-        <p className="text-xs text-muted">
-          © {year} Jurídico IA. Todos os direitos reservados.
-        </p>
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:gap-20">
+            <nav aria-label="Produto">
+              <p className="font-mono-ed text-[11px] uppercase tracking-[0.2em] text-ink-3">
+                Produto
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {PRODUCT_LINKS.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav aria-label="Legal">
+              <p className="font-mono-ed text-[11px] uppercase tracking-[0.2em] text-ink-3">
+                Legal
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {LEGAL_LINKS.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      href={link.href}
+                      className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav aria-label="Contato">
+              <p className="font-mono-ed text-[11px] uppercase tracking-[0.2em] text-ink-3">
+                Contato
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                <li>
+                  <a
+                    href="#"
+                    className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                  >
+                    Fale com o time
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        <div className="mt-14 flex flex-col gap-2 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-mono-ed text-[11px] tracking-wide text-ink-3">© 2026 Jurídico IA</p>
+          <p className="font-mono-ed text-[11px] tracking-wide text-ink-3">
+            Menos operação. Mais advocacia.
+          </p>
+        </div>
       </div>
     </footer>
   );

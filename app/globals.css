@@ -17,6 +17,23 @@
   --color-ice-2: #e2eaf4;
   --color-muted: #9fb0cc;
   --color-green: #22c55e;
+
+  /* ---- Tokens da landing pública (editorial claro) ----
+     Escopo: APENAS marketing. O app interno continua navy/Inter.
+     Paleta papel-e-tinta: off-white de papel, quase-preto tinta,
+     cinzas minerais. UM único acento — vermelho-lacre (#8B2E1F),
+     evocando lacre/carimbo documental — usado com parcimônia; a
+     página funciona integralmente sem ele. --color-lacre-bright é a
+     versão do acento legível sobre superfícies escuras (contraste AA
+     no painel tinta da seção proativa). */
+  --color-paper: #faf9f5;
+  --color-paper-2: #f3f1ea;
+  --color-paper-3: #edebe3;
+  --color-ink: #141412;
+  --color-ink-2: #44423b;
+  --color-ink-3: #6e6a60;
+  --color-lacre: #8b2e1f;
+  --color-lacre-bright: #d97a5c;
 }
 
 @theme inline {
@@ -30,8 +47,22 @@
   --color-ice-2: var(--color-ice-2);
   --color-muted: var(--color-muted);
   --color-green: var(--color-green);
-  --font-display: var(--font-display);
-  --font-sans: var(--font-sans);
+
+  /* Mapeamento dos tokens editoriais (gera utilitários bg-paper,
+     text-ink, border-lacre etc.). Nomes com sufixo -ed nas fontes para
+     nunca colidir com as fontes globais do app interno (--font-display /
+     --font-sans → font-display / font-sans). */
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+  --color-paper-3: var(--color-paper-3);
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-ink-3: var(--color-ink-3);
+  --color-lacre: var(--color-lacre);
+  --color-lacre-bright: var(--color-lacre-bright);
+  --font-serif-ed: var(--font-fraunces);
+  --font-sans-ed: var(--font-instrument);
+  --font-mono-ed: var(--font-plex);
 }
 
 /* `scroll-behavior: smooth` was removed on purpose: it's GSAP's own
@@ -80,16 +111,13 @@ html {
   margin-bottom: -0.08em;
 }
 
-@keyframes marquee {
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
 /* ---- Nav scroll-progress bar: CSS Scroll-Driven Animation ----
    Simple, linear, no pin/callback needed -> native `animation-timeline`
    first, per the framework's CSS-before-GSAP rule. No @supports match =
-   the bar just stays at scale-x-0 (invisible), zero dependency on it. */
+   the bar just stays at scale-x-0 (invisible), zero dependency on it.
+   (Na landing atual a barra de progresso do nav foi REMOVIDA — o fio
+   condutor lateral é quem desenha o progresso da página; a animação
+   permanece aqui caso volte a ser usada.) */
 @supports (animation-timeline: scroll()) {
   .nav-progress {
     animation: nav-progress-fill linear forwards;
@@ -103,28 +131,6 @@ html {
   }
   to {
     transform: scaleX(1);
-  }
-}
-
-/* ---- CTA glow: CSS Scroll-Driven Animation (view timeline) ----
-   Same rationale: a simple scale/opacity tied to view progress, no pin,
-   no callback. Falls back to the element's static inline opacity. */
-@supports (animation-timeline: view()) {
-  .cta-glow {
-    animation: cta-glow-in linear forwards;
-    animation-timeline: view();
-    animation-range: entry 0% cover 40%;
-  }
-}
-
-@keyframes cta-glow-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.85);
-  }
-  to {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -180,9 +186,20 @@ html {
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
+/* ---- Landing pública (marketing): foco visível + seleção ----
+   Escopado em .marketing-root para não alterar o app interno. O anel
+   usa o lacre (#8B2E1F, contraste ~7.9:1 sobre papel). */
+.marketing-root :focus-visible {
+  outline: 2px solid var(--color-lacre);
+  outline-offset: 2px;
+}
+
+.marketing-root ::selection {
+  background: rgba(139, 46, 31, 0.14);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .nav-progress,
-  .cta-glow {
+  .nav-progress {
     animation: none !important;
   }
 
