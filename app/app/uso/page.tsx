@@ -160,11 +160,13 @@ export default async function UsoIaPage() {
           aria-valuemax={100}
           aria-valuenow={Math.min(percentualLimite, 999)}
           aria-label={`Uso mensal de IA: ${percentualLimite}% do limite do plano`}
-          className="h-2 w-full overflow-hidden rounded-full bg-white/10"
+          className="h-2 w-full overflow-hidden rounded-full bg-ink/10"
         >
+          {/* Fill por faixa de consumo: verde até 79%, âmbar a partir de 80%,
+              vermelho no limite — tons AA sobre o papel. */}
           <div
             className={`h-full rounded-full transition-all duration-300 ${
-              percentualLimite >= 100 ? "bg-red-400" : percentualLimite >= 80 ? "bg-amber-300" : "bg-silver"
+              percentualLimite >= 100 ? "bg-red-600" : percentualLimite >= 80 ? "bg-amber-600" : "bg-green"
             }`}
             style={{ width: `${percentualBarra}%` }}
           />
@@ -181,7 +183,7 @@ export default async function UsoIaPage() {
           {serieDia.map((dia) => (
             <div key={dia.dia} className="flex items-center gap-2">
               <span className="w-10 shrink-0 text-[11px] tabular-nums text-muted">{dia.rotulo}</span>
-              <div className="h-3 flex-1 overflow-hidden rounded-sm bg-white/5" title={`${dia.chamadas} chamada(s) · ${formatarNumero(dia.tokens)} tokens`}>
+              <div className="h-3 flex-1 overflow-hidden rounded-sm bg-ink/5" title={`${dia.chamadas} chamada(s) · ${formatarNumero(dia.tokens)} tokens`}>
                 <div
                   className={`h-full rounded-sm ${dia.chamadas > 0 ? "bg-silver/50" : ""}`}
                   style={{ width: dia.tokens > 0 ? `${Math.max(2, (dia.tokens / divisorBarra) * 100)}%` : "0%" }}
@@ -208,7 +210,7 @@ export default async function UsoIaPage() {
                   <th className="pb-2 font-medium">Tokens</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-ink/10">
                 {porOrigem.map((linha) => (
                   <tr key={linha.origem}>
                     <td className="py-2 pr-3 text-ice">{linha.origem}</td>

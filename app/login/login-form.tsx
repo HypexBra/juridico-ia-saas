@@ -38,7 +38,7 @@ export function LoginForm() {
       </div>
 
       {state.error && (
-        <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-300">
+        <p role="alert" className="rounded-lg border border-red-700/20 bg-red-700/10 px-3.5 py-2.5 text-sm text-red-700">
           {state.error}
         </p>
       )}
@@ -49,7 +49,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-muted">
         Ainda não tem conta?{" "}
-        <Link href="/cadastro" className="font-medium text-silver hover:text-silver-2">
+        <Link href="/cadastro" className="font-medium text-silver underline underline-offset-2 hover:text-silver-2">
           Criar conta grátis
         </Link>
       </p>

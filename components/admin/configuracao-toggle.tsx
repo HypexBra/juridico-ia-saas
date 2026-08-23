@@ -49,9 +49,10 @@ export function ConfiguracaoToggle({
         aria-checked={valor}
         disabled={isPending}
         onClick={alternar}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${valor ? "bg-green" : "bg-white/10"}`}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${valor ? "bg-green" : "bg-ink/10"}`}
       >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${valor ? "translate-x-5" : "translate-x-0.5"}`} />
+        {/* Knob em papel com hairline: branco puro sumiria sobre o trilho claro. */}
+        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-navy shadow-sm ring-1 ring-ink/10 transition-transform ${valor ? "translate-x-5" : "translate-x-0.5"}`} />
       </button>
     </div>
   );

@@ -74,7 +74,7 @@ function etapasDoWorkflow(workflow: WorkflowParaEdicao): EtapaForm[] {
 }
 
 const inputClasse =
-  "w-full rounded-md border border-white/10 bg-navy px-3 py-2 text-sm text-ice placeholder:text-muted outline-none focus:border-silver/60";
+  "w-full rounded-md border border-ink/10 bg-navy px-3 py-2 text-sm text-ice placeholder:text-muted outline-none focus:border-silver/60";
 
 export function WorkflowEditor({
   workflow,
@@ -189,7 +189,7 @@ export function WorkflowEditor({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-navy-2/80 p-5">
+    <div className="rounded-xl border border-ink/15 bg-navy-2/80 p-5">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-display text-lg font-semibold text-ice">
           {workflow ? "Editar workflow" : "Novo workflow"}
@@ -197,7 +197,7 @@ export function WorkflowEditor({
         <button
           type="button"
           onClick={onFechar}
-          className="rounded-md border border-white/10 px-2 py-1 text-xs text-muted hover:bg-white/5 hover:text-ice"
+          className="rounded-md border border-ink/10 px-2 py-1 text-xs text-muted hover:bg-ink/5 hover:text-ice"
         >
           Fechar
         </button>
@@ -230,13 +230,14 @@ export function WorkflowEditor({
         <p className="text-[11px] font-medium uppercase tracking-wide text-muted">Etapas (executam na ordem)</p>
 
         {etapas.length === 0 && (
-          <p className="rounded-md border border-dashed border-white/10 px-3 py-4 text-center text-xs text-muted">
+          <p className="rounded-md border border-dashed border-ink/10 px-3 py-4 text-center text-xs text-muted">
             Adicione a primeira etapa abaixo.
           </p>
         )}
 
         {etapas.map((etapaAtual, indice) => (
-          <div key={etapaAtual.key} className="rounded-lg border border-white/10 bg-navy p-4">
+          /* Nó da etapa: card papel-2 com elevação sutil no hover. */
+          <div key={etapaAtual.key} className="rounded-lg border border-ink/15 bg-paper-2 p-4 transition-shadow hover:shadow-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-silver/15 text-xs font-semibold text-silver-2">
                 {indice + 1}
@@ -260,7 +261,7 @@ export function WorkflowEditor({
                   type="button"
                   onClick={() => mover(indice, -1)}
                   disabled={indice === 0}
-                  className="rounded border border-white/10 px-2 py-1 text-xs text-muted hover:bg-white/5 hover:text-ice disabled:opacity-30"
+                  className="rounded border border-ink/10 px-2 py-1 text-xs text-muted hover:bg-ink/5 hover:text-ice disabled:opacity-30"
                   aria-label="Mover etapa para cima"
                 >
                   ↑
@@ -269,7 +270,7 @@ export function WorkflowEditor({
                   type="button"
                   onClick={() => mover(indice, 1)}
                   disabled={indice === etapas.length - 1}
-                  className="rounded border border-white/10 px-2 py-1 text-xs text-muted hover:bg-white/5 hover:text-ice disabled:opacity-30"
+                  className="rounded border border-ink/10 px-2 py-1 text-xs text-muted hover:bg-ink/5 hover:text-ice disabled:opacity-30"
                   aria-label="Mover etapa para baixo"
                 >
                   ↓
@@ -277,7 +278,7 @@ export function WorkflowEditor({
                 <button
                   type="button"
                   onClick={() => setEtapas((atuais) => atuais.filter((e) => e.key !== etapaAtual.key))}
-                  className="rounded border border-red-500/30 px-2 py-1 text-xs text-red-300 hover:bg-red-950/40"
+                  className="rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
                   aria-label="Remover etapa"
                 >
                   Remover
@@ -405,7 +406,7 @@ export function WorkflowEditor({
       </div>
 
       {erro && (
-        <p className="mt-4 rounded-md border border-red-500/30 bg-red-950/30 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       )}
 
       <div className="mt-4 flex justify-end gap-2">

@@ -66,7 +66,7 @@ export function TesesCasoSection({
         />
       </div>
 
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
 
       {teses.length === 0 ? (
         <p className="text-sm text-muted">
@@ -78,7 +78,8 @@ export function TesesCasoSection({
           {teses.map((tese) => {
             const isPending = pendenteId === tese.id;
             return (
-              <li key={tese.id} className="rounded-lg border border-white/10 bg-navy/40 p-4">
+              // Nota editorial: filete verde à esquerda marca a citação de tese.
+              <li key={tese.id} className="rounded-lg border-l-2 border-accent bg-paper-2 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="mb-1 flex items-center gap-2">

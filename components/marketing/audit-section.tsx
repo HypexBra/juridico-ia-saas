@@ -65,7 +65,7 @@ export function AuditSection() {
                   Pedidos
                 </span>
                 <span
-                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-lacre font-mono-ed text-[11px] font-medium leading-none text-paper"
+                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent font-mono-ed text-[11px] font-medium leading-none text-paper"
                   aria-hidden
                 >
                   !
@@ -75,8 +75,8 @@ export function AuditSection() {
                 </span>
               </div>
 
-              <div className="mt-3 border-l-2 border-lacre bg-paper-2 px-4 py-3">
-                <p className="font-mono-ed text-[10px] uppercase tracking-[0.18em] text-lacre">
+              <div className="mt-3 border-l-2 border-accent bg-paper-2 px-4 py-3">
+                <p className="font-mono-ed text-[10px] uppercase tracking-[0.18em] text-accent">
                   Observação
                 </p>
                 <p className="mt-1 text-sm leading-relaxed text-ink-2">
@@ -100,7 +100,7 @@ export function AuditSection() {
               <span className="font-sans-ed text-sm text-ink md:text-base">
                 Contradições
               </span>
-              <span className="flex items-center font-mono-ed text-sm leading-none text-lacre">
+              <span className="flex items-center font-mono-ed text-sm leading-none text-accent">
                 <span className="sr-only">Localizadas: </span>
                 <span aria-hidden>2</span>
               </span>

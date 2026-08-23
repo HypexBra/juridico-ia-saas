@@ -74,7 +74,7 @@ export function RadarHoje({ sinaisIniciais }: { sinaisIniciais: SinalRadar[] }) 
                 {sinal.href ? (
                   <Link
                     href={sinal.href}
-                    className="flex items-start gap-2.5 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] hover:border-silver/25"
+                    className="flex items-start gap-2.5 rounded-lg border border-ink/10 bg-navy-3/40 px-3 py-2.5 transition-all duration-150 ease-out active:scale-[0.98] hover:border-silver/25 hover:bg-ink/5"
                   >
                     {conteudo}
                   </Link>
@@ -87,8 +87,9 @@ export function RadarHoje({ sinaisIniciais }: { sinaisIniciais: SinalRadar[] }) 
         </ul>
       ) : null}
 
+      {/* Briefing IA em papel-2 com hairline de tinta — bloco destacado do card. */}
       {briefing ? (
-        <div className="mt-4 space-y-3 rounded-lg border border-white/10 bg-navy-3/40 p-4">
+        <div className="mt-4 space-y-3 rounded-lg border border-ink/10 bg-paper-2 p-4">
           <p className="text-sm text-silver-2">{briefing.resumo}</p>
           {briefing.prioridades.length > 0 ? (
             <div>
@@ -117,7 +118,7 @@ export function RadarHoje({ sinaisIniciais }: { sinaisIniciais: SinalRadar[] }) 
       ) : null}
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
     </Card>
   );

@@ -24,7 +24,7 @@ export function Tabs({ items, defaultTabId }: { items: TabItem[]; defaultTabId?:
 
   return (
     <div>
-      <div role="tablist" className="mb-6 flex flex-wrap gap-1 border-b border-white/10">
+      <div role="tablist" className="mb-6 flex flex-wrap gap-1 border-b border-ink/10">
         {items.map((item) => {
           const selecionada = item.id === ativa;
           return (
@@ -42,7 +42,7 @@ export function Tabs({ items, defaultTabId }: { items: TabItem[]; defaultTabId?:
             >
               {item.label}
               {Boolean(item.contador) && (
-                <span className="ml-1.5 rounded-full bg-white/10 px-1.5 py-0.5 text-[11px] text-muted">
+                <span className="ml-1.5 rounded-full bg-ink/10 px-1.5 py-0.5 text-[11px] text-muted">
                   {item.contador}
                 </span>
               )}

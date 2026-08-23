@@ -117,7 +117,7 @@ export function ResearchSection() {
 
       {/* Honestidade obrigatória — spec §8: nunca inventar para preencher */}
       <Reveal delayMs={160}>
-        <div className="mx-auto mt-8 max-w-3xl border-l-2 border-lacre pl-5">
+        <div className="mx-auto mt-8 max-w-3xl border-l-2 border-accent pl-5">
           <p className="text-sm leading-relaxed text-ink-2">
             Quando a base não tem fonte suficiente, a resposta é: “Não foi
             localizada fonte verificável suficiente.” Nada é inventado para

@@ -10,7 +10,7 @@ type Knot = [xFraction: number, yFraction: number];
 // gesto visual vem do desenho progressivo no scroll e dos nós-lacre, não
 // de profundidade artificial.
 const THREAD_STROKE = "rgba(20,20,18,0.16)";
-const NODE_FILL = "#8b2e1f";
+const NODE_FILL = "#1d5b46" // verde-selo (ADR 0016);
 const LABEL_FILL = "rgba(20,20,18,0.45)";
 
 // Desktop: an organic sway crossing left/right roughly six times down the

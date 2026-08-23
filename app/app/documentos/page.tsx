@@ -98,7 +98,7 @@ export default async function DocumentosPage({
                 id="status"
                 name="status"
                 defaultValue={statusFiltro ?? ""}
-                className="rounded-lg border border-white/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice outline-none focus:border-silver/60 focus:ring-1 focus:ring-silver/30"
+                className="rounded-lg border border-ink/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice outline-none focus:border-silver/60 focus:ring-1 focus:ring-silver/30"
               >
                 <option value="">Todos</option>
                 <option value="processando">Processando</option>
@@ -114,7 +114,7 @@ export default async function DocumentosPage({
                 id="tipo"
                 name="tipo"
                 defaultValue={tipoFiltro ?? ""}
-                className="rounded-lg border border-white/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice outline-none focus:border-silver/60 focus:ring-1 focus:ring-silver/30"
+                className="rounded-lg border border-ink/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice outline-none focus:border-silver/60 focus:ring-1 focus:ring-silver/30"
               >
                 <option value="">Todos</option>
                 <option value="pdf">PDF</option>
@@ -124,7 +124,7 @@ export default async function DocumentosPage({
             </div>
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-lg border border-white/10 bg-navy-3 px-4 py-2.5 text-sm font-medium text-ice hover:bg-navy-3/70"
+              className="inline-flex items-center justify-center rounded-lg border border-ink/10 bg-navy-3 px-4 py-2.5 text-sm font-medium text-ice hover:bg-navy-3/70"
             >
               Filtrar
             </button>
@@ -136,7 +136,7 @@ export default async function DocumentosPage({
           </form>
 
           {!resultado?.ok ? (
-            <p className="text-sm text-red-400">{resultado?.error ?? "Não foi possível carregar as análises."}</p>
+            <p className="text-sm text-red-700">{resultado?.error ?? "Não foi possível carregar as análises."}</p>
           ) : analises.length === 0 ? (
             <p className="text-sm text-muted">
               {todasAnalises.length === 0
@@ -144,7 +144,7 @@ export default async function DocumentosPage({
                 : "Nenhuma análise encontrada com os filtros selecionados."}
             </p>
           ) : (
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-ink/10">
               {analises.map((analise) => (
                 <li key={analise.id} className="py-3">
                   <Link

@@ -174,11 +174,11 @@ export default async function FinanceiroPage() {
 
       <BorderGlow
         glowColor="42 75 70"
-        backgroundColor="#1c3a66"
+        backgroundColor="#f3f1ea"
         borderRadius={12}
         glowRadius={30}
         glowIntensity={0.9}
-        colors={["#c7d2e8", "#1c3a66", "#e3ebf7"]}
+        colors={["#1d5b46", "#44423b", "#2f6f59"]}
       >
         <div className="flex flex-wrap items-center gap-5 p-5">
           <UsageRing

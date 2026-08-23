@@ -44,12 +44,12 @@ function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoP
       }`}
     >
       {destaque ? (
-        <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-lacre" />
+        <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-accent" />
       ) : null}
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-serif-ed text-xl font-semibold text-ink">{nome}</h3>
         {destaque ? (
-          <span className="font-mono-ed text-[11px] uppercase tracking-[0.16em] text-lacre">
+          <span className="font-mono-ed text-[11px] uppercase tracking-[0.16em] text-accent">
             Recomendado
           </span>
         ) : null}
@@ -64,7 +64,7 @@ function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoP
       <ul className="mt-7 flex flex-1 flex-col gap-3">
         {features.map((feature) => (
           <li key={feature.label} className="flex items-start gap-2.5 text-sm text-ink-2">
-            <IconCheck className="mt-0.5 h-4 w-4 shrink-0 text-lacre" aria-hidden />
+            <IconCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
             {feature.label}
           </li>
         ))}

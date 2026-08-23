@@ -22,11 +22,11 @@ export function CancelarConviteButton({ conviteId }: { conviteId: string }) {
         type="button"
         disabled={isPending}
         onClick={cancelar}
-        className="rounded-md border border-red-500/30 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+        className="rounded-md border border-red-700/30 px-2 py-1 text-xs text-red-700 hover:bg-red-700/10 disabled:opacity-50"
       >
         Cancelar
       </button>
-      {erro && <p className="text-[11px] text-red-400">{erro}</p>}
+      {erro && <p className="text-[11px] text-red-700">{erro}</p>}
     </div>
   );
 }

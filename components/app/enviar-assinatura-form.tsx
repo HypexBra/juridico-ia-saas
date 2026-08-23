@@ -64,7 +64,7 @@ export function EnviarAssinaturaForm({
         <CardTitle>Assinatura eletrônica</CardTitle>
         <p className="mt-2 text-sm text-muted">
           Envio para assinatura eletrônica está desabilitado neste ambiente. Configure a variável de ambiente{" "}
-          <code className="rounded bg-white/10 px-1 py-0.5 text-xs">AUTENTIQUE_API_TOKEN</code> para habilitar.
+          <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">AUTENTIQUE_API_TOKEN</code> para habilitar.
         </p>
       </Card>
     );
@@ -146,7 +146,7 @@ export function EnviarAssinaturaForm({
       </form>
 
       {historico.length > 0 && (
-        <div className="mt-6 border-t border-white/10 pt-4">
+        <div className="mt-6 border-t border-ink/10 pt-4">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Envios anteriores</p>
           <ul className="space-y-2">
             {historico.map((doc) => (

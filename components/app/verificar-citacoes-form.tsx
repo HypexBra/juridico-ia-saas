@@ -78,7 +78,8 @@ export function VerificarCitacoesForm() {
       </div>
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        // Banner de erro claro (red-50/200) com texto vermelho escuro sobre papel.
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {citacoes !== null && !isPending ? (
@@ -87,7 +88,7 @@ export function VerificarCitacoesForm() {
         ) : (
           <ul className="mt-3 space-y-2">
             {citacoes.map((citacao) => (
-              <li key={`${citacao.tipo}:${citacao.valor}`} className="rounded-lg border border-white/10 bg-navy-3/40 px-3 py-2">
+              <li key={`${citacao.tipo}:${citacao.valor}`} className="rounded-lg border border-ink/10 bg-navy-3/40 px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={citacao.status === "verificada" ? "green" : citacao.status === "mal_formada" ? "red" : "amber"}>
                     {citacao.status === "verificada" ? "Verificada" : citacao.status === "mal_formada" ? "Dígito inválido" : "Não verificada"}

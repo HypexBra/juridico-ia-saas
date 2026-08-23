@@ -55,7 +55,7 @@ function EnvioAssinaturaInline({
   }
 
   return (
-    <div className="mt-3 space-y-2 rounded-lg border border-white/10 bg-navy-2/50 p-2.5">
+    <div className="mt-3 space-y-2 rounded-lg border border-ink/10 bg-navy-2/50 p-2.5">
       {signatarios.map((s, i) => (
         <div key={s.id} className="grid grid-cols-2 gap-2">
           <div>
@@ -100,7 +100,7 @@ function EnvioAssinaturaInline({
           {isPending ? "Enviando…" : "Confirmar envio"}
         </Button>
       </div>
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
     </div>
   );
 }
@@ -170,7 +170,12 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
   }
 
   return (
-    <div className="mt-2 max-w-[85%] rounded-xl border border-silver/25 bg-navy-3/70 p-3.5">
+    /* Borda esquerda em acento enquanto pendente: sinaliza "aguardando sua decisão". */
+    <div
+      className={`mt-2 max-w-[85%] rounded-xl border border-silver/25 bg-navy-3/70 p-3.5 ${
+        podeAgir ? "border-l-2 border-l-accent" : ""
+      }`}
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-silver-2">
           {RÓTULO_TIPO[proposta.tipo]}
@@ -180,7 +185,7 @@ export function PropostaAcaoCard({ propostaId }: { propostaId: string }) {
 
       <p className="text-sm text-ice-2">{proposta.resumo}</p>
 
-      {erro && <p className="mt-2 text-xs text-red-400">{erro}</p>}
+      {erro && <p className="mt-2 text-xs text-red-700">{erro}</p>}
 
       {podeAgir && (
         <div className="mt-3 flex gap-2">

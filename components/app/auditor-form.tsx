@@ -43,7 +43,7 @@ export function AuditorForm({ fichaCasoId }: { fichaCasoId?: string | null }) {
         <p className="text-xs text-muted">Esta auditoria será vinculada à ficha de caso de origem.</p>
       )}
 
-      <div className="inline-flex rounded-lg border border-white/10 bg-navy-2 p-1" role="tablist">
+      <div className="inline-flex rounded-lg border border-ink/10 bg-navy-2 p-1" role="tablist">
         <button
           type="button"
           role="tab"

@@ -81,7 +81,7 @@ export function RedacaoAssistidaCard({ fichaId, temAcesso }: { fichaId: string; 
     <Card>
       <div className="mb-4 flex items-center justify-between">
         <CardTitle>Redação assistida de peças completas</CardTitle>
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
+        <span className="rounded-full border border-ink/10 bg-ink/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
           Pro
         </span>
       </div>
@@ -127,7 +127,7 @@ export function RedacaoAssistidaCard({ fichaId, temAcesso }: { fichaId: string; 
 
         {conteudoGerado && (
           <div className="space-y-3">
-            <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
+            <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap rounded-lg border border-ink/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
               {conteudoGerado}
             </pre>
 

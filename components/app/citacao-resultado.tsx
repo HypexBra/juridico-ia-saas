@@ -41,14 +41,16 @@ export function ItemCitavel({
   };
 
   return (
-    <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+    <li className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
       <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
         <p className={naoEncontrado ? "text-sm italic text-muted" : "text-sm text-ice-2"}>{texto}</p>
         <Badge tone={CERTEZA_TONE[citacao.certeza]}>{certezaLabel[citacao.certeza]}</Badge>
       </div>
       {extra}
+      {/* Citação em bloco estilo nota de rodapé de livro: filete de acento à
+          esquerda + fundo papel (tema claro) no lugar do separador escuro. */}
       {citacao.trechoOriginal && (
-        <p className="mt-2 border-t border-white/5 pt-2 text-xs text-muted">
+        <p className="mt-2 border-l-2 border-accent bg-paper-2 py-1.5 pl-3 pr-2 text-xs text-muted">
           <span className="font-medium text-silver-2">Trecho de origem</span>
           {citacao.pagina !== null ? ` (pág. ${citacao.pagina})` : ""}: &ldquo;{citacao.trechoOriginal}&rdquo;
         </p>
@@ -73,7 +75,7 @@ export function SecaoAccordion({
 }) {
   const [aberto, setAberto] = useState(false);
   return (
-    <div className="rounded-lg border border-white/10">
+    <div className="rounded-lg border border-ink/10">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
@@ -84,7 +86,7 @@ export function SecaoAccordion({
         </span>
         <span className="text-xs text-muted">{aberto ? "Recolher" : "Expandir"}</span>
       </button>
-      {aberto && <div className="border-t border-white/10 p-4">{children}</div>}
+      {aberto && <div className="border-t border-ink/10 p-4">{children}</div>}
     </div>
   );
 }

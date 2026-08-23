@@ -84,7 +84,7 @@ export function AdvogadoContraForm({ fichaCasoId }: { fichaCasoId?: string | nul
         <p className="text-xs text-muted">Esta análise será vinculada à ficha de caso de origem.</p>
       )}
 
-      <div className="inline-flex flex-wrap rounded-lg border border-white/10 bg-navy-2 p-1" role="tablist">
+      <div className="inline-flex flex-wrap rounded-lg border border-ink/10 bg-navy-2 p-1" role="tablist">
         <button
           type="button"
           role="tab"
@@ -172,7 +172,7 @@ export function AdvogadoContraForm({ fichaCasoId }: { fichaCasoId?: string | nul
           <div>
             <Label htmlFor="advogado-contra-tese">Tese cadastrada no caso</Label>
             {erroTeses ? (
-              <p className="text-sm text-red-400">{erroTeses}</p>
+              <p className="text-sm text-red-700">{erroTeses}</p>
             ) : teses === null ? (
               <p className="text-sm text-muted">Carregando teses…</p>
             ) : teses.length === 0 ? (
@@ -186,7 +186,7 @@ export function AdvogadoContraForm({ fichaCasoId }: { fichaCasoId?: string | nul
                 value={teseSelecionadaId}
                 onChange={(e) => setTeseSelecionadaId(e.target.value)}
                 disabled={isPending}
-                className="block w-full rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice focus:border-silver focus:outline-none"
+                className="block w-full rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice focus:border-silver focus:outline-none"
               >
                 {teses.map((tese) => (
                   <option key={tese.id} value={tese.id}>

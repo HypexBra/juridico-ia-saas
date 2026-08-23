@@ -57,9 +57,9 @@ export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/
             name="admin"
             defaultValue={adminFiltro}
             placeholder="Admin…"
-            className="rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
+            className="rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
           />
-          <select name="acao" defaultValue={acaoFiltro} className="rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice">
+          <select name="acao" defaultValue={acaoFiltro} className="rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice">
             <option value="">Todas as ações</option>
             {Object.entries(ACOES_LABEL).map(([valor, label]) => (
               <option key={valor} value={valor}>
@@ -72,10 +72,10 @@ export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/
             name="alvo"
             defaultValue={alvoFiltro}
             placeholder="ID do alvo…"
-            className="rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
+            className="rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
           />
-          <input type="date" name="de" defaultValue={de} className="rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice" />
-          <input type="date" name="ate" defaultValue={ate} className="rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice" />
+          <input type="date" name="de" defaultValue={de} className="rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice" />
+          <input type="date" name="ate" defaultValue={ate} className="rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice" />
           <button type="submit" className="rounded-lg bg-silver/15 px-4 py-2 text-sm font-medium text-silver-2 hover:bg-silver/25 sm:col-span-2 lg:col-span-1">
             Filtrar
           </button>
@@ -93,7 +93,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/
               <th className="pb-3 font-medium">Detalhes</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-ink/10">
             {logs.map((log) => (
               <tr key={log.id}>
                 <td className="py-2.5 pr-3 whitespace-nowrap text-muted">{formatarDataHora(log.criado_em)}</td>

@@ -138,7 +138,7 @@ export function PesquisaResultados({
                     ],
                   ] as [string, (r: ResultadoJurisprudencia) => string][]
                 ).map(([rotulo, extrator]) => (
-                  <tr key={rotulo} className="border-t border-white/5">
+                  <tr key={rotulo} className="border-t border-ink/10">
                     <th scope="row" className="w-28 py-1.5 pr-2 font-medium text-muted">
                       {rotulo}
                     </th>
@@ -159,13 +159,14 @@ export function PesquisaResultados({
         )}
 
         {analise && !analise.ok ? (
-          <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">
+          // Banner de erro claro (red-50/200) com texto vermelho escuro sobre papel.
+          <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {analise.error}
           </p>
         ) : null}
 
         {analise?.ok && analise.data ? (
-          <div className="mt-3 space-y-3 rounded-lg border border-white/10 bg-navy-3/40 p-4 text-sm">
+          <div className="mt-3 space-y-3 rounded-lg border border-ink/10 bg-navy-3/40 p-4 text-sm">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Resumo comparativo</p>
               <p className="mt-1 text-silver-2">{analise.data.resumoComparativo}</p>

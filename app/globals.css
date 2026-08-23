@@ -1,39 +1,62 @@
 @import "tailwindcss";
 
+/* ============================================================
+   PALETA UNIFICADA — "papel-e-tinta" (landing + app interno)
+   ------------------------------------------------------------
+   Decisão (ADR 0016): TODO o produto agora compartilha a mesma
+   identidade editorial clara — papel off-white, tinta quase-preta
+   e UM acento verde-selo (#1d5b46). As variáveis históricas do
+   app interno (navy/ice/silver/muted) foram PRESERVADAS como
+   nomes e REMAPEADAS por valor para a paleta clara: assim os
+   utilitários existentes (bg-navy-2, text-ice, text-silver…)
+   continuam funcionando nos ~140 arquivos sem churn de diff,
+   enquanto o significado visual fica unificado com a landing.
+   Hierarquia invertida proposital: em tema claro, o acento base
+   é ESCURO (legível como texto sobre papel) e as variantes
+   silver-2/3 descem em saturação em vez de subir em luminância.
+   Contraste validado: accent sobre paper ≈ 7.5:1 (AAA);
+   accent-bright sobre ink ≈ 7:1 (AAA); ink sobre paper > 15:1.
+   ============================================================ */
 :root {
-  --color-navy: #13294b;
-  --color-navy-2: #1c3a66;
-  --color-navy-3: #24466f;
-  /* Accent trio: cool metallic silver-blue (replaced the original gold
-     accent). --color-silver was renamed from --color-gold — the old name
-     would lie about the hue, so the variable and every Tailwind class
-     (text-silver, bg-silver, border-silver, from-silver/to-silver,
-     stroke-silver, fill-silver, plus the "silver" tone token in
-     Badge/UsageRing) were renamed project-wide alongside the hex swap. */
-  --color-silver: #c7d2e8;
-  --color-silver-2: #e3ebf7;
-  --color-silver-3: #f5f8fc;
-  --color-ice: #f0f4f8;
-  --color-ice-2: #e2eaf4;
-  --color-muted: #9fb0cc;
-  --color-green: #22c55e;
+  /* Superfícies (ex-navy: era o azul-marinho do tema escuro). */
+  --color-navy: #faf9f5;
+  --color-navy-2: #f3f1ea;
+  --color-navy-3: #edebe3;
 
-  /* ---- Tokens da landing pública (editorial claro) ----
-     Escopo: APENAS marketing. O app interno continua navy/Inter.
-     Paleta papel-e-tinta: off-white de papel, quase-preto tinta,
-     cinzas minerais. UM único acento — vermelho-lacre (#8B2E1F),
-     evocando lacre/carimbo documental — usado com parcimônia; a
-     página funciona integralmente sem ele. --color-lacre-bright é a
-     versão do acento legível sobre superfícies escuras (contraste AA
-     no painel tinta da seção proativa). */
+  /* Acento único do produto: VERDE-SELO (substitui o antigo trio
+     prata-metálico frio e o vermelho-lacre da landing v3). Verde
+     institucional profundo — remete a couro/biblioteca/gestão —
+     usado com parcimônia, como todo o sistema editorial. */
+  --color-silver: #1d5b46;
+  /* Variante secundária: texto acento um tom mais suave (AA sobre
+     papel e paper-2). Era #e3ebf7 no tema escuro. */
+  --color-silver-2: #2f6f59;
+  /* Fundo de acento pálido (chips, destaques discretos). Era
+     quase-branco azulado no tema escuro. */
+  --color-silver-3: #e8efe9;
+
+  /* Textos (ex-ice: eram tons claros sobre navy). */
+  --color-ice: #141412;
+  --color-ice-2: #44423b;
+  --color-muted: #6e6a60;
+
+  /* Sucesso: verde legível sobre fundo claro (era green-500,
+     ilegível como texto sobre papel). */
+  --color-green: #15803d;
+
+  /* ---- Tokens editoriais (landing + painéis tinta) ---- */
   --color-paper: #faf9f5;
   --color-paper-2: #f3f1ea;
   --color-paper-3: #edebe3;
   --color-ink: #141412;
   --color-ink-2: #44423b;
   --color-ink-3: #6e6a60;
-  --color-lacre: #8b2e1f;
-  --color-lacre-bright: #d97a5c;
+  /* Acento editorial = o MESMO verde-selo do app (nomes renomeados
+     de lacre/lacre-bright na v3.1 para não mentir sobre a cor). */
+  --color-accent: #1d5b46;
+  /* Versão do acento legível sobre superfícies escuras (contraste
+     AA/AAA no painel tinta da seção proativa da landing). */
+  --color-accent-bright: #6fb594;
 }
 
 @theme inline {
@@ -49,7 +72,7 @@
   --color-green: var(--color-green);
 
   /* Mapeamento dos tokens editoriais (gera utilitários bg-paper,
-     text-ink, border-lacre etc.). Nomes com sufixo -ed nas fontes para
+     text-ink, border-accent etc.). Nomes com sufixo -ed nas fontes para
      nunca colidir com as fontes globais do app interno (--font-display /
      --font-sans → font-display / font-sans). */
   --color-paper: var(--color-paper);
@@ -58,11 +81,17 @@
   --color-ink: var(--color-ink);
   --color-ink-2: var(--color-ink-2);
   --color-ink-3: var(--color-ink-3);
-  --color-lacre: var(--color-lacre);
-  --color-lacre-bright: var(--color-lacre-bright);
+  --color-accent: var(--color-accent);
+  --color-accent-bright: var(--color-accent-bright);
   --font-serif-ed: var(--font-fraunces);
   --font-sans-ed: var(--font-instrument);
   --font-mono-ed: var(--font-plex);
+  /* Unificação tipográfica (ADR 0016): os nomes históricos do app interno
+     apontam para as MESMAS famílias da landing — Fraunces no display,
+     Instrument Sans na interface. Zero churn nas classes font-display/
+     font-sans já usadas nos ~140 arquivos do app. */
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-instrument);
 }
 
 /* `scroll-behavior: smooth` was removed on purpose: it's GSAP's own
@@ -175,27 +204,29 @@ html {
   }
 }
 
+/* Shimmer em TINTA translúcida (era branco no tema escuro — branco
+   sobre papel é invisível). Mesmo movimento, mesma duração. */
 .skeleton {
   background: linear-gradient(
     100deg,
-    rgba(255, 255, 255, 0.06) 30%,
-    rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.06) 70%
+    rgba(20, 20, 18, 0.04) 30%,
+    rgba(20, 20, 18, 0.09) 50%,
+    rgba(20, 20, 18, 0.04) 70%
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
 
 /* ---- Landing pública (marketing): foco visível + seleção ----
-   Escopado em .marketing-root para não alterar o app interno. O anel
-   usa o lacre (#8B2E1F, contraste ~7.9:1 sobre papel). */
+   Escopado em .marketing-root. O anel usa o verde-selo (contraste
+   ≈ 7.5:1 sobre papel). */
 .marketing-root :focus-visible {
-  outline: 2px solid var(--color-lacre);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 .marketing-root ::selection {
-  background: rgba(139, 46, 31, 0.14);
+  background: rgba(29, 91, 70, 0.14);
 }
 
 @media (prefers-reduced-motion: reduce) {

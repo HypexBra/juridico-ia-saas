@@ -20,12 +20,23 @@ const TIPO_MUDANCA_LABEL: Record<TipoMudancaClausulaComparada, string> = {
   inalterada_relevante: "Mantida (relevante)",
 };
 
-/** Borda lateral colorida por `tipoMudanca` — adicionada=verde, removida=vermelho, alterada=amarelo (ADR 0011, seção 6). */
+/** Borda lateral colorida por `tipoMudanca` — tons escuros legíveis sobre
+ * papel (ADR 0011, seção 6): adicionada=verde-700, removida=vermelho-700,
+ * alterada=âmbar-700, inalterada=tinta translúcida. */
 const TIPO_MUDANCA_BORDA: Record<TipoMudancaClausulaComparada, string> = {
-  adicionada: "border-l-green",
-  removida: "border-l-red-500",
-  alterada: "border-l-amber-500",
-  inalterada_relevante: "border-l-white/20",
+  adicionada: "border-l-green-700",
+  removida: "border-l-red-700",
+  alterada: "border-l-amber-700",
+  inalterada_relevante: "border-l-ink/20",
+};
+
+/** Fundo pálido por `tipoMudanca` (tema claro) — a diferença continua visível
+ * sem os tintes translúcidos do tema escuro; "inalterada" mantém o papel. */
+const TIPO_MUDANCA_FUNDO: Record<TipoMudancaClausulaComparada, string> = {
+  adicionada: "bg-green-50",
+  removida: "bg-red-50",
+  alterada: "bg-amber-50",
+  inalterada_relevante: "",
 };
 
 const CERTEZA_LABEL: Record<NivelCertezaAnaliseProcesso, string> = {
@@ -42,8 +53,10 @@ const CERTEZA_TONE: Record<NivelCertezaAnaliseProcesso, "green" | "silver" | "mu
 
 function ClausulaComparadaItem({ item }: { item: ClausulaComparada }) {
   return (
+    // Colunas A/B separadas por borda tinta; marcação de diff com fundo pálido
+    // legível (verde/âmbar/vermelho 50) + filete lateral escuro por tipo.
     <li
-      className={`rounded-lg border border-white/10 border-l-4 bg-navy-2 p-3.5 ${TIPO_MUDANCA_BORDA[item.tipoMudanca]}`}
+      className={`rounded-lg border border-ink/10 border-l-4 bg-navy-2 p-3.5 ${TIPO_MUDANCA_FUNDO[item.tipoMudanca]} ${TIPO_MUDANCA_BORDA[item.tipoMudanca]}`}
     >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <Badge tone={TIPO_MUDANCA_TONE[item.tipoMudanca]}>{TIPO_MUDANCA_LABEL[item.tipoMudanca]}</Badge>
@@ -58,21 +71,17 @@ function ClausulaComparadaItem({ item }: { item: ClausulaComparada }) {
       </div>
       <p className="mb-2 text-sm text-ice-2">{item.resumoMudanca}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-md border border-white/5 bg-navy p-2.5">
+        <div className="rounded-md border border-ink/10 bg-navy p-2.5">
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
             Documento A{item.paginaA !== null ? ` (pág. ${item.paginaA})` : ""}
           </p>
-          <p className="text-xs text-ice-2">
-            {item.trechoA ?? <span className="italic text-muted">Não existe em A</span>}
-          </p>
+          <p className="text-xs text-ice-2">{item.trechoA ?? <span className="italic text-muted">Não existe em A</span>}</p>
         </div>
-        <div className="rounded-md border border-white/5 bg-navy p-2.5">
+        <div className="rounded-md border border-ink/10 bg-navy p-2.5">
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
             Documento B{item.paginaB !== null ? ` (pág. ${item.paginaB})` : ""}
           </p>
-          <p className="text-xs text-ice-2">
-            {item.trechoB ?? <span className="italic text-muted">Não existe em B</span>}
-          </p>
+          <p className="text-xs text-ice-2">{item.trechoB ?? <span className="italic text-muted">Não existe em B</span>}</p>
         </div>
       </div>
     </li>
@@ -95,7 +104,8 @@ export function ComparacaoResultado({ resultado }: { resultado: ResultadoCompara
           </h4>
           <ul className="space-y-2">
             {resultado.riscosIntroduzidos.map((item, i) => (
-              <li key={i} className="rounded-lg border border-red-500/20 bg-red-950/20 p-3 text-sm text-ice-2">
+              // Fundo vermelho pálido legível sobre papel (antes red-950 translúcido).
+              <li key={i} className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-ice-2">
                 {item.descricao}
               </li>
             ))}

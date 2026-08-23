@@ -31,7 +31,7 @@ export function BarChart({
   data,
   height = 120,
   format = "numero",
-  color = "#c7d2e8",
+  color = "#1d5b46",
 }: {
   data: BarDatum[];
   height?: number;

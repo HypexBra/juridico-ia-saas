@@ -48,21 +48,21 @@ const STATUS_ETIQUETA: Record<StatusEtapaExecucao, string> = {
   cancelada: "Cancelada",
 };
 
-/** Cores por status — paleta navy do tema (sem cores fora do sistema). */
+/** Cores por status — escala clara 700-level sobre papel (bg-*-50/border-*-200). */
 function corStatus(status: StatusEtapaExecucao): string {
   switch (status) {
     case "concluida":
-      return "border-emerald-500/30 bg-emerald-950/20 text-emerald-300";
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
     case "falha":
-      return "border-red-500/30 bg-red-950/30 text-red-300";
+      return "border-red-200 bg-red-50 text-red-700";
     case "aguardando_humano":
-      return "border-amber-500/30 bg-amber-950/20 text-amber-300";
+      return "border-amber-200 bg-amber-50 text-amber-700";
     case "executando":
       return "border-silver/40 bg-silver/10 text-silver-2";
     case "cancelada":
-      return "border-white/10 bg-white/5 text-muted";
+      return "border-ink/10 bg-ink/5 text-muted";
     default:
-      return "border-white/10 bg-transparent text-muted";
+      return "border-ink/10 bg-transparent text-muted";
   }
 }
 
@@ -123,7 +123,7 @@ export function WorkflowExecucoes({ execucoes }: { execucoes: ExecucaoView[] }) 
 
   if (execucoes.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-xs text-muted">
+      <p className="rounded-md border border-dashed border-ink/10 px-3 py-6 text-center text-xs text-muted">
         Nenhuma execução ainda. Use “Executar” num workflow acima para rodá-lo sobre um caso.
       </p>
     );
@@ -132,7 +132,7 @@ export function WorkflowExecucoes({ execucoes }: { execucoes: ExecucaoView[] }) 
   return (
     <div className="space-y-3">
       {erro && (
-        <p className="rounded-md border border-red-500/30 bg-red-950/30 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       )}
 
       {execucoes.map((execucao) => {
@@ -147,8 +147,8 @@ export function WorkflowExecucoes({ execucoes }: { execucoes: ExecucaoView[] }) 
         const emAndamento = execucao.status === "em_andamento";
 
         return (
-          <div key={execucao.id} className="rounded-xl border border-white/10 bg-navy-2/60">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 px-4 py-3">
+          <div key={execucao.id} className="rounded-xl border border-ink/15 bg-navy-2/60">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-ink/10 px-4 py-3">
               <button
                 type="button"
                 onClick={() =>

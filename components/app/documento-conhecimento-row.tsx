@@ -21,7 +21,7 @@ export function DocumentoConhecimentoRow({ documento }: { documento: DocumentoCo
   if (removido) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-navy-3/40 px-3.5 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 bg-navy-3/40 px-3.5 py-2.5">
       <div className="min-w-0">
         <p className="truncate text-sm text-ice">{documento.nome_arquivo}</p>
         <p className="mt-0.5 text-xs text-muted">
@@ -49,7 +49,7 @@ export function DocumentoConhecimentoRow({ documento }: { documento: DocumentoCo
           Excluir
         </Button>
       </div>
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
     </div>
   );
 }

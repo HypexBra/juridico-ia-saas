@@ -56,7 +56,7 @@ export function DefinirSenhaForm() {
 
   if (temSessao === false) {
     return (
-      <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-300">
+      <p role="alert" className="rounded-lg border border-red-700/20 bg-red-700/10 px-3.5 py-2.5 text-sm text-red-700">
         Este link expirou ou já foi usado. Peça um novo convite/redefinição de senha.
       </p>
     );
@@ -95,7 +95,7 @@ export function DefinirSenhaForm() {
       </div>
 
       {erro && (
-        <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-300">
+        <p role="alert" className="rounded-lg border border-red-700/20 bg-red-700/10 px-3.5 py-2.5 text-sm text-red-700">
           {erro}
         </p>
       )}

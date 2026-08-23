@@ -91,7 +91,7 @@ function SecaoSemData({
             {itens.map((item) => (
               <li
                 key={item.contratoId}
-                className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-3.5 last:border-0"
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-5 py-3.5 last:border-0"
               >
                 <div className="flex min-w-0 flex-col">
                   <span className="text-sm font-medium text-ice">{item.nomeCliente}</span>
@@ -133,8 +133,9 @@ export default async function ProjecaoExitoPage() {
     return (
       <div className="space-y-6">
         <h1 className="font-display text-2xl font-semibold text-ice">Projeção de honorários de êxito</h1>
-        <Card className="border-red-500/30">
-          <p className="text-sm text-red-300">
+        <Card className="border-red-200">
+          {/* Vermelho escuro (red-700) para erro legível sobre papel. */}
+          <p className="text-sm text-red-700">
             Não foi possível carregar a projeção de recebíveis. Tente novamente em instantes.
           </p>
         </Card>
@@ -232,7 +233,7 @@ export default async function ProjecaoExitoPage() {
               <div className="space-y-4">
                 {projecao.linhasMensais.map((linha) => (
                   <Card key={linha.mesRef} className="!p-0">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 px-5 py-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/10 px-5 py-3.5">
                       <span className="font-display text-base font-semibold text-ice">
                         {formatarMesRef(linha.mesRef)}
                       </span>
@@ -245,7 +246,7 @@ export default async function ProjecaoExitoPage() {
                       {linha.itens.map((item) => (
                         <li
                           key={item.parcelaId}
-                          className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-5 py-3 last:border-0"
+                          className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-5 py-3 last:border-0"
                         >
                           <div className="flex min-w-0 flex-col">
                             <span className="text-sm font-medium text-ice">{item.nomeCliente}</span>

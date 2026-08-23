@@ -93,11 +93,11 @@ export default async function AdvogadoContraPage() {
         <Card>
           <CardTitle className="mb-4">Análises anteriores</CardTitle>
           {!resultado?.ok ? (
-            <p className="text-sm text-red-400">{resultado?.error ?? "Não foi possível carregar as análises."}</p>
+            <p className="text-sm text-red-700">{resultado?.error ?? "Não foi possível carregar as análises."}</p>
           ) : analises.length === 0 ? (
             <p className="text-sm text-muted">Nenhuma análise gerada ainda.</p>
           ) : (
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-ink/10">
               {analises.map((analise) => (
                 <li key={analise.id} className="py-3">
                   <Link

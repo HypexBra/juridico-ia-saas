@@ -1,15 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { CommandCenter } from "./command-center";
 import { MobileTabBar } from "./mobile-tab-bar";
 import { PageTransition } from "./page-transition";
 import { PullToRefresh } from "./pull-to-refresh";
 import { Sidebar } from "./sidebar";
 import type { Role } from "@/lib/types";
+
+// Command Center (CTRL/CMD+K) só é aberto por atalho/botão: carregamento
+// lazy client-side tira o componente do bundle inicial (perf Fase 28).
+const CommandCenter = dynamic(() => import("./command-center").then((m) => ({ default: m.CommandCenter })));
 
 const TITULOS: Record<string, string> = {
   "/app/dashboard": "Dashboard",
@@ -58,14 +62,14 @@ export function AppShell({
 
       <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
         <header
-          className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-white/10 bg-navy/95 px-4 backdrop-blur-md md:hidden"
+          className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-ink/10 bg-navy/95 px-4 backdrop-blur-md md:hidden"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <button
             type="button"
             aria-label="Abrir menu"
             onClick={() => setMenuAberto(true)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-white/5"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-ink/10 text-ice transition-transform duration-150 ease-out active:scale-90 active:bg-ink/5"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <path d="M4 6.5h16" />

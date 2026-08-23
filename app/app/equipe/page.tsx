@@ -54,7 +54,7 @@ export default async function EquipePage() {
       {souGestor && convitesPendentes.length > 0 && (
         <Card>
           <CardTitle className="mb-4">Convites pendentes ({convitesPendentes.length})</CardTitle>
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-ink/10">
             {convitesPendentes.map((convite) => (
               <li key={convite.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div>
@@ -83,7 +83,7 @@ export default async function EquipePage() {
             </p>
           )}
         </div>
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-ink/10">
           {lista.map((perfil) => {
             const ehVoceMesmo = perfil.auth_user_id === usuario.userId;
             const podeGerenciarEsteMembro =

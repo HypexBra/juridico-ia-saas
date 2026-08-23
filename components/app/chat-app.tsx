@@ -31,7 +31,7 @@ function FontesCitadas({ fontes }: { fontes: Mensagem["fontes"] | undefined }) {
           <span className="truncate">{fonte.label}</span>
         );
         const classe =
-          "inline-flex max-w-[220px] items-center gap-1 rounded-full border border-white/10 bg-navy-3/60 px-2.5 py-1 text-[11px] text-muted transition-colors";
+          "inline-flex max-w-[220px] items-center gap-1 rounded-full border border-ink/10 bg-navy-3/60 px-2.5 py-1 text-[11px] text-muted transition-colors";
 
         if (!fonte.href) {
           return (
@@ -534,7 +534,7 @@ export function ChatApp({
 
   const listaConversas = (
     <>
-      <div className="border-b border-white/10 p-3">
+      <div className="border-b border-ink/10 p-3">
         <Button size="sm" className="w-full" onClick={novaConversa} type="button">
           + Nova conversa
         </Button>
@@ -547,7 +547,7 @@ export function ChatApp({
           <div
             key={c.id}
             className={`group flex items-center gap-1 rounded-lg pr-1 transition-colors ${
-              c.id === conversaId ? "bg-silver/15" : "hover:bg-white/5"
+              c.id === conversaId ? "bg-silver/15" : "hover:bg-ink/5"
             }`}
           >
             <button
@@ -567,7 +567,7 @@ export function ChatApp({
                 disabled={isPendingExclusao && conversaExcluindo === c.id}
                 title="Excluir conversa"
                 aria-label="Excluir conversa"
-                className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100 disabled:opacity-50"
+                className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted opacity-0 transition-opacity hover:text-red-700 group-hover:opacity-100 disabled:opacity-50"
               >
                 {isPendingExclusao && conversaExcluindo === c.id ? "…" : "✕"}
               </button>
@@ -576,26 +576,26 @@ export function ChatApp({
         ))}
       </div>
       {conversas.some((c) => c.criado_por === perfilIdAtual) && (
-        <div className="border-t border-white/10 p-2">
+        <div className="border-t border-ink/10 p-2">
           <button
             type="button"
             onClick={excluirTodasConversas}
             disabled={isPendingExclusao}
-            className="w-full rounded-lg px-3 py-2 text-left text-xs text-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+            className="w-full rounded-lg px-3 py-2 text-left text-xs text-muted transition-colors hover:bg-red-500/10 hover:text-red-700 disabled:opacity-50"
           >
             Excluir todas as minhas conversas
           </button>
         </div>
       )}
       {avisoConversas && (
-        <div className="border-t border-white/10 px-3 py-2 text-xs text-muted">{avisoConversas}</div>
+        <div className="border-t border-ink/10 px-3 py-2 text-xs text-muted">{avisoConversas}</div>
       )}
     </>
   );
 
   return (
     <div className="flex min-h-0 flex-1 gap-4">
-      <aside className="hidden w-64 shrink-0 flex-col rounded-xl border border-white/10 bg-navy-2/40 md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col rounded-xl border border-ink/10 bg-navy-2/40 md:flex">
         {listaConversas}
       </aside>
 
@@ -603,22 +603,22 @@ export function ChatApp({
         <div
           aria-hidden
           onClick={() => setListaMobileAberta(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-[2px] md:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col border-r border-white/10 bg-navy-2 shadow-2xl shadow-black/40 transition-transform duration-200 ease-out md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col border-r border-ink/10 bg-navy-2 shadow-2xl shadow-ink/10 transition-transform duration-200 ease-out md:hidden ${
           listaMobileAberta ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
+        <div className="flex items-center justify-between border-b border-ink/10 px-3 py-3">
           <span className="text-sm font-medium text-ice">Conversas</span>
           <button
             type="button"
             aria-label="Fechar lista de conversas"
             onClick={() => setListaMobileAberta(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-white/10 text-muted hover:bg-white/5 hover:text-ice"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-ink/10 text-muted hover:bg-ink/5 hover:text-ice"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <path d="M5 5l14 14" />
@@ -629,12 +629,12 @@ export function ChatApp({
         {listaConversas}
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-white/10 bg-navy-2/40">
-        <div className="flex items-center gap-2 border-b border-white/10 p-3 md:hidden">
+      <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-ink/10 bg-navy-2/40">
+        <div className="flex items-center gap-2 border-b border-ink/10 p-3 md:hidden">
           <button
             type="button"
             onClick={() => setListaMobileAberta(true)}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-navy-3/60 px-3 py-2 text-left text-sm text-ice transition-colors hover:bg-navy-3"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-ink/10 bg-navy-3/60 px-3 py-2 text-left text-sm text-ice transition-colors hover:bg-navy-3"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden className="shrink-0">
               <path d="M4 6.5h16" />
@@ -651,7 +651,7 @@ export function ChatApp({
         </div>
 
         {limiteAtingido && (
-          <div className="border-b border-red-500/30 bg-red-950/30 px-4 py-2 text-xs text-red-300">
+          <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
             Limite mensal de {uso.limite} mensagens de IA do plano free atingido.
           </div>
         )}
@@ -671,7 +671,9 @@ export function ChatApp({
               <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    m.role === "user" ? "bg-silver/15 text-ice" : "bg-navy-3/80 text-ice"
+                    m.role === "user"
+                      ? "bg-silver/15 text-ice"
+                      : "border border-ink/10 bg-paper-2 text-ice"
                   }`}
                 >
                   {m.role === "assistant" ? (
@@ -689,7 +691,7 @@ export function ChatApp({
           {isPending && (
             <div className="flex justify-start">
               <div
-                className="flex items-center gap-1.5 rounded-2xl bg-navy-3/80 px-4 py-3"
+                className="flex items-center gap-1.5 rounded-2xl border border-ink/10 bg-paper-2 px-4 py-3"
                 role="status"
                 aria-label="A IA está digitando"
               >
@@ -702,10 +704,10 @@ export function ChatApp({
         </div>
 
         {erro && (
-          <div className="border-t border-red-500/30 bg-red-950/30 px-4 py-2 text-xs text-red-300">{erro}</div>
+          <div className="border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{erro}</div>
         )}
 
-        <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-white/10 p-4">
+        <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-ink/10 p-4">
           <div className="flex items-center justify-end gap-2">
             <label htmlFor="chat-provider-ia" className="text-[11px] uppercase tracking-wide text-muted">
               Modelo
@@ -753,8 +755,8 @@ export function ChatApp({
               }
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-silver/50 ${
                 estadoAudio === "gravando"
-                  ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                  : "border-white/10 text-muted hover:bg-white/5 hover:text-ice disabled:cursor-not-allowed disabled:opacity-50"
+                  ? "border-red-600/40 bg-red-500/10 text-red-600 hover:bg-red-500/20"
+                  : "border-ink/10 text-muted hover:bg-ink/5 hover:text-ice disabled:cursor-not-allowed disabled:opacity-50"
               }`}
             >
               {estadoAudio === "gravando" ? (
@@ -776,8 +778,8 @@ export function ChatApp({
           {/* Status do ditado (timer/transcrição) + erro discreto, sem pular layout. */}
           <div aria-live="polite" className="min-h-[18px] px-1">
             {estadoAudio === "gravando" ? (
-              <p className="flex items-center gap-1.5 text-xs tabular-nums text-red-300">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" aria-hidden />
+              <p className="flex items-center gap-1.5 text-xs tabular-nums text-red-700">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" aria-hidden />
                 Gravando · {formatarDuracao(duracaoGravacaoSeg)}
               </p>
             ) : estadoAudio === "transcrevendo" ? (
@@ -785,7 +787,7 @@ export function ChatApp({
                 Transcrevendo…
               </p>
             ) : erroAudio ? (
-              <p className="text-xs text-red-300/90">{erroAudio}</p>
+              <p className="text-xs text-red-700">{erroAudio}</p>
             ) : null}
           </div>
         </form>

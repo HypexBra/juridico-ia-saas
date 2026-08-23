@@ -54,7 +54,8 @@ export function DonutChart({
         style={{ width: size, height: size }}
       >
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+          {/* Trilho em tinta translúcida: branco a 6% era invisível sobre papel. */}
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(20,20,18,0.06)" strokeWidth={strokeWidth} />
           {total === 0
             ? null
             : arcs.map((arc) => (

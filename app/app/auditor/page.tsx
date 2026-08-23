@@ -104,11 +104,11 @@ export default async function AuditorPage({
         <Card>
           <CardTitle className="mb-4">Auditorias anteriores</CardTitle>
           {!resultado?.ok ? (
-            <p className="text-sm text-red-400">{resultado?.error ?? "Não foi possível carregar as auditorias."}</p>
+            <p className="text-sm text-red-700">{resultado?.error ?? "Não foi possível carregar as auditorias."}</p>
           ) : auditorias.length === 0 ? (
             <p className="text-sm text-muted">Nenhuma peça auditada ainda.</p>
           ) : (
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-ink/10">
               {auditorias.map((auditoria) => (
                 <li key={auditoria.id} className="py-3">
                   <Link

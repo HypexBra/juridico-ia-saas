@@ -125,7 +125,7 @@ export function PessoasCasoSection({
       </div>
 
       {formAberto && (
-        <div className="rounded-lg border border-white/10 bg-navy/40 p-4">
+        <div className="rounded-lg border border-ink/10 bg-navy/40 p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="pessoa-tipo">Tipo</Label>
@@ -192,14 +192,14 @@ export function PessoasCasoSection({
         </div>
       )}
 
-      {!formAberto && erro && <p className="text-xs text-red-400">{erro}</p>}
+      {!formAberto && erro && <p className="text-xs text-red-700">{erro}</p>}
 
       {pessoas.length === 0 ? (
         <p className="text-sm text-muted">
           Nenhuma pessoa cadastrada ainda. Adicione partes, adverso, testemunhas ou terceiros envolvidos no caso.
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-ink/10">
           {pessoas.map((pessoa) => (
             <li key={pessoa.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div>
@@ -218,7 +218,7 @@ export function PessoasCasoSection({
                   type="button"
                   disabled={isPending}
                   onClick={() => abrirEdicao(pessoa)}
-                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-white/5 hover:text-ice disabled:opacity-40"
+                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-ink/5 hover:text-ice disabled:opacity-40"
                 >
                   Editar
                 </button>
@@ -226,7 +226,7 @@ export function PessoasCasoSection({
                   type="button"
                   disabled={isPending}
                   onClick={() => remover(pessoa.id)}
-                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-950/40 hover:text-red-300 disabled:opacity-40"
+                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
                 >
                   Remover
                 </button>

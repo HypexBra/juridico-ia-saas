@@ -123,7 +123,7 @@ export function CalculadoraAtualizacao() {
       </div>
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {resultado ? (
@@ -135,26 +135,27 @@ export function CalculadoraAtualizacao() {
               ...(resultado.multa > 0 ? [["Multa", brl(resultado.multa)] as const] : []),
               ...(resultado.honorarios > 0 ? [["Honorários", brl(resultado.honorarios)] as const] : []),
             ].map(([rotulo, valor]) => (
-              <div key={rotulo} className="rounded-lg border border-white/10 bg-navy-3/40 px-3 py-2">
+              <div key={rotulo} className="rounded-lg border border-ink/10 bg-paper-2 px-3 py-2">
                 <p className="text-[11px] uppercase tracking-wide text-muted">{rotulo}</p>
-                <p className="font-display text-sm font-bold text-ice">{valor}</p>
+                <p className="font-display text-sm font-bold text-ice tabular-nums">{valor}</p>
               </div>
             ))}
             <div className="rounded-lg border border-silver/30 bg-silver/10 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted">TOTAL</p>
-              <p className="font-display text-sm font-bold text-ice">{brl(resultado.total)}</p>
+              <p className="font-display text-sm font-bold text-ice tabular-nums">{brl(resultado.total)}</p>
             </div>
           </div>
 
-          <details className="rounded-lg border border-white/10 bg-navy/40 p-3 text-xs">
+          <details className="rounded-lg border border-ink/10 bg-paper-2 p-3 text-xs">
             <summary className="cursor-pointer font-medium text-silver-2">Fórmula e demonstrativo ({resultado.mesesCorrigidos} meses corrigidos · {resultado.diasJuros} dias de juros)</summary>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-muted">
+            {/* Fórmulas em mono pequeno: legibilidade de cálculo sobre papel. */}
+            <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-muted">
               {resultado.formulas.map((f, i) => (
                 <li key={i}>{f}</li>
               ))}
             </ul>
             {resultado.demonstrativo.length > 0 ? (
-              <table className="mt-2 w-full text-left text-[11px]">
+              <table className="mt-2 w-full text-left font-mono text-[11px] tabular-nums">
                 <thead>
                   <tr className="text-muted">
                     <th className="py-1">Mês</th>
@@ -184,7 +185,8 @@ export function CalculadoraAtualizacao() {
 
 export function DetalhesLegais({ premissas, fontes }: { premissas: string[]; fontes?: string[] }) {
   return (
-    <div className="space-y-1.5 text-[11px] text-muted">
+    // Bloco de premissas/fontes: nota mono sobre papel-2, com hairline tinta.
+    <div className="space-y-1.5 rounded-lg border border-ink/10 bg-paper-2 p-2.5 font-mono text-[11px] text-muted">
       <p>
         <span className="font-medium text-silver-2">Premissas:</span> {premissas.join(" ")}
       </p>

@@ -39,27 +39,27 @@ function SecaoVariaveisDisponiveis({ catalogo }: { catalogo: ReadonlyArray<Grupo
     .filter((grupo) => grupo.variaveis.length > 0);
 
   return (
-    <div className="rounded-lg border border-white/10">
+    <div className="rounded-lg border border-ink/10">
       <button
         type="button"
         onClick={() => setAberta((valor) => !valor)}
         aria-expanded={aberta}
         aria-controls="catalogo-variaveis-condicional"
-        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-medium text-ice transition-colors hover:bg-white/5"
+        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm font-medium text-ice transition-colors hover:bg-ink/5"
       >
         Variáveis disponíveis
         <span className="text-xs text-silver-2">{aberta ? "ocultar ▲" : "mostrar ▼"}</span>
       </button>
 
       {aberta && (
-        <div id="catalogo-variaveis-condicional" className="space-y-4 border-t border-white/10 px-3 py-3">
+        <div id="catalogo-variaveis-condicional" className="space-y-4 border-t border-ink/10 px-3 py-3">
           <input
             type="search"
             value={filtro}
             onChange={(evento) => setFiltro(evento.target.value)}
             placeholder="Filtrar por nome ou descrição…"
             aria-label="Filtrar variáveis"
-            className="w-full rounded-md border border-white/10 bg-navy-2 px-3 py-1.5 text-sm text-ice placeholder:text-silver-2 focus:border-gold focus:outline-none"
+            className="w-full rounded-md border border-ink/10 bg-navy-2 px-3 py-1.5 text-sm text-ice placeholder:text-silver-2 focus:border-accent focus:outline-none"
           />
 
           {gruposVisiveis.length === 0 ? (
@@ -70,7 +70,7 @@ function SecaoVariaveisDisponiveis({ catalogo }: { catalogo: ReadonlyArray<Grupo
                 <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-silver-2">
                   {grupo.grupo}
                   {grupo.colecao && (
-                    <code className="ml-2 rounded bg-white/10 px-1 py-0.5 text-[11px] normal-case tracking-normal text-ice-2">
+                    <code className="ml-2 rounded bg-ink/10 px-1 py-0.5 text-[11px] normal-case tracking-normal text-ice-2">
                       {`{{#cada ${grupo.colecao}}}…{{/${grupo.colecao}}}`}
                     </code>
                   )}
@@ -78,7 +78,7 @@ function SecaoVariaveisDisponiveis({ catalogo }: { catalogo: ReadonlyArray<Grupo
                 <ul className="space-y-1">
                   {grupo.variaveis.map((variavel) => (
                     <li key={variavel.chave} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-                      <code className="rounded bg-white/10 px-1 py-0.5 text-ice">
+                      <code className="rounded bg-ink/10 px-1 py-0.5 text-ice">
                         {grupo.colecao === null ? `{{${variavel.chave}}}` : variavel.chave}
                       </code>
                       <span className="text-muted">{variavel.descricao}</span>
@@ -134,7 +134,7 @@ export function AutomacaoCondicionalCard({
       <Card>
         <div className="mb-1 flex items-center justify-between">
           <CardTitle>Automação de documento com lógica condicional</CardTitle>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
+          <span className="rounded-full border border-ink/10 bg-ink/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
             Pro
           </span>
         </div>
@@ -156,15 +156,15 @@ export function AutomacaoCondicionalCard({
       <Card>
         <div className="mb-1 flex items-center justify-between">
           <CardTitle>Automação de documento com lógica condicional</CardTitle>
-          <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
+          <span className="rounded-full border border-ink/10 bg-ink/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
             Pro
           </span>
         </div>
         <p className="text-sm text-muted">
           Nenhum modelo com lógica condicional cadastrado ainda. Em &quot;Modelos&quot;, use{" "}
-          <code className="rounded bg-white/10 px-1 py-0.5 text-xs">{'{{#se area_direito == "Trabalhista"}}...{{/se}}'}</code>{" "}
+          <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">{'{{#se area_direito == "Trabalhista"}}...{{/se}}'}</code>{" "}
           ou{" "}
-          <code className="rounded bg-white/10 px-1 py-0.5 text-xs">{"{{#cada parcelas}}...{{/cada}}"}</code> para
+          <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">{"{{#cada parcelas}}...{{/cada}}"}</code> para
           criar um.
         </p>
         {/* Catálogo visível também sem modelos: é justamente na autoria do
@@ -255,7 +255,7 @@ export function AutomacaoCondicionalCard({
     <Card>
       <div className="mb-4 flex items-center justify-between">
         <CardTitle>Automação de documento com lógica condicional</CardTitle>
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
+        <span className="rounded-full border border-ink/10 bg-ink/5 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-silver-2">
           Pro
         </span>
       </div>
@@ -297,7 +297,7 @@ export function AutomacaoCondicionalCard({
         <FieldError>{erro}</FieldError>
 
         {avisoDocx && (
-          <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
             {avisoDocx}
           </p>
         )}
@@ -305,13 +305,13 @@ export function AutomacaoCondicionalCard({
         {textoGerado && (
           <div className="space-y-3">
             {variaveisNaoResolvidas.length > 0 && (
-              <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                 Atenção: não foi possível resolver {variaveisNaoResolvidas.join(", ")} — revise o texto abaixo antes
                 de usar.
               </p>
             )}
 
-            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
+            <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border border-ink/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
               {textoGerado}
             </pre>
 

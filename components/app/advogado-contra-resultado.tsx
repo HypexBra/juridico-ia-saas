@@ -96,12 +96,13 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
   return (
     <div className="space-y-5">
       {/* Aviso fixo geral — requisito funcional do ADR 0013, SEMPRE visível,
-          nunca condicional a veredito/achados específicos. */}
-      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-        <p className="text-sm font-medium text-amber-200">
+          nunca condicional a veredito/achados específicos. Banner âmbar claro
+          (amber-50/200) com texto âmbar escuro, legível sobre papel. */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-medium text-amber-900">
           Simulação da IA — não é citação jurídica verificada nem avaliação definitiva
         </p>
-        <p className="mt-1 text-xs leading-relaxed text-amber-100/90">
+        <p className="mt-1 text-xs leading-relaxed text-amber-700">
           Esta análise simula a perspectiva da parte adversária a partir do texto fornecido, gerada por IA — não
           substitui a análise jurídica do advogado responsável nem representa uma avaliação oficial da tese. Revise
           cada argumento, fragilidade e precedente hipotético antes de tomar qualquer decisão com base neste
@@ -114,12 +115,12 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
         <p className="text-sm text-ice-2">{resultado.teseIdentificada}</p>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-navy-2 p-4">
+      <div className="rounded-lg border border-ink/10 bg-navy-2 p-4">
         <h4 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted">Resumo executivo</h4>
         <p className="whitespace-pre-wrap text-sm text-ice-2">{resultado.resumoExecutivo}</p>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-navy-2 p-4">
+      <div className="rounded-lg border border-ink/10 bg-navy-2 p-4">
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-xs font-medium uppercase tracking-wide text-muted">Vulnerabilidade geral da tese</h4>
           <Badge tone={VULNERABILIDADE_TONE[resultado.vulnerabilidadeGeral]}>
@@ -191,11 +192,12 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
         </SecaoAccordion>
 
         {/* Seção CLARAMENTE separada, com aviso reforçado próprio — a mais
-            perigosa em termos de risco de alucinação (ADR 0013). */}
-        <div className="rounded-lg border border-red-500/30">
-          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3">
-            <p className="text-sm font-medium text-red-200">Precedentes contrários prováveis (hipótese da IA)</p>
-            <p className="mt-1 text-xs leading-relaxed text-red-100/90">
+            perigosa em termos de risco de alucinação (ADR 0013). Banner
+            vermelho claro (red-50/200) com texto vermelho escuro sobre papel. */}
+        <div className="rounded-lg border border-red-200">
+          <div className="border-b border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm font-medium text-red-800">Precedentes contrários prováveis (hipótese da IA)</p>
+            <p className="mt-1 text-xs leading-relaxed text-red-700">
               Isto é uma hipótese da IA sobre o TIPO de entendimento jurisprudencial/doutrinário que pode existir
               contra a tese — NÃO é uma citação verificada. Nenhum número de processo, relator, data de julgamento
               ou súmula específica aqui deve ser tratado como real: confirme sempre em uma base de jurisprudência
@@ -208,7 +210,7 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
             ) : (
               <ul className="space-y-2">
                 {resultado.precedentesContrariosProvaveis.map((precedente, i) => (
-                  <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+                  <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
                     <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm text-ice-2">{precedente.descricao}</p>
                       <Badge tone={FORCA_TONE[precedente.forca]}>{FORCA_LABEL[precedente.forca]}</Badge>
@@ -232,7 +234,7 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
           ) : (
             <ul className="space-y-2">
               {resultado.pontosQueExigemProva.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm text-ice-2">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm text-ice-2">
                   {texto}
                 </li>
               ))}
@@ -246,7 +248,7 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
           ) : (
             <ul className="space-y-2">
               {resultado.perguntasDificeis.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm italic text-muted">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm italic text-muted">
                   {texto}
                 </li>
               ))}
@@ -263,7 +265,7 @@ export function AdvogadoContraResultado({ resultado }: { resultado: ResultadoAdv
           ) : (
             <ul className="space-y-2">
               {resultado.recomendacoesFortalecimento.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm text-ice-2">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm text-ice-2">
                   {texto}
                 </li>
               ))}

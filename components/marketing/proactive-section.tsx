@@ -73,7 +73,7 @@ export function ProactiveSection() {
                   {/* Numeração ornamental — a ordem já é semântica do <ol> */}
                   <span
                     aria-hidden
-                    className="pt-0.5 font-mono-ed text-sm leading-none text-lacre-bright"
+                    className="pt-0.5 font-mono-ed text-sm leading-none text-accent-bright"
                   >
                     {numero}
                   </span>

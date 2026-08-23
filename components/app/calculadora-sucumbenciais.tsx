@@ -70,20 +70,20 @@ export function CalculadoraSucumbenciais() {
       </div>
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {resultado ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-lg border border-silver/30 bg-silver/10 px-3 py-2">
             <p className="text-[11px] uppercase tracking-wide text-muted">Honorários ({resultado.percentualEfetivo}% efetivo sobre {resultado.salariosMinimosReferencia.toLocaleString("pt-BR")} URM)</p>
-            <p className="font-display text-lg font-bold text-ice">{brl(resultado.totalHonorarios)}</p>
+            <p className="font-display text-lg font-bold text-ice tabular-nums">{brl(resultado.totalHonorarios)}</p>
             {resultado.sucumbenciaRecursal != null ? (
               <p className="text-xs text-silver-2">+ recursal: {brl(resultado.sucumbenciaRecursal)}</p>
             ) : null}
           </div>
 
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs tabular-nums">
             <thead className="text-muted">
               <tr>
                 <th className="py-1">Faixa</th>
@@ -94,7 +94,7 @@ export function CalculadoraSucumbenciais() {
             </thead>
             <tbody className="text-silver-2">
               {resultado.linhasPorFaixa.map((linha) => (
-                <tr key={linha.faixa} className="border-t border-white/5">
+                <tr key={linha.faixa} className="border-t border-ink/10">
                   <td className="py-1">{linha.faixa}</td>
                   <td>{brl(linha.baseNaFaixa)}</td>
                   <td>{linha.percentual}%</td>

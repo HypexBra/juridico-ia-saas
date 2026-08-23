@@ -88,7 +88,7 @@ export function ExtracaoSentenca({
   }
 
   return (
-    <div className="mt-2 rounded-lg border border-white/10 bg-navy/40 p-3">
+    <div className="mt-2 rounded-lg border border-ink/10 bg-paper-2 p-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium text-silver-2">Cole o trecho da sentença, acordo ou contrato</p>
         <button type="button" onClick={() => setAberto(false)} className="text-xs text-muted hover:text-silver-2" aria-label="Fechar extração">
@@ -101,7 +101,7 @@ export function ExtracaoSentenca({
         rows={5}
         maxLength={60_000}
         placeholder='Ex.: "...condenar a ré a pagar R$ 25.000,00, corrigidos pelo IPCA desde o evento (12/03/2024), com juros de mora de 1% ao mês..."'
-        className="mt-2 w-full resize-y rounded-lg border border-white/10 bg-navy-2 px-3 py-2 text-xs text-ice placeholder:text-muted/70 outline-none focus:border-silver/50"
+        className="mt-2 w-full resize-y rounded-lg border border-ink/15 bg-paper-2 px-3 py-2 text-xs text-ice placeholder:text-muted/70 outline-none focus:border-silver"
         aria-label="Texto para extração"
       />
       <div className="mt-2 flex items-center justify-between">
@@ -112,7 +112,7 @@ export function ExtracaoSentenca({
       </div>
 
       {erro ? (
-        <p className="mt-2 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {extraidos ? (
@@ -125,13 +125,14 @@ export function ExtracaoSentenca({
               ["Juros", `${extraidos.jurosPercentualMensal}% a.m. (${extraidos.tipoJuros})`, extraidos.jurosTrecho],
             ] as const
           ).map(([rotulo, valor, trecho]) => (
-            <div key={rotulo} className="rounded border border-white/5 bg-navy-3/40 px-2.5 py-1.5">
+            <div key={rotulo} className="rounded border border-ink/10 bg-paper-2 px-2.5 py-1.5">
               <div className="flex items-center gap-2">
                 <Badge tone="silver">{rotulo}</Badge>
-                <span className="text-xs font-medium text-ice">{valor}</span>
+                <span className="text-xs font-medium text-ice tabular-nums">{valor}</span>
               </div>
               {trecho ? (
-                <p className="mt-0.5 line-clamp-2 text-[11px] italic text-muted">“{trecho}”</p>
+                // Trecho literal citado: nota editorial com filete no acento.
+                <p className="mt-0.5 line-clamp-2 border-l-2 border-accent pl-2 text-[11px] italic text-muted">“{trecho}”</p>
               ) : (
                 <p className="mt-0.5 text-[11px] text-muted">Sem lastro no texto informado.</p>
               )}

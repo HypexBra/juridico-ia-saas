@@ -184,16 +184,16 @@ export function Sidebar({
         <div
           aria-hidden
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] md:hidden"
+          className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-[2px] md:hidden"
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col border-r border-white/10 bg-navy-2 shadow-2xl shadow-black/40 transition-transform duration-200 ease-out md:sticky md:top-0 md:z-0 md:h-screen md:w-64 md:max-w-none md:translate-x-0 md:bg-navy-2/40 md:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col border-r border-ink/10 bg-navy-2 shadow-xl shadow-ink/10 transition-transform duration-200 ease-out md:sticky md:top-0 md:z-0 md:h-screen md:w-64 md:max-w-none md:translate-x-0 md:bg-navy-2/40 md:shadow-none ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
+        <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-5 py-5">
           <div className="min-w-0">
             <Link href="/app/dashboard" className="font-display text-xl font-bold text-ice">
               Jurídico<span className="text-silver">IA</span>
@@ -207,7 +207,7 @@ export function Sidebar({
             type="button"
             aria-label="Fechar menu"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 text-muted hover:bg-white/5 hover:text-ice md:hidden"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-ink/10 text-muted hover:bg-ink/5 hover:text-ink md:hidden"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <path d="M5 5l14 14" />
@@ -224,7 +224,7 @@ export function Sidebar({
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] ${
-                  isActive ? "bg-silver/15 text-silver-2" : "text-muted hover:bg-white/5 hover:text-ice active:bg-white/10"
+                  isActive ? "bg-silver/10 text-silver" : "text-muted hover:bg-ink/5 hover:text-ink active:bg-ink/10"
                 }`}
               >
                 <NavIcon name={item.icon} />
@@ -235,10 +235,10 @@ export function Sidebar({
         </nav>
 
         {isAdminPlataforma && (
-          <div className="border-t border-white/10 px-3 py-3">
+          <div className="border-t border-ink/10 px-3 py-3">
             <Link
               href="/admin"
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-amber-300 transition-all duration-150 ease-out hover:bg-amber-500/10 active:scale-[0.97]"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-amber-700 transition-all duration-150 ease-out hover:bg-amber-700/10 active:scale-[0.97]"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
@@ -248,7 +248,7 @@ export function Sidebar({
           </div>
         )}
 
-        <div className="border-t border-white/10 px-3 py-3">
+        <div className="border-t border-ink/10 px-3 py-3">
           <LogoutButton />
         </div>
       </aside>

@@ -164,7 +164,7 @@ export function TarefasCasoSection({
         )
       </h3>
 
-      <div className="rounded-lg border border-white/10 bg-navy/40 p-4">
+      <div className="rounded-lg border border-ink/10 bg-navy/40 p-4">
         <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr_1fr]">
           <div>
             <Label htmlFor="tarefa-titulo">Título</Label>
@@ -263,7 +263,7 @@ export function TarefasCasoSection({
             : "Nenhuma tarefa corresponde aos filtros selecionados."}
         </p>
       ) : (
-        <ul className="divide-y divide-white/5">
+        <ul className="divide-y divide-ink/10">
           {tarefasFiltradas.map((tarefa) => (
             <li key={tarefa.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div className="min-w-0">
@@ -334,7 +334,7 @@ export function TarefasCasoSection({
                   type="button"
                   disabled={isPending}
                   onClick={() => remover(tarefa.id)}
-                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-950/40 hover:text-red-300 disabled:opacity-40"
+                  className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
                 >
                   Remover
                 </button>

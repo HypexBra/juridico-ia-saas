@@ -29,7 +29,7 @@ export function PrazoViewRow({ prazo }: { prazo: Prazo }) {
   const dias = diasAte(prazo.data_prazo);
 
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-white/5 py-3 last:border-0">
+    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-ink/10 py-3 last:border-0">
       <div className="min-w-0">
         <p className={`text-sm font-medium ${prazo.concluido ? "text-muted line-through" : "text-ice"}`}>
           {prazo.titulo}

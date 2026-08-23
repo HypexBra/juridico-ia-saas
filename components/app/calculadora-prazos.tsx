@@ -88,14 +88,14 @@ export function CalculadoraPrazo() {
       </div>
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {resultado ? (
-        <div className="mt-4 space-y-2 rounded-lg border border-white/10 bg-navy-3/40 p-4">
+        <div className="mt-4 space-y-2 rounded-lg border border-ink/10 bg-paper-2 p-4">
           <p className="text-sm text-silver-2">
-            Início da contagem: <span className="font-bold text-ice">{dataBr(resultado.inicioContagem)}</span> ·
-            VENCIMENTO: <span className="font-display font-bold text-ice">{dataBr(resultado.vencimento)}</span>
+            Início da contagem: <span className="font-bold text-ice tabular-nums">{dataBr(resultado.inicioContagem)}</span> ·
+            VENCIMENTO: <span className="font-display font-bold text-ice tabular-nums">{dataBr(resultado.vencimento)}</span>
             {resultado.diasUteisEfetivos != null ? ` · ${resultado.diasUteisEfetivos} dias úteis` : ""}
           </p>
           {resultado.feriadosNoPeriodo.length > 0 ? (
@@ -173,11 +173,11 @@ export function CalculadoraPrescricao() {
       </div>
 
       {erro ? (
-        <p className="mt-3 rounded-lg border border-red-500/25 bg-red-950/20 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       ) : null}
 
       {resultado ? (
-        <div className="mt-4 space-y-2 rounded-lg border border-white/10 bg-navy-3/40 p-4">
+        <div className="mt-4 space-y-2 rounded-lg border border-ink/10 bg-paper-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={resultado.status === "prescrito" ? "red" : resultado.status === "proximo" ? "amber" : "green"}>
               {resultado.status === "prescrito"

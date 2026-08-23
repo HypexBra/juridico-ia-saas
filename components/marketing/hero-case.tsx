@@ -184,7 +184,7 @@ export function HeroCase() {
         <div className="flex items-center justify-between gap-4 border-b border-ink/10 pb-4">
           <span className="font-mono-ed text-xs tracking-[0.22em] text-ink">CASO 0241</span>
           <span className="flex items-center gap-2 font-mono-ed text-[10px] uppercase tracking-[0.18em] text-ink-3">
-            <span ref={dotRef} className="inline-block h-1.5 w-1.5 rounded-full bg-lacre" />
+            <span ref={dotRef} className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
             Em andamento
           </span>
         </div>
@@ -214,7 +214,7 @@ export function HeroCase() {
                   <span
                     ref={chipRef}
                     style={{ opacity: 0 }}
-                    className="shrink-0 rounded-full border border-lacre/30 px-2 py-0.5 font-mono-ed text-[10px] uppercase tracking-[0.14em] text-lacre"
+                    className="shrink-0 rounded-full border border-accent/30 px-2 py-0.5 font-mono-ed text-[10px] uppercase tracking-[0.14em] text-accent"
                   >
                     {CHIP_LABEL}
                   </span>

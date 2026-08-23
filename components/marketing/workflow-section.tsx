@@ -89,16 +89,16 @@ const STEPPER_CSS = `
         border-color: rgb(20 20 18 / 0.25);
       }
       to {
-        background-color: var(--color-lacre);
-        border-color: var(--color-lacre);
+        background-color: var(--color-accent);
+        border-color: var(--color-accent);
       }
     }
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .jur-wf-no {
-    background-color: var(--color-lacre);
-    border-color: var(--color-lacre);
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
   }
 }
 `;

@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, LabelHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 const FIELD_BASE =
-  "w-full rounded-lg border border-white/10 bg-navy-2 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted/70 outline-none transition-colors focus:border-silver/60 focus:ring-1 focus:ring-silver/30 disabled:opacity-50";
+  "w-full rounded-lg border border-ink/15 bg-navy-2 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted outline-none transition-colors focus:border-silver/60 focus:ring-1 focus:ring-silver/30 disabled:opacity-50";
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className = "", ...rest } = props;
@@ -22,7 +22,7 @@ export function Label(props: LabelHTMLAttributes<HTMLLabelElement>) {
   const { className = "", ...rest } = props;
   return (
     <label
-      className={`mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted ${className}`}
+      className={`mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-2 ${className}`}
       {...rest}
     />
   );
@@ -30,7 +30,7 @@ export function Label(props: LabelHTMLAttributes<HTMLLabelElement>) {
 
 export function FieldError({ children }: { children?: string | null }) {
   if (!children) return null;
-  return <p className="mt-1.5 text-xs text-red-400">{children}</p>;
+  return <p className="mt-1.5 text-xs text-red-700">{children}</p>;
 }
 
 export function Checkbox(props: InputHTMLAttributes<HTMLInputElement>) {

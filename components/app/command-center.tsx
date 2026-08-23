@@ -155,14 +155,14 @@ export function CommandCenter() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-ink/40 px-4 pt-[12vh] backdrop-blur-sm"
       onClick={() => setAberto(false)}
       role="dialog"
       aria-modal="true"
       aria-label="Command Center"
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-xl border border-white/10 bg-navy shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-xl border border-ink/10 bg-paper shadow-[0_16px_48px_-8px_rgba(20,20,18,0.12)]"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -174,7 +174,7 @@ export function CommandCenter() {
             if (e.key === "Enter") aoDigitarEnter();
           }}
           placeholder="Buscar caso, prazo ou digite um pedido… (ESC fecha)"
-          className="w-full border-b border-white/10 bg-transparent px-4 py-3.5 text-sm text-ice placeholder:text-muted outline-none"
+          className="w-full border-b border-ink/10 bg-transparent px-4 py-3.5 text-sm text-ice placeholder:text-muted outline-none"
         />
 
         <div className="max-h-[55vh] overflow-y-auto p-2">
@@ -185,7 +185,7 @@ export function CommandCenter() {
               className="flex w-full items-center justify-between rounded-lg bg-silver/15 px-3 py-2.5 text-left text-sm text-ice hover:bg-silver/25"
             >
               <span>Entendi: abrir tela correspondente</span>
-              <kbd className="rounded border border-white/20 px-1.5 text-[10px] text-muted">ENTER</kbd>
+              <kbd className="rounded border border-ink/15 px-1.5 text-[10px] text-muted">ENTER</kbd>
             </button>
           ) : null}
 
@@ -197,7 +197,7 @@ export function CommandCenter() {
                   key={ficha.id}
                   type="button"
                   onClick={() => ir(`/app/fichas/${ficha.id}`)}
-                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/5"
+                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-ink/5"
                 >
                   <p className="text-sm text-ice">{ficha.nomeCliente ?? "(sem nome)"}</p>
                   <p className="text-xs text-muted">{ficha.areaDireito ?? "Área não informada"} · ver ficha completa →</p>
@@ -214,7 +214,7 @@ export function CommandCenter() {
                   key={prazo.id}
                   type="button"
                   onClick={() => ir("/app/prazos")}
-                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/5"
+                  className="block w-full rounded-lg px-3 py-2 text-left hover:bg-ink/5"
                 >
                   <p className="text-sm text-ice">{prazo.titulo}</p>
                   <p className="text-xs text-muted">
@@ -236,7 +236,7 @@ export function CommandCenter() {
               <button
                 type="button"
                 onClick={() => ir(sugestaoVisivel.href)}
-                className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/5"
+                className="block w-full rounded-lg px-3 py-2 text-left hover:bg-ink/5"
               >
                 <p className="text-sm text-ice">
                   <span className="text-muted">Sugestão · </span>
@@ -255,7 +255,7 @@ export function CommandCenter() {
                   key={comando.id}
                   type="button"
                   onClick={() => ir(comando.href)}
-                  className="flex w-full items-baseline justify-between rounded-lg px-3 py-2 text-left hover:bg-white/5"
+                  className="flex w-full items-baseline justify-between rounded-lg px-3 py-2 text-left hover:bg-ink/5"
                 >
                   <span>
                     <span className="text-sm text-ice">{comando.rotulo}</span>
@@ -274,7 +274,7 @@ export function CommandCenter() {
           ) : null}
         </div>
 
-        <div className="border-t border-white/10 px-4 py-2 text-[10px] text-muted">
+        <div className="border-t border-ink/10 px-4 py-2 text-[10px] text-muted">
           CTRL+K abre · ENTER vai ao primeiro resultado · ESC fecha
         </div>
       </div>

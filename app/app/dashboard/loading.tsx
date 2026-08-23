@@ -27,7 +27,7 @@ export default function DashboardLoading() {
             </div>
             <div className="space-y-3">
               {[0, 1, 2].map((j) => (
-                <div key={j} className="flex items-center justify-between gap-3 border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                <div key={j} className="flex items-center justify-between gap-3 border-b border-ink/10 pb-3 last:border-0 last:pb-0">
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="skeleton h-3.5 w-3/5 rounded" />
                     <div className="skeleton h-3 w-2/5 rounded" />

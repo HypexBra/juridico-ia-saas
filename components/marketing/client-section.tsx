@@ -66,7 +66,7 @@ export function ClientSection() {
                     ) : (
                       <span
                         className={`font-sans-ed text-sm ${
-                          linha.lacre ? "font-medium text-lacre" : "text-ink"
+                          linha.lacre ? "font-medium text-accent" : "text-ink"
                         }`}
                       >
                         {linha.valor}

@@ -247,33 +247,33 @@ export default async function RelatoriosPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Casos</p>
-                  <p className="mt-1 font-display text-xl font-semibold text-ice">{linha.totalCasos}</p>
+                  <p className="mt-1 font-display text-xl font-semibold tabular-nums text-ice">{linha.totalCasos}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Prazos</p>
-                  <p className="mt-1 font-display text-xl font-semibold text-ice">{linha.prazosTotal}</p>
+                  <p className="mt-1 font-display text-xl font-semibold tabular-nums text-ice">{linha.prazosTotal}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Cumpridos</p>
-                  <p className="mt-1 font-display text-xl font-semibold text-green">{linha.prazosConcluidos}</p>
+                  <p className="mt-1 font-display text-xl font-semibold tabular-nums text-green">{linha.prazosConcluidos}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Atrasados</p>
-                  <p className="mt-1 font-display text-xl font-semibold text-red-400">{linha.prazosAtrasados}</p>
+                  <p className="mt-1 font-display text-xl font-semibold tabular-nums text-red-700">{linha.prazosAtrasados}</p>
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
+              <div className="mt-4 grid grid-cols-2 gap-3 border-t border-ink/10 pt-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Honorários gerados</p>
-                  <p className="mt-1 font-display text-lg font-semibold text-silver-2">
+                  <p className="mt-1 font-display text-lg font-semibold tabular-nums text-silver-2">
                     {formatarMoeda(linha.honorariosGerados)}
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted">Parcela do rateio sobre o valor total dos contratos.</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">Honorários recebidos</p>
-                  <p className="mt-1 font-display text-lg font-semibold text-ice">
+                  <p className="mt-1 font-display text-lg font-semibold tabular-nums text-ice">
                     {formatarMoeda(linha.honorariosRecebidos)}
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted">Parcela do rateio sobre parcelas já pagas.</p>
@@ -296,19 +296,19 @@ export default async function RelatoriosPage() {
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Contratado</p>
-              <p className="mt-1 font-display text-lg font-semibold text-silver-2">
+              <p className="mt-1 font-display text-lg font-semibold tabular-nums text-silver-2">
                 {formatarMoeda(relatorioAvancado.valorContratadoTotal)}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Recebido</p>
-              <p className="mt-1 font-display text-lg font-semibold text-ice">
+              <p className="mt-1 font-display text-lg font-semibold tabular-nums text-ice">
                 {formatarMoeda(relatorioAvancado.valorRecebidoTotal)}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Realization rate</p>
-              <p className="mt-1 font-display text-lg font-semibold text-green">
+              <p className="mt-1 font-display text-lg font-semibold tabular-nums text-green">
                 {relatorioAvancado.realizationRateGeral === null
                   ? "—"
                   : `${(relatorioAvancado.realizationRateGeral * 100).toFixed(1)}%`}
@@ -329,13 +329,13 @@ export default async function RelatoriosPage() {
                     <th className="pb-2 font-medium">Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-ink/10">
                   {relatorioAvancado.porArea.map((linha) => (
                     <tr key={linha.areaDireito}>
                       <td className="py-2 pr-3 text-ice">{linha.areaDireito}</td>
                       <td className="py-2 pr-3 text-muted">{linha.totalCasos}</td>
-                      <td className="py-2 pr-3 text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
-                      <td className="py-2 pr-3 text-ice">{formatarMoeda(linha.valorRecebido)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-ice">{formatarMoeda(linha.valorRecebido)}</td>
                       <td className="py-2 text-muted">
                         {linha.realizationRate === null ? "—" : `${(linha.realizationRate * 100).toFixed(1)}%`}
                       </td>
@@ -360,14 +360,14 @@ export default async function RelatoriosPage() {
                     <th className="pb-2 font-medium">Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-ink/10">
                   {relatorioAvancado.porCaso.map((linha) => (
                     <tr key={linha.fichaCasoId}>
                       <td className="py-2 pr-3 text-ice">{linha.nomeCliente}</td>
                       <td className="py-2 pr-3 text-muted">{linha.areaDireito}</td>
-                      <td className="py-2 pr-3 text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
-                      <td className="py-2 pr-3 text-ice">{formatarMoeda(linha.valorRecebido)}</td>
-                      <td className="py-2 pr-3 text-muted">{formatarMoeda(linha.valorPendenteOuAtrasado)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-silver-2">{formatarMoeda(linha.valorContratado)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-ice">{formatarMoeda(linha.valorRecebido)}</td>
+                      <td className="py-2 pr-3 tabular-nums text-muted">{formatarMoeda(linha.valorPendenteOuAtrasado)}</td>
                       <td className="py-2 text-muted">
                         {linha.realizationRate === null ? "—" : `${(linha.realizationRate * 100).toFixed(1)}%`}
                       </td>

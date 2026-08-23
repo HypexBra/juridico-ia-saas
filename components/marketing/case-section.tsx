@@ -89,7 +89,7 @@ export function CaseSection() {
               <h3 className="font-mono-ed text-[11px] uppercase tracking-[0.18em] text-ink-3">
                 Ficha do caso
               </h3>
-              <span className="font-mono-ed text-[11px] uppercase tracking-[0.18em] text-lacre">
+              <span className="font-mono-ed text-[11px] uppercase tracking-[0.18em] text-accent">
                 Atualizada hoje
               </span>
             </header>
@@ -110,7 +110,7 @@ export function CaseSection() {
                       O padding vive no filho interno para não pular na
                       transição (só max-h/opacity animam). */}
                   <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:max-h-24 group-hover:opacity-100">
-                    <p className="border-l border-lacre pt-2 pl-3 text-sm leading-relaxed text-ink-2">
+                    <p className="border-l border-accent pt-2 pl-3 text-sm leading-relaxed text-ink-2">
                       {linha.detalhe}
                     </p>
                   </div>

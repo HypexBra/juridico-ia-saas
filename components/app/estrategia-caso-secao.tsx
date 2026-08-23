@@ -58,7 +58,7 @@ function CartaoEstrategia({
       )}
 
       {estrategia.status === "erro" && (
-        <p className="text-sm text-red-400">{estrategia.erro ?? "Não foi possível gerar a estratégia."}</p>
+        <p className="text-sm text-red-700">{estrategia.erro ?? "Não foi possível gerar a estratégia."}</p>
       )}
 
       {estrategia.status === "pronto" && estrategia.resultado_estrategia && (
@@ -148,13 +148,13 @@ export function EstrategiaCasoSecao({
           quando concluído.
         </p>
       )}
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
 
       {!maisRecente ? (
         <p className="text-sm text-muted">Nenhuma estratégia gerada ainda para este caso.</p>
       ) : (
         <div className="space-y-4">
-          <div className="rounded-lg border border-white/10 p-4">
+          <div className="rounded-lg border border-ink/10 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-medium uppercase tracking-wide text-muted">
                 Estratégia mais recente — {new Date(maisRecente.criado_em).toLocaleString("pt-BR")}
@@ -177,7 +177,7 @@ export function EstrategiaCasoSecao({
               {historico.map((estrategia) => {
                 const aberto = idsExpandidos.has(estrategia.id);
                 return (
-                  <div key={estrategia.id} className="rounded-lg border border-white/10">
+                  <div key={estrategia.id} className="rounded-lg border border-ink/10">
                     <button
                       type="button"
                       onClick={() => alternarExpandido(estrategia.id)}
@@ -192,7 +192,7 @@ export function EstrategiaCasoSecao({
                       </div>
                     </button>
                     {aberto && (
-                      <div className="border-t border-white/10 p-4">
+                      <div className="border-t border-ink/10 p-4">
                         <CartaoEstrategia
                           fichaCasoId={fichaCasoId}
                           estrategia={estrategia}

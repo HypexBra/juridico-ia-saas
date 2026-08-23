@@ -73,23 +73,25 @@ const CATEGORIA_LABEL: Record<CategoriaAchadoAuditoria, string> = {
   clareza: "Clareza",
 };
 
-/** Cor da barra de nota — só efeito visual, nunca esconde a humildade
+/** Cor da barra de nota — tons escuros legíveis sobre fundo claro
+ * (verde/âmbar/vermelho 700); só efeito visual, nunca esconde a humildade
  * epistêmica calibrada no prompt (ver aviso fixo abaixo). */
 function corBarraNota(nota: number): string {
   if (nota >= 8) return "bg-green";
-  if (nota >= 5) return "bg-amber-400";
-  return "bg-red-400";
+  if (nota >= 5) return "bg-amber-700";
+  return "bg-red-700";
 }
 
 function CartaoNota({ dimensao, nota }: { dimensao: DimensaoNotaAuditoria; nota: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-navy-2 p-4">
+    <div className="rounded-lg border border-ink/10 bg-navy-2 p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{DIMENSAO_LABEL[dimensao]}</p>
       <p className="mt-1.5 text-2xl font-semibold text-ice">
         {nota.toFixed(1)}
         <span className="text-sm font-normal text-muted">/10</span>
       </p>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+      {/* Trilho em tinta translúcida (tema claro) com preenchimento accent. */}
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
         <div className={`h-full rounded-full ${corBarraNota(nota)}`} style={{ width: `${nota * 10}%` }} />
       </div>
     </div>
@@ -117,10 +119,11 @@ export function AuditorResultado({ resultado }: { resultado: ResultadoAuditoriaP
   return (
     <div className="space-y-5">
       {/* Aviso fixo — requisito funcional do ADR 0012, seção 4/6, SEMPRE visível,
-          nunca condicional a veredito/nota específicos. */}
-      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-        <p className="text-sm font-medium text-amber-200">Ferramenta auxiliar — não é verdade jurídica absoluta</p>
-        <p className="mt-1 text-xs leading-relaxed text-amber-100/90">
+          nunca condicional a veredito/nota específicos. Banner âmbar claro
+          (amber-50/200) com texto âmbar escuro, legível sobre papel. */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm font-medium text-amber-900">Ferramenta auxiliar — não é verdade jurídica absoluta</p>
+        <p className="mt-1 text-xs leading-relaxed text-amber-700">
           Estas notas são uma ferramenta auxiliar de revisão, geradas por IA — não substituem a análise jurídica do
           advogado responsável nem representam uma avaliação oficial ou definitiva da peça. Revise cada achado e
           contra-argumento antes de tomar qualquer decisão com base neste relatório.
@@ -144,7 +147,7 @@ export function AuditorResultado({ resultado }: { resultado: ResultadoAuditoriaP
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-navy-2 p-4">
+      <div className="rounded-lg border border-ink/10 bg-navy-2 p-4">
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-xs font-medium uppercase tracking-wide text-muted">Veredito de risco geral</h4>
           <Badge tone={VEREDITO_RISCO_TONE[resultado.veredictoRisco]}>
@@ -209,7 +212,7 @@ export function AuditorResultado({ resultado }: { resultado: ResultadoAuditoriaP
           ) : (
             <ul className="space-y-2">
               {resultado.omissoesDetectadas.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm italic text-muted">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm italic text-muted">
                   {texto}
                 </li>
               ))}

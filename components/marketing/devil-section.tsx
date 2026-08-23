@@ -75,15 +75,15 @@ export function DevilSection() {
 
         {/* Coluna direita — painel de ataque adversarial */}
         <Reveal delayMs={120}>
-          <article className="h-full rounded-none border border-lacre/40 bg-paper-2 p-6 md:p-8">
-            <h3 className="font-mono-ed text-[11px] uppercase tracking-[0.2em] text-lacre">
+          <article className="h-full rounded-none border border-accent/40 bg-paper-2 p-6 md:p-8">
+            <h3 className="font-mono-ed text-[11px] uppercase tracking-[0.2em] text-accent">
               Advogado do contra
             </h3>
 
             <ul className="mt-5 divide-y divide-ink/10">
               {ATAQUES.map(({ rotulo, texto }) => (
                 <li key={rotulo} className="py-4 first:pt-0 last:pb-0">
-                  <p className="font-mono-ed text-[10px] uppercase tracking-[0.18em] text-lacre">
+                  <p className="font-mono-ed text-[10px] uppercase tracking-[0.18em] text-accent">
                     {rotulo}
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-2">

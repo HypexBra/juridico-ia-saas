@@ -56,7 +56,7 @@ export default async function PesquisaPage({
             name="q"
             defaultValue={termo}
             placeholder='Ex.: prescrição intercorrente, usucapião extraordinária, nº de processo…'
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-navy-3/60 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted focus:border-silver/50 focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-navy-3/60 px-3.5 py-2.5 text-sm text-ice placeholder:text-muted focus:border-silver/50 focus:outline-none"
             aria-label="Termo de pesquisa"
           />
           <Button type="submit" disabled={!termo}>
@@ -64,7 +64,7 @@ export default async function PesquisaPage({
           </Button>
         </form>
         {busca.aviso ? (
-          <p className="mt-2 text-xs text-amber-300/90">{busca.aviso}</p>
+          <p className="mt-2 text-xs text-amber-700">{busca.aviso}</p>
         ) : null}
         <p className="mt-2 text-xs text-muted">
           Busca lexical (termos exatos, nº CNJ) combinada com busca semântica por significado.

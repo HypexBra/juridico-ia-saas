@@ -16,6 +16,7 @@
 8. `supabase/migrations/0044_workflows.sql` — Fase 8 (Workflow Engine)
 9. `supabase/migrations/0045_observabilidade_uso.sql` — Fase 27: colunas modelo/duração/origem em uso_ia + índice (NOVA — sessão 6)
 10. `supabase/migrations/0046_memoria_escritorio.sql` — Fase 17: diretrizes_ia/tom_escrita/clausulas_padrao em escritorios (NOVA — sessão 6)
+11. `supabase/migrations/0047_webhooks.sql` — Fase 22: webhook_endpoints + webhook_deliveries com RLS (NOVA — sessão 7)
 
 ## Depois das migrations (2 minutos)
 
@@ -35,7 +36,7 @@
 -- deve retornar as tabelas novas:
 select table_name from information_schema.tables
 where table_schema='public' and table_name in
-('convites_equipe','analises_advogado_contra','estrategias_caso','fontes_stj_sync');
+('convites_equipe','analises_advogado_contra','estrategias_caso','fontes_stj_sync','webhook_endpoints');
 select prioridade from tarefas_caso limit 1; -- coluna existe?
 -- 0045/0046 (sessão 6):
 select modelo, duracao_ms, origem from uso_ia limit 1; -- colunas existem (linhas antigas: NULL é esperado)

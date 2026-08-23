@@ -60,7 +60,7 @@ export function MembroLinhaAcoes({
           disabled={isPending || !podeAlterarRole}
           onChange={(e) => alterarRole(e.target.value)}
           title="Papel deste membro dentro do escritório"
-          className="rounded-md border border-white/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
+          className="rounded-md border border-ink/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
         >
           {Object.entries(ROLE_LABEL).map(([valor, label]) => (
             <option key={valor} value={valor}>
@@ -73,13 +73,13 @@ export function MembroLinhaAcoes({
           disabled={isPending || !podeAlterarRole}
           onClick={alternarAtivo}
           className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-            ativo ? "border-red-500/30 text-red-300 hover:bg-red-500/10" : "border-green/30 text-green hover:bg-green/10"
+            ativo ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
           }`}
         >
           {ativo ? "Desativar" : "Ativar"}
         </button>
       </div>
-      {erro && <p className="text-[11px] text-red-400">{erro}</p>}
+      {erro && <p className="text-[11px] text-red-700">{erro}</p>}
       {mensagem && <p className="text-[11px] text-muted">{mensagem}</p>}
     </div>
   );

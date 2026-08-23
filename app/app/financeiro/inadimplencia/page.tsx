@@ -83,8 +83,9 @@ export default async function InadimplenciaPage() {
     return (
       <div className="space-y-6">
         <h1 className="font-display text-2xl font-semibold text-ice">Inadimplência</h1>
-        <Card className="border-red-500/30">
-          <p className="text-sm text-red-300">
+        <Card className="border-red-200">
+          {/* Vermelho escuro (red-700) para erro legível sobre papel. */}
+          <p className="text-sm text-red-700">
             Não foi possível carregar as parcelas em atraso. Tente novamente em instantes.
           </p>
         </Card>
@@ -127,9 +128,10 @@ export default async function InadimplenciaPage() {
         </div>
       </div>
 
-      <Card className={parcelas.length > 0 ? "border-red-500/30" : ""}>
+      <Card className={parcelas.length > 0 ? "border-red-200" : ""}>
         <p className="text-xs font-medium uppercase tracking-wide text-muted">Total em atraso</p>
-        <p className="mt-2 font-display text-3xl font-bold text-red-400">{formatarMoeda(totalAtrasado)}</p>
+        {/* red-700: valor devedor em vermelho legível sobre papel (AA). */}
+        <p className="mt-2 font-display text-3xl font-bold text-red-700">{formatarMoeda(totalAtrasado)}</p>
         <p className="mt-2 text-xs text-muted">{parcelas.length} parcela(s) vencida(s) sem pagamento.</p>
       </Card>
 
@@ -145,7 +147,7 @@ export default async function InadimplenciaPage() {
               {parcelas.map((parcela) => (
                 <li
                   key={parcela.id}
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-red-500/5 px-5 py-3.5 last:border-0"
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 bg-red-50 px-5 py-3.5 last:border-0"
                 >
                   <div className="flex min-w-0 flex-col">
                     <span className="text-sm font-medium text-ice">{parcela.nomeCliente}</span>

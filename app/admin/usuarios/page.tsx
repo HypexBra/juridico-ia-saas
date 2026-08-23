@@ -112,7 +112,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
             name="q"
             defaultValue={busca}
             placeholder="Buscar por nome ou e-mail…"
-            className="flex-1 rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
+            className="flex-1 rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
           />
           <button type="submit" className="rounded-lg bg-silver/15 px-4 py-2 text-sm font-medium text-silver-2 hover:bg-silver/25">
             Buscar
@@ -125,7 +125,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
               key={f.valor}
               href={urlCom({ filtro: f.valor })}
               className={`rounded-full border px-3 py-1 text-xs ${
-                filtro === f.valor ? "border-silver/40 bg-silver/15 text-silver-2" : "border-white/10 text-muted hover:text-ice"
+                filtro === f.valor ? "border-silver/40 bg-silver/15 text-silver-2" : "border-ink/10 text-muted hover:text-ice"
               }`}
             >
               {f.label}
@@ -139,7 +139,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
             <Link
               key={o.valor}
               href={urlCom({ ordenar: o.valor })}
-              className={`rounded-md px-2 py-1 ${ordenacao === o.valor ? "bg-white/10 text-ice" : "hover:text-ice"}`}
+              className={`rounded-md px-2 py-1 ${ordenacao === o.valor ? "bg-ink/10 text-ice" : "hover:text-ink"}`}
             >
               {o.label}
             </Link>
@@ -163,7 +163,7 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
               <th className="pb-3 font-medium text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-ink/10">
             {linhas.map((u) => (
               <tr key={u.perfilId}>
                 <td className="py-3 pr-3 text-ice">

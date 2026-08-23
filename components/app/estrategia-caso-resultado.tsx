@@ -55,7 +55,7 @@ function OrigemTags({ origens }: { origens: OrigemContextoEstrategia[] }) {
       {origens.map((origem, indice) => (
         <span
           key={indice}
-          className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-muted"
+          className="rounded-full border border-ink/10 bg-ink/5 px-2 py-0.5 text-[11px] text-muted"
         >
           {ORIGEM_LABEL[origem.tipo]}
         </span>
@@ -83,7 +83,8 @@ function TeseItem({
   if (tese.origem === "tese_cadastrada") {
     const teseCadastrada = tesesCaso.find((item) => item.id === tese.teseCasoId);
     return (
-      <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+      /* Nota editorial: tese cadastrada vira citação com filete verde. */
+      <li className="rounded-lg border-l-2 border-accent bg-paper-2 p-3.5">
         <div className="mb-1.5 flex flex-wrap items-center gap-2">
           <Badge tone={tese.papel === "principal" ? "blue" : "muted"}>{label}</Badge>
           <Badge tone="green">Tese cadastrada</Badge>
@@ -114,7 +115,8 @@ function TeseItem({
   }
 
   return (
-    <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+    /* Nota editorial: tese sugerida pela IA recebe o mesmo filete verde. */
+    <li className="rounded-lg border-l-2 border-accent bg-paper-2 p-3.5">
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <Badge tone={tese.papel === "principal" ? "blue" : "muted"}>{label}</Badge>
         <Badge tone="amber">Sugerida pela IA</Badge>
@@ -125,7 +127,7 @@ function TeseItem({
         <Button size="sm" variant="secondary" disabled={isPending || cadastrada} onClick={cadastrarTese}>
           {cadastrada ? "Tese cadastrada" : isPending ? "Cadastrando…" : "Cadastrar como tese do caso"}
         </Button>
-        {erro && <p className="mt-1.5 text-xs text-red-400">{erro}</p>}
+        {erro && <p className="mt-1.5 text-xs text-red-700">{erro}</p>}
       </div>
     </li>
   );
@@ -170,14 +172,14 @@ function ItemAcionavel({
   }
 
   return (
-    <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+    <li className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
       <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
         <p className="text-sm font-medium text-ice-2">{item.titulo}</p>
         <Badge tone={PRIORIDADE_TONE[item.prioridade]}>Prioridade {PRIORIDADE_LABEL[item.prioridade]}</Badge>
       </div>
       {item.detalhe && <p className="text-sm text-muted">{item.detalhe}</p>}
       {item.prazoSugerido && (
-        <p className="mt-1.5 text-xs text-amber-300">
+        <p className="mt-1.5 text-xs text-amber-700">
           Prazo sugerido pela IA: {item.prazoSugerido} — estimativa operacional, nunca um prazo processual formal.
         </p>
       )}
@@ -186,7 +188,7 @@ function ItemAcionavel({
         <Button size="sm" variant="secondary" disabled={isPending || jaCriada} onClick={criarTarefa}>
           {jaCriada ? "Tarefa criada" : isPending ? "Criando tarefa…" : "Criar tarefa"}
         </Button>
-        {erro && <p className="mt-1.5 text-xs text-red-400">{erro}</p>}
+        {erro && <p className="mt-1.5 text-xs text-red-700">{erro}</p>}
       </div>
     </li>
   );
@@ -230,7 +232,7 @@ export function EstrategiaCasoResultado({
         ) : (
           <ul className="space-y-2">
             {resultado.provas.map((prova, indice) => (
-              <li key={indice} className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+              <li key={indice} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="text-sm text-ice-2">{prova.descricao}</p>
                   <Badge tone={prova.status === "disponivel" ? "green" : "amber"}>
@@ -253,7 +255,7 @@ export function EstrategiaCasoResultado({
         ) : (
           <ul className="space-y-2">
             {resultado.riscos.map((risco, indice) => (
-              <li key={indice} className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+              <li key={indice} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="text-sm text-ice-2">{risco.descricao}</p>
                   <div className="flex items-center gap-1.5">
@@ -277,7 +279,7 @@ export function EstrategiaCasoResultado({
         ) : (
           <ul className="space-y-2">
             {resultado.oportunidades.map((oportunidade, indice) => (
-              <li key={indice} className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+              <li key={indice} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
                 <p className="text-sm text-ice-2">{oportunidade.descricao}</p>
                 <OrigemTags origens={oportunidade.origem} />
               </li>
@@ -316,8 +318,9 @@ export function EstrategiaCasoResultado({
         )}
       </div>
 
-      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
-        <h4 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-300">Ressalvas</h4>
+      {/* Banner de ressalvas em âmbar claro (escala 700 para texto). */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <h4 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-700">Ressalvas</h4>
         {resultado.ressalvas.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma ressalva relevante apontada pela IA sobre o contexto lido.</p>
         ) : (

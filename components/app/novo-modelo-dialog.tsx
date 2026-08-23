@@ -22,7 +22,7 @@ export function NovoModeloDialog() {
       aberto={aberto}
       onFechar={fechar}
       titulo="Novo modelo de peça"
-      painelClassName="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-white/10 bg-navy-2 p-6 shadow-2xl"
+      painelClassName="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-ink/10 bg-navy-2 p-6 shadow-xl shadow-ink/[0.12]"
     >
       <ModeloForm action={criarModeloAction} onCancelar={fechar} />
     </Dialog>

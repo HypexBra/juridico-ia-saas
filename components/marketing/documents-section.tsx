@@ -50,7 +50,7 @@ function CirculoMarcacao({
   return (
     <span
       aria-hidden
-      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-lacre font-mono-ed text-[10px] leading-none text-lacre ${className}`}
+      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent font-mono-ed text-[10px] leading-none text-accent ${className}`}
     >
       {numero}
     </span>
@@ -81,7 +81,7 @@ export function DocumentsSection() {
               key={item.rotulo}
               className="rounded-full border border-ink/10 bg-paper-2 px-4 py-1.5 font-mono-ed text-[11px] tracking-wide text-ink-2"
             >
-              <span className="text-lacre">{item.numero}</span> {item.rotulo}
+              <span className="text-accent">{item.numero}</span> {item.rotulo}
             </li>
           ))}
         </ul>
@@ -164,7 +164,7 @@ export function DocumentsSection() {
                     {marcacao.texto}
                   </p>
                   {marcacao.tag ? (
-                    <p className="mt-1.5 font-mono-ed text-[10px] uppercase tracking-[0.18em] text-lacre">
+                    <p className="mt-1.5 font-mono-ed text-[10px] uppercase tracking-[0.18em] text-accent">
                       {marcacao.tag}
                     </p>
                   ) : null}

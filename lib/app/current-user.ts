@@ -29,6 +29,12 @@ export type UsuarioAtual = {
  * cada requisição paga o custo de rede (auth + query no Supabase).
  */
 export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
+  // Sem credenciais do Supabase no ambiente (ex.: local sem .env preenchido),
+  // não há sessão possível — evita 500 na criação do client.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
   const supabase = await createClient();
 
   // O middleware já validou a sessão e expôs id+email via header — evita
@@ -46,8 +52,17 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
     userIdDoHeader ? { id: userIdDoHeader, email: userEmailDoHeader } : null;
 
   if (!user) {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    // Falha de rede/indisponibilidade do provider NÃO pode virar 500 em toda
+    // página: sem resposta de auth, trata como anônimo — as rotas protegidas
+    // redirecionam para /login e o usuário retenta (mesmo espírito do
+    // fail-open controlado do middleware).
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    } catch (erro) {
+      console.warn("[current-user/getUsuarioAtual] auth.getUser indisponível; tratando como anônimo:", erro instanceof Error ? erro.message : erro);
+      return null;
+    }
   }
 
   if (!user) return null;

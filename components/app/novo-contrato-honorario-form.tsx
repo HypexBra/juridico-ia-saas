@@ -141,7 +141,7 @@ export function NovoContratoHonorarioForm({
             {perfis.map((perfil) => (
               <div
                 key={perfil.id}
-                className="flex items-center gap-3 rounded-lg border border-white/10 bg-navy-2 px-3 py-2"
+                className="flex items-center gap-3 rounded-lg border border-ink/10 bg-navy-2 px-3 py-2"
               >
                 <label htmlFor={`percentual_${perfil.id}`} className="flex-1 truncate text-sm text-ice-2">
                   {perfil.nome}

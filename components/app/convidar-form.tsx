@@ -26,7 +26,7 @@ export function ConvidarForm() {
           id="role"
           name="role"
           defaultValue="advogado"
-          className="h-10 w-full rounded-lg border border-white/10 bg-navy-3 px-3 text-sm text-ice"
+          className="h-10 w-full rounded-lg border border-ink/10 bg-navy-3 px-3 text-sm text-ice"
         >
           <option value="advogado">Advogado(a)</option>
           <option value="admin">Administrador(a)</option>
@@ -35,7 +35,7 @@ export function ConvidarForm() {
       <Button type="submit" disabled={isPending}>
         {isPending ? "Enviando…" : "Convidar"}
       </Button>
-      {state.error && <p className="w-full text-xs text-red-400">{state.error}</p>}
+      {state.error && <p className="w-full text-xs text-red-700">{state.error}</p>}
       {state.sucesso && <p className="w-full text-xs text-muted">{state.sucesso}</p>}
     </form>
   );

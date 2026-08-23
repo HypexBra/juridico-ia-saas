@@ -32,7 +32,7 @@ export function ExcluirConversaBotao({ conversaId, aposExcluirVoltar = false }: 
         type="button"
         disabled={isPending}
         onClick={excluir}
-        className="rounded-md border border-red-500/30 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+        className="rounded-md border border-red-700/30 px-2 py-1 text-xs text-red-700 hover:bg-red-700/10 disabled:opacity-50"
       >
         Excluir conversa
       </button>

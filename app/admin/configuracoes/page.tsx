@@ -26,7 +26,7 @@ export default async function AdminConfiguracoesPage() {
 
       <Card>
         <CardTitle className="mb-1">Acesso</CardTitle>
-        <div className="divide-y divide-white/5">
+        <div className="divide-y divide-ink/10">
           <ConfiguracaoToggle
             campo="modo_manutencao"
             valorInicial={config.modoManutencao}

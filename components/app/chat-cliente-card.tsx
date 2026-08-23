@@ -82,7 +82,7 @@ export function ChatClienteCard({
     <div className="space-y-3">
       <p className="text-sm text-muted">Conversa com {clienteNome}.</p>
 
-      <div ref={listaRef} className="max-h-80 space-y-2.5 overflow-y-auto rounded-lg border border-white/10 bg-navy p-3">
+      <div ref={listaRef} className="max-h-80 space-y-2.5 overflow-y-auto rounded-lg border border-ink/10 bg-navy p-3">
         {mensagens.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma mensagem ainda. Envie a primeira mensagem para o cliente.</p>
         ) : (
@@ -93,7 +93,9 @@ export function ChatClienteCard({
             >
               <div
                 className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                  mensagem.remetente === "escritorio" ? "bg-silver/20 text-ice" : "bg-navy-3 text-ice-2"
+                  mensagem.remetente === "escritorio"
+                    ? "bg-silver/20 text-ice"
+                    : "border border-ink/10 bg-paper-2 text-ice-2"
                 }`}
               >
                 <p className="whitespace-pre-wrap">{mensagem.conteudo}</p>
@@ -104,7 +106,7 @@ export function ChatClienteCard({
         )}
       </div>
 
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
 
       <div className="flex gap-2">
         <Textarea

@@ -15,7 +15,7 @@ function MensagemErro({ titulo, descricao }: { titulo: string; descricao: string
       <div className="mx-auto max-w-md space-y-4 text-center">
         <h1 className="font-display text-xl font-semibold text-ice">{titulo}</h1>
         <p className="text-sm text-muted">{descricao}</p>
-        <Link href="/portal/login" className="inline-block text-sm font-medium text-silver hover:text-silver-2">
+        <Link href="/portal/login" className="inline-block text-sm font-medium text-silver underline underline-offset-4 hover:text-silver-2">
           Já tem uma conta? Entrar
         </Link>
       </div>
@@ -63,7 +63,7 @@ export default async function PortalAtivarPage({ searchParams }: PageProps<"/por
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-navy-2/60 p-8 shadow-2xl shadow-black/30">
+        <div className="rounded-2xl border border-ink/10 bg-paper-2 p-8 shadow-sm">
           <p className="mb-5 text-sm text-muted">
             E-mail do convite: <span className="text-ice-2">{convite.email}</span>
           </p>

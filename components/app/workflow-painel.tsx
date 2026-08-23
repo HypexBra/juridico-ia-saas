@@ -103,7 +103,7 @@ export function WorkflowsPainel({
       </div>
 
       {erro && (
-        <p className="rounded-md border border-red-500/30 bg-red-950/30 px-3 py-2 text-xs text-red-300">{erro}</p>
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{erro}</p>
       )}
 
       {editorAberto && (
@@ -112,7 +112,7 @@ export function WorkflowsPainel({
 
       <div className="space-y-3">
         {workflows.length === 0 && (
-          <p className="rounded-md border border-dashed border-white/10 px-3 py-6 text-center text-xs text-muted">
+          <p className="rounded-md border border-dashed border-ink/10 px-3 py-6 text-center text-xs text-muted">
             Nenhum workflow ainda. Crie o primeiro com rotinas que você repete caso a caso.
           </p>
         )}
@@ -122,14 +122,14 @@ export function WorkflowsPainel({
           const selecionando = executandoId === workflow.id;
 
           return (
-            <div key={workflow.id} className="rounded-xl border border-white/10 bg-navy-2/60 p-4">
+            <div key={workflow.id} className="rounded-xl border border-ink/15 bg-navy-2/60 p-4">
               <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
                 <h3 className="font-display text-base font-semibold text-ice">{workflow.nome}</h3>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
                     workflow.ativo
-                      ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300"
-                      : "border-white/10 bg-white/5 text-muted"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-ink/10 bg-ink/5 text-muted"
                   }`}
                 >
                   {workflow.ativo ? "Ativo" : "Pausado"}
@@ -177,7 +177,7 @@ export function WorkflowsPainel({
                     .map((etapaAtual, indice) => (
                       <li
                         key={`${workflow.id}-${etapaAtual.ordem}`}
-                        className="rounded-md border border-white/10 bg-navy px-2 py-1 text-xs text-silver-2"
+                        className="rounded-md border border-ink/10 bg-navy px-2 py-1 text-xs text-silver-2"
                       >
                         <span className="text-muted">{indice + 1}.</span>{" "}
                         {ROTULO_ACAO[etapaAtual.tipo_acao as TipoAcaoWorkflow] ?? etapaAtual.tipo_acao}
@@ -188,13 +188,13 @@ export function WorkflowsPainel({
               )}
 
               {selecionando && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-navy p-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-ink/10 bg-navy p-3">
                   <label className="text-xs text-muted">
                     Caso alvo
                     <select
                       value={fichaSelecionada}
                       onChange={(e) => setFichaSelecionada(e.target.value)}
-                      className="mt-1 w-full min-w-64 rounded-md border border-white/10 bg-navy px-3 py-2 text-sm text-ice outline-none focus:border-silver/60"
+                      className="mt-1 w-full min-w-64 rounded-md border border-ink/10 bg-navy px-3 py-2 text-sm text-ice outline-none focus:border-silver/60"
                     >
                       <option value="">Selecione um caso…</option>
                       {fichas.map((ficha) => (

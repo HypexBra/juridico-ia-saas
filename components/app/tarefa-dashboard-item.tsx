@@ -40,7 +40,7 @@ export function TarefaDashboardItem({ tarefa }: { tarefa: TarefaCaso }) {
   }
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 last:border-0 last:pb-0">
+    <li className="flex items-center justify-between gap-3 rounded-lg border-b border-ink/10 px-1 -mx-1 pb-3 last:border-0 last:pb-0">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-ice">{tarefa.titulo}</p>
         <div className="flex flex-wrap items-center gap-1.5">

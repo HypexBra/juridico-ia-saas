@@ -45,10 +45,10 @@ export function CtaFinal() {
             motivo "cláusula" — agora com a promessa honesta do produto:
             revisão humana antes de qualquer peça. */}
         <Reveal delayMs={200} className="lg:justify-self-end">
-          <div className="relative max-w-xs border-l-2 border-lacre/50 pl-6">
+          <div className="relative max-w-xs border-l-2 border-accent/50 pl-6">
             <span
               aria-hidden
-              className="absolute -left-3 -top-9 select-none font-serif-ed text-7xl italic text-lacre/15"
+              className="absolute -left-3 -top-9 select-none font-serif-ed text-7xl italic text-accent/15"
             >
               §
             </span>

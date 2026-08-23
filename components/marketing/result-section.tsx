@@ -75,7 +75,7 @@ export function ResultSection() {
           {/* DEPOIS — o que sobra para o advogado, sólido e marcado em lacre */}
           <div>
             <Reveal delayMs={BASE_DEPOIS_MS - PASSO_DEPOIS_MS}>
-              <p className="font-mono-ed text-xs uppercase tracking-[0.2em] text-lacre">
+              <p className="font-mono-ed text-xs uppercase tracking-[0.2em] text-accent">
                 DEPOIS
               </p>
             </Reveal>
@@ -85,7 +85,7 @@ export function ResultSection() {
                   <span className="font-serif-ed text-2xl leading-snug text-ink md:text-3xl">
                     <span
                       aria-hidden="true"
-                      className="mr-4 inline-block w-6 border-t-2 border-lacre align-middle"
+                      className="mr-4 inline-block w-6 border-t-2 border-accent align-middle"
                     />
                     {palavra}
                   </span>

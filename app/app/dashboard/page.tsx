@@ -173,11 +173,13 @@ export default async function DashboardPage() {
     else if (dias <= 7) distribuicaoPrazos.semana += 1;
     else distribuicaoPrazos.futuros += 1;
   }
+  // Paleta clara legível (papel-e-tinta): vermelho/âmbar AA para atraso,
+  // tinta para janela próxima e verde para o futuro tranquilo.
   const segmentosPrazos = [
-    { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#f87171" },
-    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#e3ebf7" },
-    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#c7d2e8" },
-    { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#22c55e" },
+    { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#b91c1c" },
+    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#b45309" },
+    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#44423b" },
+    { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#15803d" },
   ];
 
   return (
@@ -192,10 +194,10 @@ export default async function DashboardPage() {
       <RadarHoje sinaisIniciais={classificarSinais(sinaisRadar)} />
 
       {alertasPrazo.length > 0 && (
-        <Card className="border-red-500/30 bg-red-950/10">
+        <Card className="border-red-200 bg-red-50">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-red-400" />
+              <span className="flex h-2 w-2 rounded-full bg-red-700" />
               <CardTitle className="text-ice">Prazos que exigem atenção</CardTitle>
             </div>
             <LinkButton href="/app/prazos" variant="ghost" size="sm">
@@ -209,7 +211,7 @@ export default async function DashboardPage() {
               return (
                 <li
                   key={prazo.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] active:bg-navy-3/70"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] active:bg-navy-3/70"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
@@ -285,14 +287,16 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
+        {/* Glow suave em papel: fundo claro, lavagem verde-selo e halo dourado
+            de baixa intensidade — o glow forte era artefato do tema escuro. */}
         <BorderGlow
           className="h-full"
           glowColor="42 75 70"
-          backgroundColor="#1c3a66"
+          backgroundColor="#f3f1ea"
           borderRadius={12}
           glowRadius={26}
-          glowIntensity={0.9}
-          colors={["#c7d2e8", "#1c3a66", "#e3ebf7"]}
+          glowIntensity={0.5}
+          colors={["#e8efe9", "#2f6f59", "#f3f1ea"]}
         >
           <div className="flex h-full items-center gap-4 p-5">
             <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "silver"} size={72} strokeWidth={7} />
@@ -334,7 +338,7 @@ export default async function DashboardPage() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Em atraso</p>
-            <p className="mt-2 font-display text-2xl font-bold text-red-400">
+            <p className="mt-2 font-display text-2xl font-bold text-red-700">
               {formatarMoeda(resumoFinanceiro.totalAtrasado)}
             </p>
             {resumoFinanceiro.parcelasAtrasadasCount > 0 && (
@@ -376,7 +380,7 @@ export default async function DashboardPage() {
               {prazos.map((prazo) => {
                 const urgencia = urgenciaPrazo(diasAte(prazo.data_prazo));
                 return (
-                  <li key={prazo.id} className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-colors duration-150 ease-out last:border-0 last:pb-0 active:bg-white/5">
+                  <li key={prazo.id} className="flex items-center justify-between gap-3 rounded-lg border-b border-ink/10 px-1 -mx-1 pb-3 transition-colors duration-150 ease-out last:border-0 last:pb-0 active:bg-ink/5">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
                       <p className="text-xs text-muted">
@@ -407,7 +411,7 @@ export default async function DashboardPage() {
                 <li key={ficha.id}>
                   <Link
                     href={`/app/fichas/${ficha.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-all duration-150 ease-out last:border-0 last:pb-0 hover:opacity-80 active:scale-[0.98] active:bg-white/5"
+                    className="flex items-center justify-between gap-3 rounded-lg border-b border-ink/10 px-1 -mx-1 pb-3 transition-all duration-150 ease-out last:border-0 last:pb-0 hover:opacity-80 active:scale-[0.98] active:bg-ink/5"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">

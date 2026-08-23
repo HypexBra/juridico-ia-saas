@@ -19,7 +19,7 @@ interface TextRevealProps {
  *
  * Theme-neutral by design: this component owns motion only — color comes
  * entirely from the consumer's `className`. On the paper-and-ink editorial
- * theme pass `text-ink` for headlines (accent words via `text-lacre` in the
+ * theme pass `text-ink` for headlines (accent words via `text-accent` in the
  * markup that wraps this component); nothing here hardcodes a palette, so
  * migrating themes never touches this file.
  *
