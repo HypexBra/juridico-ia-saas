@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { NovoPrazoForm } from "@/components/app/novo-prazo-form";
 import { PrazoRow } from "@/components/app/prazo-row";
+import { StatusDataJud } from "@/components/app/status-datajud";
 import type { Prazo } from "@/lib/types";
 
 export const metadata = { title: "Prazos — Jurídico IA" };
@@ -29,6 +30,9 @@ export default async function PrazosPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold text-ice">Prazos</h1>
         <p className="mt-1 text-sm text-muted">Acompanhe prazos processuais e administrativos do escritório.</p>
+        <div className="mt-3">
+          <StatusDataJud />
+        </div>
       </div>
 
       <Card>

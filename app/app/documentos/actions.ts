@@ -158,7 +158,11 @@ export async function analisarDocumentoAction(formData: FormData): Promise<Anali
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarDocumento({ buffer, tipoArquivo, nomeArquivo: arquivo.name });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -195,7 +199,13 @@ export async function analisarDocumentoAction(formData: FormData): Promise<Anali
 
   // Mesmo padrão de `analise-processo-actions.ts`/`redline/actions.ts`: uma
   // linha por chamada de IA em `uso_ia` (contagem de chamadas, não de tokens).
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Fase 27: agora com duração e origem para a página /app/uso.
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "documentos",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/documentos");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);
@@ -315,11 +325,15 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
       continue;
     }
 
+    // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+    // gravada no insert de `uso_ia` mais adiante.
+    const inicioChamadaIaMs = Date.now();
     const resultado = await analisarDocumento({
       buffer,
       tipoArquivo: item.tipoArquivo as TipoArquivoAnaliseDocumento,
       nomeArquivo: item.arquivo.name,
     });
+    const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
     const agora = new Date().toISOString();
 
     if (!resultado.ok) {
@@ -356,7 +370,13 @@ export async function analisarDocumentosLoteAction(formData: FormData): Promise<
       continue;
     }
 
-    await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+    // Observabilidade (Fase 27): duração real + origem para a página /app/uso.
+    await supabase.from("uso_ia").insert({
+      escritorio_id: escritorioId,
+      duracao_ms: duracaoChamadaIaMs,
+      origem: "documentos",
+      mes_ref: agora.slice(0, 7),
+    });
     analisesFinal.push(atualizada);
   }
 
@@ -451,6 +471,9 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
     return { ok: false, error: "Não foi possível registrar a comparação. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await compararDocumentos({
     bufferA,
     tipoArquivoA: tipoArquivoA as TipoArquivoComparacaoDocumento,
@@ -459,6 +482,7 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
     tipoArquivoB: tipoArquivoB as TipoArquivoComparacaoDocumento,
     nomeArquivoB: arquivoB.name,
   });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -495,7 +519,15 @@ export async function compararDocumentosAction(formData: FormData): Promise<Comp
     };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso.
+  // Rótulo distinto das análises deste arquivo: comparação A×B é a feature
+  // "comparacao_documentos" (ADR 0011, seção 7), não "analise_documento".
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "documentos_comparacao",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/documentos");
   return { ok: true, comparacao: atualizada };

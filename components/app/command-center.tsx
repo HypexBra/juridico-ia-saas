@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import type { ResultadoBuscaCommand } from "@/app/app/command-center/actions";
 
 /**
- * COMMAND CENTER — CTRL/CMD+K (Fase 26).
+ * COMMAND CENTER — CTRL/CMD+K (Fase 26 + orquestração leve Fase 18).
  *
- * Três camadas, da mais rápida para a mais cara:
+ * Quatro camadas, da mais rápida para a mais cara:
  *   1. COMANDOS estáticos: navegação instantânea (zero rede) para todas as
  *      seções + atalhos de criação.
  *   2. BUSCA server-side: casos e prazos por termo (debounce 250ms).
@@ -15,6 +15,9 @@ import type { ResultadoBuscaCommand } from "@/app/app/command-center/actions";
  *      "tarefas atrasadas" / "financeiro" roteiam direto pra tela certa
  *      sem LLM (latência zero, custo zero) — o chat IA continua sendo a
  *      porta para pedidos complexos.
+ *   4. SUGESTÃO por intenção (Fase 18): se a busca NÃO encontrou nada, o
+ *      servidor classifica o pedido (heurística pura, custo zero) e devolve
+ *      uma sugestão de ferramenta — exibida como item comum do palette.
  */
 
 type Comando = {
@@ -101,6 +104,7 @@ export function CommandCenter() {
   }, [termo, aberto]);
 
   const buscaVisivel = termo.trim().length >= 2 ? busca : null;
+  const sugestaoVisivel = buscaVisivel?.sugestao ?? null;
 
   const comandoNatural = useMemo(() => (termo.trim().length >= 3 ? rotearLinguagemNatural(termo) : null), [termo]);
 
@@ -135,6 +139,12 @@ export function CommandCenter() {
     const primeiraFicha = buscaVisivel?.fichas[0];
     if (primeiraFicha) {
       ir(`/app/fichas/${primeiraFicha.id}`);
+      return;
+    }
+    // Sugestão por intenção (só existe quando a busca veio vazia).
+    const sugestao = buscaVisivel?.sugestao;
+    if (sugestao) {
+      ir(sugestao.href);
       return;
     }
     const primeiroComando = comandosFiltrados[0];
@@ -220,6 +230,23 @@ export function CommandCenter() {
             <p className="px-3 py-2 text-xs text-muted">Buscando…</p>
           ) : null}
 
+          {sugestaoVisivel ? (
+            <>
+              <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted">Sugestão</p>
+              <button
+                type="button"
+                onClick={() => ir(sugestaoVisivel.href)}
+                className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/5"
+              >
+                <p className="text-sm text-ice">
+                  <span className="text-muted">Sugestão · </span>
+                  Ir para {sugestaoVisivel.label}
+                </p>
+                <p className="text-xs text-muted">{sugestaoVisivel.motivoCurto}</p>
+              </button>
+            </>
+          ) : null}
+
           {comandosFiltrados.length > 0 ? (
             <>
               <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-wide text-muted">Comandos</p>
@@ -240,7 +267,7 @@ export function CommandCenter() {
             </>
           ) : null}
 
-          {!comandoNatural && !buscaVisivel?.fichas.length && !buscaVisivel?.prazos.length && !isPending && comandosFiltrados.length === 0 ? (
+          {!comandoNatural && !buscaVisivel?.fichas.length && !buscaVisivel?.prazos.length && !buscaVisivel?.sugestao && !isPending && comandosFiltrados.length === 0 ? (
             <p className="px-3 py-4 text-center text-xs text-muted">
               Nada encontrado. Para pesquisas complexas, use o Chat IA.
             </p>

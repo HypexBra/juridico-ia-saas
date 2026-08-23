@@ -87,7 +87,43 @@ export type OpcoesGeracao = {
    * sem grounding, leis/súmulas citadas saem só da memória do modelo.
    */
   modoRapido?: boolean;
+  /**
+   * Bloco de "Memória do escritório" (Fase 17) já montado/truncado por
+   * blocoContextoEscritorio (lib/ia/contexto-escritorio.ts). Quando presente
+   * E não-vazio E SEM `systemPromptOverride`, entra ENTRE o SYSTEM_PROMPT e o
+   * RAG_TOOLING_PROMPT na systemInstruction. Precedência: quem passa um
+   * override está substituindo a persona inteira do copiloto (pipelines de
+   * classificação focados) e NÃO recebe o bloco — memória do escritório só
+   * faz sentido dentro da persona. Bloco vazio/whitespace/null/ausente =
+   * comportamento IDÊNTICO ao anterior à Fase 17 (zero custo de tokens).
+   */
+  blocoMemoriaEscritorio?: string | null;
 };
+
+/**
+ * Composição pura da systemInstruction compartilhada pelos DOIS providers
+ * (gemini.ts via configPara e groq.ts nos fluxos one-shot/stream) — extraída
+ * em função própria para que Gemini e Groq NUNCA divirjam na ordem/composição
+ * dos blocos e para ser testável sem mockar SDK/rede (ver
+ * system-prompt-wiring.test.ts).
+ *
+ * Precedência: `systemPromptOverride` presente vence TUDO (features que
+ * substituem a persona não recebem o bloco de memória); sem override, bloco
+ * de memória não-vazio entra entre SYSTEM_PROMPT e RAG_TOOLING_PROMPT; caso
+ * contrário, composição clássica `SYSTEM_PROMPT\nRAG_TOOLING_PROMPT`.
+ */
+export function comporSystemInstruction(opcoes: Pick<OpcoesGeracao, "systemPromptOverride" | "blocoMemoriaEscritorio">): string {
+  const override = opcoes.systemPromptOverride;
+  if (override) return override;
+
+  // trim() decide o vazio (bloco whitespace-only não vale um "\n\n" extra na
+  // system prompt); o valor injetado já sai normalizado pelo mesmo trim —
+  // blocoContextoEscritorio nunca produz bordas de whitespace, então isso é
+  // idempotente na prática e defensivo contra callers futuros.
+  const bloco = opcoes.blocoMemoriaEscritorio?.trim();
+  if (!bloco) return `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`;
+  return `${SYSTEM_PROMPT}\n${bloco}\n${RAG_TOOLING_PROMPT}`;
+}
 
 /**
  * Config de tools/thinking derivada das opções — única para os dois fluxos,
@@ -96,7 +132,9 @@ export type OpcoesGeracao = {
 export function configPara(opcoes: OpcoesGeracao, modelo: string) {
   const usaSchema = Boolean(opcoes.responseSchema);
   const trivial = Boolean(opcoes.modoRapido);
-  const systemInstruction = opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`;
+  // Composição centralizada em comporSystemInstruction (mesma função usada
+  // pelo Groq): override > bloco de memória > composição clássica.
+  const systemInstruction = comporSystemInstruction(opcoes);
   const maxOutputTokens = maxOutputTokensPara(modelo);
   // Trivial: zero thinking — a resposta é curta e não há raciocínio a fazer;
   // cada token de thinking é latência pura pro usuário esperando "oi".
@@ -210,6 +248,14 @@ export type RespostaIa = {
   tokensIn: number;
   tokensOut: number;
   functionCalls: ChamadaFuncao[];
+  /**
+   * Nome do modelo que DE FATO respondeu (observabilidade — Fase 27): no
+   * Gemini é a variável do loop sobre cadeiaModelos (o escolhido por
+   * complexidade ou o fallback de quota); no Groq, a constante MODELO_GROQ.
+   * Opcional por retrocompatibilidade: callers antigos podem construir
+   * RespostaIa sem o campo (ex: testes), e o registro em uso_ia aceita null.
+   */
+  modelo?: string;
 };
 
 /**
@@ -225,10 +271,12 @@ export type RespostaIa = {
  * `SYSTEM_PROMPT` do copiloto interno (nunca é concatenado a ele) — uso
  * exclusivo de pipelines de classificação focados (ex: triagem de lead
  * público, score de risco) que não devem herdar o escopo/persona do
- * copiloto. `responseSchema`, quando presente junto, força saída JSON
- * estruturada nativa do Gemini em vez de texto livre a ser parseado por
- * regex — desliga tools automaticamente (a API não aceita as duas coisas
- * juntas).
+ * copiloto. Por isso, quando o override está presente, o bloco de memória do
+ * escritório (`blocoMemoriaEscritorio`, Fase 17) é IGNORADO — ver
+ * comporSystemInstruction. `responseSchema`, quando presente junto, força
+ * saída JSON estruturada nativa do Gemini em vez de texto livre a ser
+ * parseado por regex — desliga tools automaticamente (a API não aceita as
+ * duas coisas juntas).
  */
 export async function gerarRespostaGemini(
   historico: ChatTurno[],
@@ -290,6 +338,9 @@ export async function gerarRespostaGemini(
           functionCalls: (resposta.functionCalls ?? [])
             .filter((chamada) => Boolean(chamada.name))
             .map((chamada) => ({ name: chamada.name as string, args: chamada.args ?? {} })),
+          // Modelo REAL que respondeu (pode ser o fallback de quota da
+          // cadeia, não o escolhido por complexidade) — observabilidade.
+          modelo,
         };
       } catch (erro) {
         ultimoErro = erro;
@@ -437,7 +488,14 @@ export async function* gerarRespostaGeminiStream(
 
         yield {
           tipo: "fim",
-          resposta: { texto: textoCompleto, tokensIn, tokensOut, functionCalls: [...chamadasColetadas] },
+          resposta: {
+            texto: textoCompleto,
+            tokensIn,
+            tokensOut,
+            functionCalls: [...chamadasColetadas],
+            // Modelo REAL que respondeu (variável do loop da cadeia).
+            modelo,
+          },
         };
         return;
       } catch (erro) {

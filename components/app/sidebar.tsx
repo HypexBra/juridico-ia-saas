@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/app/advogado-contra", label: "Advogado do Contra", icon: "advogadoContra" as const },
   { href: "/app/pesquisa", label: "Pesquisa Jurídica", icon: "layout" as const },
   { href: "/app/financeiro", label: "Financeiro", icon: "chart" as const },
+  { href: "/app/uso", label: "Uso de IA", icon: "uso" as const },
   { href: "/app/relatorios", label: "Relatórios", icon: "report" as const },
   { href: "/app/equipe", label: "Equipe", icon: "users" as const },
   { href: "/app/perfil", label: "Meu perfil", icon: "user" as const },
@@ -104,6 +105,15 @@ const ICONS: Record<string, React.ReactNode> = {
       <path d="M16 16l4 4" />
       <path d="M19 21l2-2" />
       <path d="M9.5 6.5L3 13v3h3l6.5-6.5" />
+    </>
+  ),
+  // Uso de IA (Fase 27): medidor (gauge) — arco + agulha, mesmo traço
+  // stroke-based dos ícones vizinhos.
+  uso: (
+    <>
+      <path d="M4 14a8 8 0 1 1 16 0" />
+      <line x1="12" y1="14" x2="16" y2="9" />
+      <line x1="2" y1="18" x2="22" y2="18" />
     </>
   ),
   report: (

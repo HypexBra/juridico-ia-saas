@@ -188,9 +188,13 @@ export async function extrairDadosSentencaAction(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Texto inválido." };
 
   try {
+    // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+    // gravada no insert de `uso_ia` logo abaixo.
+    const inicioChamadaIaMs = Date.now();
     const resultado = await extrairDadosDeSentenca(parsed.data.texto);
+    const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
     // Contagem de uso mensal — mesma política das demais features de IA.
-    await supabaseUsoInsert(usuario.perfil.escritorio.id);
+    await supabaseUsoInsert(usuario.perfil.escritorio.id, duracaoChamadaIaMs);
     return { ok: true, resultado };
   } catch (erro) {
     console.error("[calculadoras/extrair-sentenca] Falha:", erro);
@@ -198,10 +202,14 @@ export async function extrairDadosSentencaAction(
   }
 }
 
-async function supabaseUsoInsert(escritorioId: string): Promise<void> {
+async function supabaseUsoInsert(escritorioId: string, duracaoChamadaIaMs: number): Promise<void> {
   const supabase = await createClient();
+  // Observabilidade (Fase 27): duração real da chamada de extração por IA +
+  // origem para a página /app/uso.
   await supabase.from("uso_ia").insert({
     escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "calculadora",
     mes_ref: new Date().toISOString().slice(0, 7),
   });
 }

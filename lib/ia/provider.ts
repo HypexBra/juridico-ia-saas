@@ -40,6 +40,12 @@ export async function gerarResposta(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     responseSchema?: Schema;
+    /**
+     * Bloco de memória do escritório (Fase 17) repassado INTEGRO ao provider
+     * que for de fato acionado — inclusive no caminho com `providerOverride`
+     * (gemini e groq recebem, pois ambos compõem via comporSystemInstruction).
+     */
+    blocoMemoriaEscritorio?: string | null;
     providerOverride?: { provider: "gemini" | "groq" };
   } = {},
 ): Promise<RespostaIa> {
@@ -100,6 +106,12 @@ export async function* gerarRespostaStream(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     modoRapido?: boolean;
+    /**
+     * Bloco de memória do escritório (Fase 17) repassado INTEGRO ao provider
+     * acionado — inclusive no caminho com `providerOverride` (gemini e groq
+     * recebem; composição idêntica via comporSystemInstruction).
+     */
+    blocoMemoriaEscritorio?: string | null;
     providerOverride?: { provider: "gemini" | "groq" };
   } = {},
 ): AsyncGenerator<StreamEvento, void, unknown> {

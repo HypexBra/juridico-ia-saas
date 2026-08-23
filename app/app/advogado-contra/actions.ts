@@ -138,7 +138,11 @@ export async function analisarColadoAction(formData: FormData): Promise<Analisar
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarComoAdvogadoContra({ origem: "colado", titulo, texto });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -175,7 +179,15 @@ export async function analisarColadoAction(formData: FormData): Promise<Analisar
 
   // Mesmo padrão de `auditarPecaColadaAction`: uma linha por chamada de IA
   // em `uso_ia` (contagem de chamadas, não de tokens).
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos três modos: colado/upload/tese cadastrada são a mesma
+  // feature "advogado_do_contra").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "advogado_contra",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/advogado-contra");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);
@@ -248,6 +260,9 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarComoAdvogadoContra({
     origem: "upload",
     titulo,
@@ -255,6 +270,7 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
     tipoArquivo,
     nomeArquivo: arquivo.name,
   });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -289,7 +305,15 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
     return { ok: false, error: "A IA analisou a tese, mas houve um erro ao salvar o resultado. Tente novamente." };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos três modos: colado/upload/tese cadastrada são a mesma
+  // feature "advogado_do_contra").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "advogado_contra",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/advogado-contra");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);
@@ -358,11 +382,15 @@ export async function analisarTeseCadastradaAction(teseCasoId: string): Promise<
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarComoAdvogadoContra({
     origem: "tese_cadastrada",
     tese: tese.tese,
     fundamentacao: tese.fundamentacao,
   });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -397,7 +425,15 @@ export async function analisarTeseCadastradaAction(teseCasoId: string): Promise<
     return { ok: false, error: "A IA analisou a tese, mas houve um erro ao salvar o resultado. Tente novamente." };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos três modos: colado/upload/tese cadastrada são a mesma
+  // feature "advogado_do_contra").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "advogado_contra",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/advogado-contra");
   revalidatePath(`/app/fichas/${tese.ficha_caso_id}`);

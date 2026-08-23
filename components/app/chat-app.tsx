@@ -63,6 +63,40 @@ function formatarHora(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
+// ── Ditado por voz (Fase 15): MediaRecorder → /api/audio/transcrever → TEXTO
+// no composer (HITL: revisão + envio manual — nunca submit automático). ──
+
+type EstadoGravacaoAudio = "idle" | "gravando" | "transcrevendo";
+
+/** Timer da gravação em mm:ss. */
+function formatarDuracao(totalSegundos: number) {
+  const minutos = Math.floor(totalSegundos / 60);
+  const segundos = totalSegundos % 60;
+  return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+}
+
+/**
+ * Escolhe o melhor mimeType suportado pelo navegador, priorizando webm/opus
+ * (Chrome/Firefox) com fallback ogg e mp4 (Safari). `undefined` = deixa o
+ * default nativo do MediaRecorder (o backend aceita qualquer audio/*).
+ */
+function escolherMimeTypeGravacao(): string | undefined {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
+    return undefined;
+  }
+  const candidatos = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
+  return candidatos.find((candidato) => MediaRecorder.isTypeSupported(candidato));
+}
+
+/** Extensão coerente com o mimeType gravado — o provider infere o container por ela. */
+function extensaoDoMimeType(mimeType: string): string {
+  if (mimeType.includes("mp4") || mimeType.includes("m4a")) return "m4a";
+  if (mimeType.includes("ogg") || mimeType.includes("opus")) return "ogg";
+  if (mimeType.includes("wav")) return "wav";
+  if (mimeType.includes("mpeg") || mimeType.includes("mp3")) return "mp3";
+  return "webm";
+}
+
 export function ChatApp({
   conversasIniciais,
   usoInicial,
@@ -85,6 +119,16 @@ export function ChatApp({
   const [isPendingExclusao, startExclusaoTransition] = useTransition();
   const [conversaExcluindo, setConversaExcluindo] = useState<string | null>(null);
   const [listaMobileAberta, setListaMobileAberta] = useState(false);
+  // ── Ditado por voz (Fase 15) ──
+  const [estadoAudio, setEstadoAudio] = useState<EstadoGravacaoAudio>("idle");
+  const [duracaoGravacaoSeg, setDuracaoGravacaoSeg] = useState(0);
+  const [erroAudio, setErroAudio] = useState<string | null>(null);
+  const campoComposerRef = useRef<HTMLDivElement>(null);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const pedacosAudioRef = useRef<Blob[]>([]);
+  const streamMicrofoneRef = useRef<MediaStream | null>(null);
+  const timerDuracaoRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const montadoRef = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,6 +152,176 @@ export function ChatApp({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [mensagens]);
+
+  // ── Ciclo de vida do ditado por voz: solta microfone/timer no unmount. ──
+  // O evento "stop" do gravador pode disparar transcreverGravacao depois —
+  // montadoRef a faz retornar sem setState (evita fetch/fantasma pós-unmount).
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+      pararTimerDuracao();
+      const gravador = gravadorRef.current;
+      gravadorRef.current = null;
+      if (gravador && gravador.state !== "inactive") gravador.stop();
+      streamMicrofoneRef.current?.getTracks().forEach((track) => track.stop());
+      streamMicrofoneRef.current = null;
+    };
+  }, []);
+
+  function pararTimerDuracao() {
+    if (timerDuracaoRef.current !== null) {
+      clearInterval(timerDuracaoRef.current);
+      timerDuracaoRef.current = null;
+    }
+  }
+
+  /** Encerra a captura: para TODAS as tracks (apaga o ícone de mic ativo do SO). */
+  function liberarMicrofone() {
+    pararTimerDuracao();
+    streamMicrofoneRef.current?.getTracks().forEach((track) => track.stop());
+    streamMicrofoneRef.current = null;
+  }
+
+  /**
+   * Pós-gravação: monta o blob, pede transcrição à API e preenche o TEXTAREA
+   * com o texto + foco para revisão manual (HITL — NUNCA submete o form).
+   */
+  async function transcreverGravacao() {
+    const pedacos = pedacosAudioRef.current;
+    const mimeType = gravadorRef.current?.mimeType ?? "";
+    gravadorRef.current = null;
+    pedacosAudioRef.current = [];
+    liberarMicrofone();
+
+    if (!montadoRef.current) return;
+
+    if (pedacos.length === 0) {
+      setEstadoAudio("idle");
+      setErroAudio("A gravação ficou vazia. Verifique se o microfone está funcionando e tente novamente.");
+      return;
+    }
+
+    setEstadoAudio("transcrevendo");
+    const blobAudio = new Blob(pedacos, { type: mimeType || "audio/webm" });
+
+    try {
+      const formulario = new FormData();
+      formulario.append("audio", blobAudio, `ditado.${extensaoDoMimeType(mimeType)}`);
+      const resposta = await fetch("/api/audio/transcrever", { method: "POST", body: formulario });
+
+      let corpo: { texto?: unknown; error?: unknown } | null = null;
+      try {
+        corpo = await resposta.json();
+      } catch {
+        corpo = null; // resposta sem JSON (proxy/timeout) → mensagem genérica abaixo
+      }
+
+      if (!resposta.ok) {
+        throw new Error(
+          typeof corpo?.error === "string" && corpo.error
+            ? corpo.error
+            : "Não foi possível transcrever o áudio. Tente novamente.",
+        );
+      }
+
+      const transcrito = typeof corpo?.texto === "string" ? corpo.texto.trim() : "";
+      if (!transcrito) {
+        throw new Error("A transcrição veio vazia. Fale um pouco mais perto do microfone e tente de novo.");
+      }
+
+      // Anexa ao que já estava digitado em vez de sobrescrever silenciosamente.
+      setTexto((anterior) => (anterior.trim() ? `${anterior.trimEnd()} ${transcrito}` : transcrito));
+      setErroAudio(null);
+      campoComposerRef.current?.querySelector("textarea")?.focus();
+    } catch (erroTranscricao) {
+      setErroAudio(
+        erroTranscricao instanceof Error && erroTranscricao.message
+          ? erroTranscricao.message
+          : "Não foi possível transcrever o áudio. Tente novamente.",
+      );
+    } finally {
+      if (montadoRef.current) setEstadoAudio("idle");
+    }
+  }
+
+  function pararGravacao() {
+    pararTimerDuracao();
+    const gravador = gravadorRef.current;
+    if (gravador && gravador.state !== "inactive") {
+      gravador.stop(); // dispara evento "stop" → transcreverGravacao()
+    } else {
+      void transcreverGravacao();
+    }
+  }
+
+  /** Toggle do microfone: idle → gravando → (stop) → transcrevendo → idle. */
+  async function alternarGravacao() {
+    if (estadoAudio === "transcrevendo") return;
+    if (estadoAudio === "gravando") {
+      pararGravacao();
+      return;
+    }
+
+    setErroAudio(null);
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia ||
+      typeof MediaRecorder === "undefined"
+    ) {
+      setErroAudio("Este navegador não suporta gravação de áudio. Digite sua mensagem normalmente.");
+      return;
+    }
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (erroPermissao) {
+      const nome = erroPermissao instanceof DOMException ? erroPermissao.name : "";
+      if (nome === "NotAllowedError" || nome === "SecurityError") {
+        setErroAudio("Permita o acesso ao microfone para ditar.");
+      } else if (nome === "NotFoundError" || nome === "OverconstrainedError") {
+        setErroAudio("Nenhum microfone foi encontrado neste dispositivo.");
+      } else {
+        setErroAudio("Não foi possível acessar o microfone. Verifique as permissões do navegador.");
+      }
+      return;
+    }
+
+    streamMicrofoneRef.current = stream;
+    pedacosAudioRef.current = [];
+    const mimeTypeEscolhido = escolherMimeTypeGravacao();
+
+    let gravador: MediaRecorder;
+    try {
+      gravador = new MediaRecorder(stream, mimeTypeEscolhido ? { mimeType: mimeTypeEscolhido } : undefined);
+    } catch {
+      try {
+        gravador = new MediaRecorder(stream); // fallback: default nativo do navegador
+      } catch {
+        liberarMicrofone();
+        setErroAudio("Não foi possível iniciar a gravação neste navegador.");
+        return;
+      }
+    }
+
+    gravador.addEventListener("dataavailable", (evento) => {
+      if (evento.data.size > 0) pedacosAudioRef.current.push(evento.data);
+    });
+    gravador.addEventListener("stop", () => {
+      void transcreverGravacao();
+    });
+
+    gravadorRef.current = gravador;
+    gravador.start(); // sem timeslice: um único blob ao parar (ditados curtos)
+    setDuracaoGravacaoSeg(0);
+    timerDuracaoRef.current = setInterval(
+      () => setDuracaoGravacaoSeg((segundos) => segundos + 1),
+      1000,
+    );
+    setEstadoAudio("gravando");
+  }
 
   const limiteAtingido = uso.usados >= uso.limite;
 
@@ -509,23 +723,70 @@ export function ChatApp({
             </Select>
           </div>
           <div className="flex items-end gap-3">
-            <Textarea
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  enviar(e);
-                }
-              }}
-              placeholder="Descreva o caso ou peça uma minuta…"
-              rows={2}
-              className="flex-1"
-              disabled={limiteAtingido}
-            />
+            <div ref={campoComposerRef} className="min-w-0 flex-1">
+              <Textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    enviar(e);
+                  }
+                }}
+                placeholder="Descreva o caso ou peça uma minuta…"
+                rows={2}
+                disabled={limiteAtingido}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => void alternarGravacao()}
+              disabled={estadoAudio === "transcrevendo" || limiteAtingido}
+              aria-label={estadoAudio === "gravando" ? "Parar gravação" : "Gravar áudio"}
+              aria-pressed={estadoAudio === "gravando"}
+              title={
+                estadoAudio === "gravando"
+                  ? "Parar e transcrever"
+                  : estadoAudio === "transcrevendo"
+                    ? "Transcrevendo áudio…"
+                    : "Ditar mensagem por voz"
+              }
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-silver/50 ${
+                estadoAudio === "gravando"
+                  ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                  : "border-white/10 text-muted hover:bg-white/5 hover:text-ice disabled:cursor-not-allowed disabled:opacity-50"
+              }`}
+            >
+              {estadoAudio === "gravando" ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <rect x="7" y="7" width="10" height="10" rx="1.5" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                  <path d="M19 11v1a7 7 0 0 1-14 0v-1" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              )}
+            </button>
             <Button type="submit" disabled={isPending || !texto.trim() || limiteAtingido}>
               Enviar
             </Button>
+          </div>
+          {/* Status do ditado (timer/transcrição) + erro discreto, sem pular layout. */}
+          <div aria-live="polite" className="min-h-[18px] px-1">
+            {estadoAudio === "gravando" ? (
+              <p className="flex items-center gap-1.5 text-xs tabular-nums text-red-300">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" aria-hidden />
+                Gravando · {formatarDuracao(duracaoGravacaoSeg)}
+              </p>
+            ) : estadoAudio === "transcrevendo" ? (
+              <p className="text-xs text-muted" role="status">
+                Transcrevendo…
+              </p>
+            ) : erroAudio ? (
+              <p className="text-xs text-red-300/90">{erroAudio}</p>
+            ) : null}
           </div>
         </form>
       </div>

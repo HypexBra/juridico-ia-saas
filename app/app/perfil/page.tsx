@@ -6,9 +6,11 @@ import { OabForm } from "@/components/app/oab-form";
 import { AssinaturaCard } from "@/components/app/assinatura-card";
 import { WhatsappCanalForm } from "@/components/app/whatsapp-canal-form";
 import { ApiKeysCard } from "@/components/app/apikeys-card";
+import { MemoriaEscritorioForm } from "@/components/app/memoria-escritorio-form";
 import { LIMIAR_HORAS_ALERTA_FICHA_URGENTE } from "@/lib/whatsapp/lembretes";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import { listarApiKeysAction } from "@/app/app/perfil/apikeys-actions";
+import { carregarMemoriaEscritorio, type MemoriaEscritorio } from "@/lib/ia/contexto-escritorio";
 
 export const metadata = { title: "Meu perfil — Jurídico IA" };
 
@@ -17,8 +19,20 @@ export default async function PerfilPage() {
   if (!usuario) redirect("/login");
 
   const podeGerenciarWhatsapp = usuario.perfil.role === "owner" || usuario.perfil.role === "admin";
+  // Memória do escritório (Fase 17): mesma prerrogativa de configuração do
+  // escritório que os lembretes de WhatsApp — só titular/admin.
+  const podeGerenciarMemoria = podeGerenciarWhatsapp;
   const temAcessoApiIntegracoes = planoTemAcesso(usuario.perfil.escritorio, "api_integracoes");
   const chavesApi = temAcessoApiIntegracoes ? await listarApiKeysAction() : [];
+
+  // Leitura best-effort da memória atual (qualquer erro → defaults dentro da
+  // própria função): alimenta os valores iniciais do form sem nunca quebrar
+  // a página. A RLS de `escritorios` garante o isolamento.
+  let memoriaEscritorio: MemoriaEscritorio | null = null;
+  if (podeGerenciarMemoria) {
+    const supabaseMemoria = await createClient();
+    memoriaEscritorio = await carregarMemoriaEscritorio(supabaseMemoria, usuario.perfil.escritorio_id);
+  }
 
   // A RLS `canais_whatsapp_admin` (migration 0008) já restringe esta leitura
   // a owner/admin do próprio escritório — para `advogado` a query volta
@@ -86,6 +100,18 @@ export default async function PerfilPage() {
           </p>
         )}
       </Card>
+
+      {podeGerenciarMemoria && memoriaEscritorio && (
+        <Card>
+          <CardTitle className="mb-1">Memória do escritório</CardTitle>
+          <p className="mb-4 text-sm text-muted">
+            Configure como a IA escreve para este escritório: tom preferido, diretrizes de redação e cláusulas
+            padrão. Usadas como contexto nas respostas e minutas. Não substituem sua revisão. Só titular e
+            administradores veem e editam esta seção.
+          </p>
+          <MemoriaEscritorioForm memoria={memoriaEscritorio} />
+        </Card>
+      )}
 
       {podeGerenciarWhatsapp && (
         <Card>

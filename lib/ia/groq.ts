@@ -3,10 +3,8 @@ import "server-only";
 import { ChatGroq } from "@langchain/groq";
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { Schema } from "@google/genai";
-import { SYSTEM_PROMPT } from "./system-prompt";
-import { RAG_TOOLING_PROMPT } from "./rag-prompt";
+import { comporSystemInstruction, type ChatTurno, type RespostaIa } from "./gemini";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
-import type { ChatTurno, RespostaIa } from "./gemini";
 import { selecionarChave, registrarFalhaQuota } from "@/lib/ia/chaves/pool";
 import { QuotaExcedidaError } from "@/lib/ia/erros";
 import { paraJsonSchemaOpenAi } from "@/lib/ia/langchain/schema-utils";
@@ -86,6 +84,13 @@ export async function gerarRespostaGroq(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     responseSchema?: Schema;
+    /**
+     * Bloco de memória do escritório (Fase 17) — mesma semântica do campo de
+     * mesmo nome em OpcoesGeracao (lib/ia/gemini.ts): só entra quando não há
+     * systemPromptOverride; composição idêntica à do Gemini via
+     * comporSystemInstruction.
+     */
+    blocoMemoriaEscritorio?: string | null;
   } = {},
 ): Promise<RespostaIa> {
   const cliente = await getClient();
@@ -103,7 +108,10 @@ export async function gerarRespostaGroq(
     : ultima.conteudo;
 
   const mensagens = [
-    new SystemMessage(opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`),
+    // Mesma composição do Gemini (override > bloco de memória > clássica):
+    // centralizada em comporSystemInstruction para os dois providers nunca
+    // divergirem no system prompt.
+    new SystemMessage(comporSystemInstruction(opcoes)),
     ...anteriores.map((turno) =>
       turno.role === "assistant" ? new AIMessage(turno.conteudo) : new HumanMessage(turno.conteudo),
     ),
@@ -120,7 +128,7 @@ export async function gerarRespostaGroq(
       response_format: usaSchema ? { type: "json_object" } : undefined,
     });
 
-    return paraRespostaIa(resposta as AIMessage);
+    return { ...paraRespostaIa(resposta as AIMessage), modelo: MODELO_GROQ };
   } catch (erro) {
     if (isErroDeQuotaGroq(erro) && chaveId) {
       const motivo = erro instanceof Error ? erro.message : String(erro);
@@ -147,6 +155,12 @@ export async function* gerarRespostaGroqStream(
     contextoRag?: string | null;
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
+    /**
+     * Bloco de memória do escritório (Fase 17) — mesma semântica de
+     * OpcoesGeracao.blocoMemoriaEscritorio (lib/ia/gemini.ts), composição
+     * idêntica via comporSystemInstruction.
+     */
+    blocoMemoriaEscritorio?: string | null;
   } = {},
 ): AsyncGenerator<StreamEvento, void, unknown> {
   const cliente = await getClient();
@@ -163,7 +177,8 @@ export async function* gerarRespostaGroqStream(
     : ultima.conteudo;
 
   const mensagens = [
-    new SystemMessage(opcoes.systemPromptOverride ?? `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`),
+    // Mesma composição do Gemini — ver comporSystemInstruction.
+    new SystemMessage(comporSystemInstruction(opcoes)),
     ...anteriores.map((turno) =>
       turno.role === "assistant" ? new AIMessage(turno.conteudo) : new HumanMessage(turno.conteudo),
     ),
@@ -227,6 +242,6 @@ export async function* gerarRespostaGroqStream(
 
   yield {
     tipo: "fim",
-    resposta: { texto: textoCompleto, tokensIn: 0, tokensOut: 0, functionCalls },
+    resposta: { texto: textoCompleto, tokensIn: 0, tokensOut: 0, functionCalls, modelo: MODELO_GROQ },
   };
 }

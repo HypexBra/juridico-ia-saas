@@ -251,7 +251,11 @@ export async function gerarEstrategiaCasoAction(fichaCasoId: string): Promise<Ge
   }
 
   const dados = await buscarDadosContextoEstrategiaCaso(supabase, ficha, parsedFichaId.data);
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await gerarEstrategiaCaso({ dados });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -282,7 +286,13 @@ export async function gerarEstrategiaCasoAction(fichaCasoId: string): Promise<Ge
     return { ok: false, error: "A IA gerou a estratégia, mas houve um erro ao salvar o resultado. Tente novamente." };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso.
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "estrategia_caso",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath(`/app/fichas/${parsedFichaId.data}`);
   return { ok: true, estrategiaId: registro.id };

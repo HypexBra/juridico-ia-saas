@@ -11,6 +11,7 @@ import {
   obterAppUrl,
   StripeNaoConfiguradoError,
 } from "@/lib/billing/stripe-client";
+import { normalizarTom } from "@/lib/ia/contexto-escritorio";
 import type { Assinatura } from "@/lib/types";
 
 // Formato NÚMERO/UF (ex: "123456/SP") — é o que a API do DJEN espera como
@@ -62,6 +63,80 @@ export async function atualizarOabAction(
 }
 
 export type AssinaturaActionState = { error: string | null };
+
+// Limites da memória do escritório (Fase 17) — mesmos maxLength do form no
+// client e do textarea na página; validados AQUI na origem também.
+const MAX_DIRETRIZES_CHARS = 4000;
+const MAX_CLAUSULAS_CHARS = 6000;
+
+const memoriaEscritorioSchema = z.object({
+  diretrizes: z
+    .string()
+    .max(MAX_DIRETRIZES_CHARS, `Diretrizes podem ter no máximo ${MAX_DIRETRIZES_CHARS} caracteres.`)
+    .default(""),
+  clausulas: z
+    .string()
+    .max(MAX_CLAUSULAS_CHARS, `Cláusulas padrão podem ter no máximo ${MAX_CLAUSULAS_CHARS} caracteres.`)
+    .default(""),
+});
+
+export type MemoriaEscritorioState = { error: string | null; sucesso: string | null };
+
+/**
+ * Salva a memória do escritório (Fase 17, migration 0046): diretrizes de
+ * escrita, tom preferido e cláusulas padrão em `escritorios` — usadas como
+ * CONTEXTO opcional nas respostas/minutas da IA. Configuração de escritório:
+ * só titular/admin (mesmo critério do guard de gestão de equipe em
+ * app/app/equipe/actions.ts); a RLS de `escritorios` continua sendo a
+ * garantia real de isolamento cross-tenant. O tom é normalizado de forma
+ * tolerante (`normalizarTom`) — valor estranho nunca quebra o save, cai no
+ * default "formal".
+ */
+export async function salvarMemoriaEscritorioAction(
+  _prev: MemoriaEscritorioState,
+  formData: FormData,
+): Promise<MemoriaEscritorioState> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { error: "Sessão expirada. Faça login novamente.", sucesso: null };
+
+  if (usuario.perfil.role !== "owner" && usuario.perfil.role !== "admin") {
+    return {
+      error: "Só o titular ou administrador(a) do escritório pode editar a memória do escritório.",
+      sucesso: null,
+    };
+  }
+
+  const parsed = memoriaEscritorioSchema.safeParse({
+    diretrizes: typeof formData.get("diretrizes") === "string" ? formData.get("diretrizes") : "",
+    clausulas: typeof formData.get("clausulas") === "string" ? formData.get("clausulas") : "",
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos.", sucesso: null };
+  }
+
+  const tom = normalizarTom(formData.get("tom"));
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("escritorios")
+    .update({
+      diretrizes_ia: parsed.data.diretrizes,
+      tom_escrita: tom,
+      clausulas_padrao: parsed.data.clausulas,
+    })
+    .eq("id", usuario.perfil.escritorio_id);
+
+  if (error) {
+    console.error("[perfil/salvarMemoriaEscritorioAction] Falha ao salvar memória:", error);
+    return { error: "Não foi possível salvar a memória do escritório. Tente novamente.", sucesso: null };
+  }
+
+  revalidatePath("/app/perfil");
+  return {
+    error: null,
+    sucesso: "Memória do escritório salva. As próximas respostas e minutas já consideram estas preferências.",
+  };
+}
 
 /**
  * Inicia o upgrade para o plano Pro (Checkout Session do Stripe). Sempre

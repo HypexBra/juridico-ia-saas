@@ -138,7 +138,11 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Não foi possível registrar a auditoria. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await auditarPeca({ origem: "colado", titulo, texto });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -175,7 +179,15 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
 
   // Mesmo padrão de `analisarDocumentoAction`/`analisarContratoAction`: uma
   // linha por chamada de IA em `uso_ia` (contagem de chamadas, não de tokens).
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos dois modos: colado e upload são a mesma feature
+  // "auditoria_peca").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "auditor_peca",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/auditor");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);
@@ -248,7 +260,11 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Não foi possível registrar a auditoria. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await auditarPeca({ origem: "upload", titulo, buffer, tipoArquivo, nomeArquivo: arquivo.name });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -283,7 +299,15 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "A IA auditou a peça, mas houve um erro ao salvar o resultado. Tente novamente." };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos dois modos: colado e upload são a mesma feature
+  // "auditoria_peca").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "auditor_peca",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/auditor");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);

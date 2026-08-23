@@ -220,6 +220,8 @@ ${MARCADOR_QUESTOES}
 ${MARCADOR_ESTRATEGIA}
 [Estratégias possíveis e a recomendação do advogado sênior, incluindo documentos a solicitar e próximos passos]`;
 
+  // Observabilidade (Fase 27, migration 0045): duração real da chamada de IA.
+  const inicioChamadaIaMs = Date.now();
   let respostaIa;
   try {
     respostaIa = await gerarResposta([{ role: "user", conteudo: prompt }]);
@@ -270,6 +272,13 @@ ${MARCADOR_ESTRATEGIA}
     tokens_in: respostaIa.tokensIn,
     tokens_out: respostaIa.tokensOut,
     mes_ref: mesRef,
+    // Observabilidade (Fase 27): `RespostaIa` não expõe o modelo que de fato
+    // respondeu — registramos o modelo PRIMÁRIO da cadeia configurada em
+    // lib/ia/gemini.ts (MODELO_FLASH = "gemini-flash-latest"; fallbacks por
+    // quota "gemini-flash-lite-latest" e Groq podem divergir pontualmente).
+    modelo: "gemini-flash-latest",
+    duracao_ms: Date.now() - inicioChamadaIaMs,
+    origem: "analise_ficha",
   });
 
   revalidatePath(`/app/fichas/${fichaId}`);

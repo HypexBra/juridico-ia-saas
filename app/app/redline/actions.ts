@@ -54,11 +54,16 @@ export async function analisarContratoAction(
   const prompt = montarPromptRedline({ titulo: tituloLimpo, textoContrato: textoLimpo });
 
   let respostaIa;
+  // Observabilidade (Fase 27): duração real da chamada de IA medida na
+  // chamada abaixo e gravada no insert de `uso_ia` mais adiante.
+  let duracaoChamadaIaMs = 0;
   try {
+    const inicioChamadaIaMs = Date.now();
     respostaIa = await gerarResposta([{ role: "user", conteudo: prompt }], {
       systemPromptOverride: REDLINE_SYSTEM_PROMPT,
       responseSchema: REDLINE_RESPONSE_SCHEMA,
     });
+    duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   } catch (erro) {
     console.error("[redline/actions] Falha ao chamar a IA para análise de contrato:", erro);
     return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
@@ -111,10 +116,13 @@ export async function analisarContratoAction(
     // pagou (em custo de chamada de IA) para obter.
   }
 
+  // Observabilidade (Fase 27): duração real da chamada + origem (/app/uso).
   await supabase.from("uso_ia").insert({
     escritorio_id: usuario.perfil.escritorio_id,
     tokens_in: respostaIa.tokensIn,
     tokens_out: respostaIa.tokensOut,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "redline",
     mes_ref: new Date().toISOString().slice(0, 7),
   });
 

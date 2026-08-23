@@ -18,6 +18,7 @@ import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara, type Mensagem } from "@/lib/types";
 import { mensagemTrivial } from "@/lib/ia/gate-trivialidade";
+import { blocoContextoEscritorio, carregarMemoriaEscritorio } from "@/lib/ia/contexto-escritorio";
 import {
   JANELA_DEDUP_MS,
   MAX_HISTORICO,
@@ -173,7 +174,12 @@ export async function POST(request: NextRequest) {
         // (segundos). Mensagem real mantém comportamento completo.
         const trivial = mensagemTrivial(input.texto);
 
-        const [propostasPendentesResultado, ragResultado] = await Promise.all([
+        // Três consultas INDEPENDENTES em paralelo (a latência total é o
+        // maior dos três tempos, não a soma): propostas pendentes (gate do
+        // agente), RAG e memória do escritório (Fase 17). A memória é
+        // fail-safe por construção — carregarMemoriaEscritorio nunca lança
+        // (qualquer erro devolve defaults), então é segura aqui dentro.
+        const [propostasPendentesResultado, ragResultado, memoriaEscritorio] = await Promise.all([
           supabase
             .from("propostas_acao")
             .select("id", { count: "exact", head: true })
@@ -182,21 +188,29 @@ export async function POST(request: NextRequest) {
           trivial
             ? Promise.resolve([] as ChunkRecuperado[])
             : buscarContextoRelevante(supabase, escritorioId, input.texto).catch(() => [] as ChunkRecuperado[]),
+          carregarMemoriaEscritorio(supabase, escritorioId),
         ]);
 
         const propostasPendentes = propostasPendentesResultado.count;
         const contextoRag: string | null = trivial ? null : montarBlocoContexto(ragResultado);
+        // Bloco vazio (escritório sem memória configurada) vira undefined:
+        // comporSystemInstruction trata os dois como "nada a injetar" —
+        // comportamento idêntico ao anterior à Fase 17.
+        const blocoMemoria = blocoContextoEscritorio(memoriaEscritorio);
 
         // ── Geração streaming com fallback cross-provider ──
         let textoAcumulado = "";
         let respostaFinal: RespostaIa | null = null;
         let streamInterrompido = false;
+        const inicioGeracaoMs = Date.now();
+        let duracaoGeracaoMs = 0;
 
         try {
           for await (const evento of gerarRespostaStream(historico, {
             contextoRag,
             habilitarFerramentas: (propostasPendentes ?? 0) === 0,
             modoRapido: trivial,
+            blocoMemoriaEscritorio: blocoMemoria || undefined,
             providerOverride: input.provider ? { provider: input.provider } : undefined,
           })) {
             if (evento.tipo === "delta") {
@@ -234,6 +248,10 @@ export async function POST(request: NextRequest) {
           }
           // Com texto parcial entregue: cai no tratamento de interrupção abaixo.
         }
+        // Duração da geração (sucesso OU interrupção mid-stream): cobre o
+        // tempo total do for-await, incluindo fallback cross-provider se
+        // houve. Só é registrada quando o fluxo chega ao persistir.
+        duracaoGeracaoMs = Date.now() - inicioGeracaoMs;
 
         if (!respostaFinal && !textoAcumulado) {
           enviar({ tipo: "error", error: "A IA está indisponível no momento. Tente novamente em instantes." });
@@ -304,12 +322,19 @@ export async function POST(request: NextRequest) {
 
         // Registro de uso mensal + mensagem do assistente (mesmos campos do
         // fluxo one-shot: tokens, proposta vinculada e fontes RAG citáveis).
+        // Observabilidade (Fase 27): origem fixa "chat", duração da geração
+        // em ms e o modelo que DE FATO respondeu (pode ter sido o fallback
+        // de quota ou o Groq — ver RespostaIa.modelo); null quando a resposta
+        // veio interrompida sem agregado final.
         await supabase.from("uso_ia").insert({
           escritorio_id: escritorioId,
           conversa_id: conversaId,
           tokens_in: tokensIn,
           tokens_out: tokensOut,
           mes_ref: mesRef,
+          origem: "chat",
+          duracao_ms: duracaoGeracaoMs,
+          modelo: respostaFinal?.modelo ?? null,
         });
         const { data: msgAssistant, error: erroInsertAssistant } = await supabase
           .from("mensagens")

@@ -127,7 +127,11 @@ export async function uploadEAnalisarProcessoAction(
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarDocumentoProcesso({ buffer, tipoArquivo, nomeArquivo: arquivo.name });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
 
   const agora = new Date().toISOString();
 
@@ -168,7 +172,13 @@ export async function uploadEAnalisarProcessoAction(
   // expõe contagem de tokens hoje (chamada isolada em `lib/analise-processo/analisar.ts`,
   // fora de `lib/ia/provider.ts`), então tokens_in/tokens_out ficam no
   // default (0) da coluna em vez de um número inventado.
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Fase 27: agora com duração e origem para a página /app/uso.
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "analise_processo",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath(`/app/fichas/${fichaCasoId}`);
   return { ok: true, analise: analiseAtualizada };

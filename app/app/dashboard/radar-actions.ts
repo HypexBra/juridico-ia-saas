@@ -23,6 +23,12 @@ const BRIEFING_RESPONSE_SCHEMA: Schema = {
   propertyOrdering: ["resumo", "prioridades", "recomendacoes"],
 };
 
+// Modelo PRIMÁRIO da cadeia de briefing (mesmo alias de MODELO_FLASH em
+// lib/ia/gemini.ts). Constante única usada na chamada E no registro de uso
+// (Fase 27) para os dois nunca divergirem; o fallback por quota
+// ("gemini-flash-lite-latest") pode assumir pontualmente e não é registrado.
+const MODELO_PRINCIPAL_BRIEFING = "gemini-flash-latest";
+
 function parsearBriefing(jsonBruto: unknown): BriefingRadar | null {
   if (typeof jsonBruto !== "string") return null;
   try {
@@ -75,6 +81,8 @@ export async function gerarBriefingRadarAction(): Promise<BriefingResultado> {
     .join("\n");
 
   try {
+    // Observabilidade (Fase 27): duração real da chamada estruturada.
+    const inicioChamadaIaMs = Date.now();
     const jsonBruto = await gerarRespostaEstruturada({
       promptTexto: `SINAIS DO RADAR DO ESCRITÓRIO (dados reais de hoje):\n${contexto}`,
       parteExtra: null,
@@ -83,17 +91,22 @@ export async function gerarBriefingRadarAction(): Promise<BriefingResultado> {
       responseSchema: BRIEFING_RESPONSE_SCHEMA,
       maxOutputTokens: 2048,
       thinkingBudget: 256,
-      cadeiaModelos: ["gemini-flash-latest", "gemini-flash-lite-latest"],
+      cadeiaModelos: [MODELO_PRINCIPAL_BRIEFING, "gemini-flash-lite-latest"],
       logPrefixo: "[radar/briefing]",
     });
+    const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
 
     const briefing = parsearBriefing(jsonBruto);
     if (!briefing) return { ok: false, error: "A IA devolveu uma resposta inesperada. Tente novamente." };
 
     // Contagem de uso mensal — mesma política das demais features de IA.
+    // Fase 27: agora com modelo, duração e origem para a página /app/uso.
     await supabase.from("uso_ia").insert({
       escritorio_id: usuario.perfil.escritorio.id,
       mes_ref: new Date().toISOString().slice(0, 7),
+      modelo: MODELO_PRINCIPAL_BRIEFING,
+      duracao_ms: duracaoChamadaIaMs,
+      origem: "radar_briefing",
     });
 
     return { ok: true, briefing, sinais: sinaisClassificados };
