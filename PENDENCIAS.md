@@ -18,7 +18,7 @@ adicionar `https://juridico-ia-saas.vercel.app/auth/callback`
 (sem isso convite de equipe e reset de senha quebram).
 
 ### 1.3 Primeiro sync STJ + env vars
-- Disparar o primeiro sync da base de acórdãos: `curl -X POST .../api/cron/sync-stj -H "Authorization: Bearer $CRON_SECRET"` (ou POST autenticado como owner em `/app/pesquisa`). Até lá o verificador de citações responde "não verificada" para tudo — comportamento correto.
+- ~~Primeiro sync STJ~~ ✅ feito (865 acórdços; cron mensal segue dia 3, 04h UTC). CRON_SECRET foi RENOVADO em 23/08 — cópia em .env.local.
 - Confirmar na Vercel (e `.env.local`): `GEMINI_API_KEY`, `GROQ_API_KEY` (agora também habilita ditado por voz), `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `AUTENTIQUE_API_TOKEN` + webhook secret, `DJEN_API_BASE_URL`, trio Stripe (`STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID_PRO_MENSAL`, `STRIPE_WEBHOOK_SECRET`) — causa raiz provável do bug "não leva pro checkout" (`erros-corrigidos.md`, 2026-08-20). Depois de preencher: **redeploy manual** (Vercel não aplica retroativamente).
 
 ## 2. Aguardando validação do usuário
