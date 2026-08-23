@@ -15,9 +15,11 @@ const NAV_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#recursos", label: "Recursos" },
   { href: "#planos", label: "Planos" },
+  { href: "#contato", label: "Contato" },
 ] as const;
 
 const SIGNUP_HREF = "/cadastro";
+const LOGIN_HREF = "/login";
 const SCROLL_THRESHOLD_PX = 24;
 
 export function Nav() {
@@ -98,12 +100,22 @@ export function Nav() {
           ))}
         </nav>
 
-        <Link
-          href={SIGNUP_HREF}
-          className="hidden rounded-none bg-ink px-4 py-2 font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90 md:inline-flex"
-        >
-          Começar gratuitamente
-        </Link>
+        {/* Par de ações: "Entrar" (link textual) + CTA primário. Quem já tem
+            conta não precisa passar pelo cadastro para logar. */}
+        <div className="hidden items-center gap-5 md:flex">
+          <Link
+            href={LOGIN_HREF}
+            className="font-sans-ed text-sm font-medium text-ink-2 transition-colors hover:text-ink"
+          >
+            Entrar
+          </Link>
+          <Link
+            href={SIGNUP_HREF}
+            className="rounded-none bg-ink px-4 py-2 font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90"
+          >
+            Começar gratuitamente
+          </Link>
+        </div>
 
         <button
           type="button"
@@ -137,9 +149,16 @@ export function Nav() {
             </ul>
 
             <Link
+              href={LOGIN_HREF}
+              onClick={() => setOpen(false)}
+              className="mt-auto border border-ink/15 py-3 text-center font-sans-ed text-sm font-medium text-ink transition-colors hover:border-ink/30"
+            >
+              Entrar
+            </Link>
+            <Link
               href={SIGNUP_HREF}
               onClick={() => setOpen(false)}
-              className="mt-auto rounded-none bg-ink px-4 py-3 text-center font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90"
+              className="mt-2 rounded-none bg-ink px-4 py-3 text-center font-sans-ed text-sm font-medium text-paper transition-colors hover:bg-ink/90"
             >
               Começar gratuitamente
             </Link>

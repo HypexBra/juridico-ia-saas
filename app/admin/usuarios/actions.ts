@@ -170,7 +170,13 @@ export async function alterarPlanoEscritorioAction(
     return { ok: false, error: "Plano inválido." };
   }
 
-  const supabase = await createClient();
+  // Service_role (createAdminClient), NÃO o client da sessão: a policy
+  // UPDATE de `escritorios` (migration 0012) só permite membros owner do
+  // PRÓPRIO escritório e proíbe explicitamente alterar `plano`/features via
+  // client de usuário. O admin da plataforma não é membro dos escritórios
+  // que administra, então a RLS bloquearia qualquer update aqui — esta é
+  // uma operação administrativa legítima, auditada por registrarLogAdmin.
+  const supabase = createAdminClient();
   const { error } = await supabase.from("escritorios").update({ plano: novoPlano }).eq("id", parsedId.data);
   if (error) {
     console.error("[admin/usuarios] Falha ao alterar plano do escritório:", error);

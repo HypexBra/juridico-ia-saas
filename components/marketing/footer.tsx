@@ -72,7 +72,7 @@ export function Footer() {
               <ul className="mt-4 space-y-2.5">
                 <li>
                   <a
-                    href="#"
+                    href="#contato"
                     className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
                   >
                     Fale com o time

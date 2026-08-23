@@ -1,6 +1,7 @@
 import { AuditSection } from "@/components/marketing/audit-section";
 import { CaseSection } from "@/components/marketing/case-section";
 import { ClientSection } from "@/components/marketing/client-section";
+import { ContactSection } from "@/components/marketing/contact-section";
 import { CtaFinal } from "@/components/marketing/cta-final";
 import { DevilSection } from "@/components/marketing/devil-section";
 import { DocumentsSection } from "@/components/marketing/documents-section";
@@ -61,6 +62,7 @@ export default function Home() {
         <Pricing />
         <SecuritySection />
         <Faq />
+        <ContactSection />
         <CtaFinal />
       </main>
       <Footer />
