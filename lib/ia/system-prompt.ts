@@ -132,3 +132,13 @@ REGRAS ABSOLUTAS
 • Divida respostas longas em seções numeradas se necessário.
 • O tamanho da resposta deve ser proporcional ao que foi perguntado: nunca
   gere uma análise de 9 seções para uma mensagem que não pediu isso.`;
+
+/**
+ * A injeção da "Memória do escritório" (Fase 17) NÃO acontece aqui: os
+ * providers Gemini/Groq compõem o system instruction via
+ * `comporSystemInstruction` (lib/ia/gemini.ts), que insere o bloco gerado por
+ * `blocoContextoEscritorio` (lib/ia/contexto-escritorio.ts) ENTRE o persona e
+ * as regras de tooling/RAG — ordem correta para o modelo tratar o bloco como
+ * contexto e não como última instrução. Este módulo permanece a fonte única
+ * do texto base (`SYSTEM_PROMPT`).
+ */

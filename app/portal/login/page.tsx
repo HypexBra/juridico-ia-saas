@@ -18,7 +18,7 @@ export default async function PortalLoginPage({ searchParams }: PageProps<"/port
           Jurídico<span className="text-silver">IA</span>
         </Link>
 
-        <div className="rounded-2xl border border-white/10 bg-navy-2/60 p-8 shadow-2xl shadow-black/30">
+        <div className="rounded-2xl border border-ink/10 bg-paper-2 p-8 shadow-sm">
           <h1 className="mb-1 font-display text-2xl font-semibold text-ice">Portal do cliente</h1>
           <p className="mb-6 text-sm text-muted">Entre para acompanhar o andamento do seu caso.</p>
           <PortalLoginForm tokenConvitePendente={tokenConvitePendente} />

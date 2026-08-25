@@ -55,6 +55,55 @@ export const FEATURES_PREMIUM = [
    * docs/adrs/0012-auditor-de-pecas.md, seção 7.
    */
   "auditoria_peca",
+  /**
+   * (11) Advogado do Contra — a IA assume a perspectiva da parte adversária
+   * de uma tese/petição (colada, upload ou tese já cadastrada em
+   * `teses_caso`) e produz argumentos contrários, fragilidades,
+   * contradições, precedentes contrários PROVÁVEIS (hipótese da IA, nunca
+   * citação jurídica verificada), pontos que precisam de prova, perguntas
+   * difíceis e recomendações de reforço — sem notas numéricas agregadas
+   * (migration 0039, `analises_advogado_contra`). Pro-only sem tier
+   * gratuito parcial, mesmo padrão das demais features de análise
+   * estruturada por IA. Ver docs/adrs/0013-advogado-do-contra.md.
+   */
+  "advogado_do_contra",
+  /**
+   * (12) Estrategista Jurídico — sintetiza teses/eventos/pessoas/
+   * jurisprudência citada/análises já existentes de um caso já aberto
+   * (`fichas_caso`) em objetivo, tese principal, teses subsidiárias, provas,
+   * riscos, oportunidades, próximos passos e ações recomendadas (migration
+   * 0041, `estrategias_caso`). Primeiro "agregador" do produto (lê múltiplas
+   * fontes estruturadas em vez de um texto avulso), mas mesmo padrão
+   * comercial das demais features de análise estruturada por IA: Pro-only
+   * sem tier gratuito parcial. Ver docs/adrs/0014-estrategista-caso.md.
+   */
+  "estrategista_caso",
+  /**
+   * (13) Pesquisa Jurídica Avançada — a síntese da IA no Comparador de
+   * Decisões (Fase 7). A BUSCA em si (lexical + semântica sobre jurisprudência)
+   * e a verificação de citações são livres para todo escritório — dados
+   * públicos (CC-BY STJ) não se cobram. O que se cobra é o trabalho caro de
+   * IA: comparação analítica multi-decisões (teses em comum, divergências,
+   * tendência, riscos).
+   */
+  "pesquisa_juridica_avancada",
+  /**
+   * (14) Cálculo assistido — extração por IA de valor/datas/índice/juros
+   * direto do trecho de sentença/acordo para preencher a Calculadora de
+   * atualização (Fase 16 avançada). Cada campo vem com o trecho literal que
+   * o sustenta; a conferência humana é parte do fluxo.
+   */
+  "calculo_assistido_sentenca",
+  /**
+   * (15) Workflow Engine — definição e execução de cadeias ordenadas de
+   * etapas por caso (criar tarefa/prazo, gerar documento, mensagem ao
+   * cliente, aprovação humana) (migration 0044). Pro-only sem tier gratuito
+   * parcial: é a feature que mais escreve em tabelas operacionais do
+   * produto (tarefas_caso/prazos/mensagens_portal_cliente/documentos), o
+   * que a torna o recurso mais "de produção" do plano. Ver
+   * docs/adrs/0016-workflow-engine.md.
+   */
+  "workflows_automacao",
 ] as const;
 
 export type FeaturePremium = (typeof FEATURES_PREMIUM)[number];

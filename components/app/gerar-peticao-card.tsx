@@ -147,7 +147,7 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
       {modelos.length === 0 ? (
         <p className="text-sm text-muted">
           Nenhum modelo cadastrado ainda. Crie um modelo em &quot;Modelos&quot; com variáveis como{" "}
-          <code className="rounded bg-white/10 px-1 py-0.5 text-xs">{"{{nome_cliente}}"}</code> para usar aqui.
+          <code className="rounded bg-ink/10 px-1 py-0.5 text-xs">{"{{nome_cliente}}"}</code> para usar aqui.
         </p>
       ) : (
         <div className="space-y-4">
@@ -178,7 +178,7 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
           <FieldError>{erro}</FieldError>
 
           {avisoDocx && (
-            <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
               {avisoDocx}
             </p>
           )}
@@ -186,7 +186,7 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
           {textoGerado && (
             <div className="space-y-3">
               {variaveisNaoResolvidas.length > 0 && (
-                <p className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
                   Atenção: não foi possível preencher automaticamente{" "}
                   {variaveisNaoResolvidas
                     .map((v) => RÓTULO_VARIAVEL[v] ?? v)
@@ -195,7 +195,7 @@ export function GerarPeticaoCard({ fichaId, modelos }: { fichaId: string; modelo
                 </p>
               )}
 
-              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
+              <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap rounded-lg border border-ink/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
                 {textoGerado}
               </pre>
 

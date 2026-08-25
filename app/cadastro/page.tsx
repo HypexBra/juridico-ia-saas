@@ -14,7 +14,7 @@ export default function CadastroPage() {
           Jurídico<span className="text-silver">IA</span>
         </Link>
 
-        <div className="rounded-2xl border border-white/10 bg-navy-2/60 p-8 shadow-2xl shadow-black/30">
+        <div className="rounded-2xl border border-ink/10 bg-paper-2 p-8 shadow-sm">
           <h1 className="mb-1 font-display text-2xl font-semibold text-ice">Comece grátis</h1>
           <p className="mb-6 text-sm text-muted">
             Crie o escritório e comece a usar o copiloto jurídico com IA em minutos.

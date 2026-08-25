@@ -24,13 +24,15 @@ function ChaveGeradaAviso({ chave }: { chave: string }) {
   const [copiada, setCopiada] = useState(false);
 
   return (
-    <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3.5">
-      <p className="text-xs font-medium text-amber-300">
+    // Aviso em papel-2 com hairline de tinta: bloco neutro, o texto carrega a
+    // urgência (âmbar AA) e o chip mono destaca a chave única exibida.
+    <div className="space-y-2 rounded-lg border border-ink/10 bg-paper-2 p-3.5">
+      <p className="text-xs font-medium text-amber-700">
         Copie esta chave agora — por segurança, ela não será mostrada novamente. Se perdê-la, revogue e crie
         uma nova.
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-md bg-navy px-2.5 py-1.5 text-xs text-ice-2">{chave}</code>
+        <code className="min-w-0 flex-1 truncate rounded-md bg-navy px-2.5 py-1.5 font-mono text-xs text-ink">{chave}</code>
         <Button
           type="button"
           variant="secondary"
@@ -53,7 +55,7 @@ function CriarChaveForm() {
   const [state, formAction, isPending] = useActionState(criarApiKeyAction, CRIAR_INITIAL_STATE);
 
   return (
-    <form action={formAction} className="space-y-3 rounded-lg border border-white/10 bg-navy-3/40 p-3.5">
+    <form action={formAction} className="space-y-3 rounded-lg border border-ink/10 bg-navy-3/40 p-3.5">
       <div>
         <Label htmlFor="nomeApiKey">Nome da chave</Label>
         <Input id="nomeApiKey" name="nome" placeholder="Ex: Zapier, n8n, sistema interno" maxLength={100} required />
@@ -89,7 +91,7 @@ function RevogarChaveForm({ apiKeyId }: { apiKeyId: string }) {
       <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmando(false)} disabled={isPending}>
         Cancelar
       </Button>
-      {state.error && <span className="text-xs text-red-400">{state.error}</span>}
+      {state.error && <span className="text-xs text-red-700">{state.error}</span>}
     </form>
   );
 }
@@ -115,7 +117,7 @@ export function ApiKeysCard({ chavesIniciais }: { chavesIniciais: ApiKeyListada[
           {chavesIniciais.map((chave) => (
             <li
               key={chave.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-navy-3/40 px-3.5 py-2.5"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink/10 bg-navy-3/40 px-3.5 py-2.5"
             >
               <div>
                 <p className="text-sm font-medium text-ice">

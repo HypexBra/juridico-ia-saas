@@ -34,7 +34,7 @@ export function UsageRing({
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(100, Math.max(0, percent));
   const offset = circumference - (mounted ? clamped / 100 : 0) * circumference;
-  const color = tone === "red" ? "#f87171" : "#c7d2e8";
+  const color = tone === "red" ? "#b91c1c" : "#1d5b46";
 
   return (
     <div
@@ -49,7 +49,7 @@ export function UsageRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="rgba(20,20,18,0.08)"
           strokeWidth={strokeWidth}
         />
         <circle

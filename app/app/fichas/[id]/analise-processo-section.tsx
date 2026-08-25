@@ -45,14 +45,14 @@ const CERTEZA_LABEL: Record<CitacaoAnaliseProcesso["certeza"], string> = {
 function ItemCitavel({ texto, citacao, extra }: { texto: string; citacao: CitacaoAnaliseProcesso; extra?: ReactNode }) {
   const naoEncontrado = citacao.certeza === "nao_encontrado";
   return (
-    <li className="rounded-lg border border-white/10 bg-navy-2 p-3.5">
+    <li className="rounded-lg border border-ink/10 bg-navy-2 p-3.5">
       <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
         <p className={naoEncontrado ? "text-sm italic text-muted" : "text-sm text-ice-2"}>{texto}</p>
         <Badge tone={CERTEZA_TONE[citacao.certeza]}>{CERTEZA_LABEL[citacao.certeza]}</Badge>
       </div>
       {extra}
       {citacao.trechoOriginal && (
-        <p className="mt-2 border-t border-white/5 pt-2 text-xs text-muted">
+        <p className="mt-2 border-t border-ink/10 pt-2 text-xs text-muted">
           <span className="font-medium text-silver-2">Trecho de origem</span>
           {citacao.pagina !== null ? ` (pág. ${citacao.pagina})` : ""}: “{citacao.trechoOriginal}”
         </p>
@@ -64,7 +64,7 @@ function ItemCitavel({ texto, citacao, extra }: { texto: string; citacao: Citaca
 function SecaoAccordion({ titulo, contador, children }: { titulo: string; contador: number; children: ReactNode }) {
   const [aberto, setAberto] = useState(false);
   return (
-    <div className="rounded-lg border border-white/10">
+    <div className="rounded-lg border border-ink/10">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
@@ -75,7 +75,7 @@ function SecaoAccordion({ titulo, contador, children }: { titulo: string; contad
         </span>
         <span className="text-xs text-muted">{aberto ? "Recolher" : "Expandir"}</span>
       </button>
-      {aberto && <div className="border-t border-white/10 p-4">{children}</div>}
+      {aberto && <div className="border-t border-ink/10 p-4">{children}</div>}
     </div>
   );
 }
@@ -164,7 +164,7 @@ function ResultadoAnaliseView({ resultado }: { resultado: ResultadoAnaliseProces
           ) : (
             <ul className="space-y-2">
               {resultado.informacoesAusentes.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm italic text-muted">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm italic text-muted">
                   {texto}
                 </li>
               ))}
@@ -226,7 +226,7 @@ function ResultadoAnaliseView({ resultado }: { resultado: ResultadoAnaliseProces
 }
 
 function ResumoWriteback({ resultado }: { resultado: AplicarWritebackResultado }) {
-  if (!resultado.ok) return <p className="text-xs text-red-400">{resultado.error}</p>;
+  if (!resultado.ok) return <p className="text-xs text-red-700">{resultado.error}</p>;
   const { contagem } = resultado;
   const partes = [
     `${contagem.pessoasInseridas} pessoa(s)`,
@@ -306,7 +306,7 @@ export function AnaliseProcessoSection({
       <form
         ref={formRef}
         action={enviar}
-        className="flex flex-col gap-3 rounded-lg border border-white/10 bg-navy/40 p-4 sm:flex-row sm:items-end"
+        className="flex flex-col gap-3 rounded-lg border border-ink/10 bg-navy/40 p-4 sm:flex-row sm:items-end"
       >
         <div className="flex-1">
           <label htmlFor="analise-processo-arquivo" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted">
@@ -338,7 +338,7 @@ export function AnaliseProcessoSection({
         <p className="text-sm text-muted">Nenhum documento analisado ainda para este caso.</p>
       ) : (
         <div className="space-y-4">
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-ink/10">
             {analises.map((analise) => (
               <li key={analise.id} className="py-3">
                 <button
@@ -359,7 +359,7 @@ export function AnaliseProcessoSection({
                 </button>
 
                 {analise.status === "erro" && analise.erro && (
-                  <p className="mt-2 text-xs text-red-400">{analise.erro}</p>
+                  <p className="mt-2 text-xs text-red-700">{analise.erro}</p>
                 )}
 
                 {analiseAbertaId === analise.id && analise.status === "pronto" && analise.resultado_analise && (

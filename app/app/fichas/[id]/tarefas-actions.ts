@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import {
+  montarAtualizacaoPrioridadeTarefa,
   montarAtualizacaoStatusTarefa,
   montarNovaTarefaCaso,
   validarResponsavelTarefaCaso,
@@ -43,6 +44,7 @@ export type NovaTarefaCasoFormInput = {
   titulo: string;
   responsavelPerfilId?: string | null;
   prazoOpcional?: string | null;
+  prioridade?: string | null;
 };
 
 export type CriarTarefaCasoResultado = { ok: true; tarefa: TarefaCaso } | { ok: false; error: string };
@@ -52,6 +54,16 @@ export type CriarTarefaCasoResultado = { ok: true; tarefa: TarefaCaso } | { ok: 
  * Distinta de `prazos`: não tem regra de dobra processual, é só trabalho
  * operacional da equipe. O título é validado por `montarNovaTarefaCaso`
  * (função pura, testável sem banco) antes de qualquer round-trip.
+ *
+ * Achado de revisão de segurança (Fase 6, Estrategista): diferente de
+ * update/delete (que sempre fazem um SELECT prévio por `id` já protegido
+ * pela RLS de `tarefas_caso`), um INSERT define `escritorio_id` a partir da
+ * PRÓPRIA sessão — passa a RLS mesmo se `fichaCasoId` apontar para uma
+ * ficha de OUTRO escritório (a FK só garante que a ficha existe em algum
+ * lugar, não que pertence a quem está chamando). Sem esta checagem
+ * explícita, um usuário autenticado que descobrisse o `fichaCasoId` de
+ * outro tenant (ex.: enumeração de UUID) podia inserir uma tarefa cruzando
+ * `escritorio_id` (o dele) com `ficha_caso_id` (de outro escritório).
  */
 export async function criarTarefaCasoAction(
   fichaCasoId: string,
@@ -59,6 +71,17 @@ export async function criarTarefaCasoAction(
 ): Promise<CriarTarefaCasoResultado> {
   const usuario = await getUsuarioAtual();
   if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  const supabase = await createClient();
+  const { data: fichaVisivel, error: erroFicha } = await supabase
+    .from("fichas_caso")
+    .select("id")
+    .eq("id", fichaCasoId)
+    .eq("escritorio_id", usuario.perfil.escritorio_id)
+    .maybeSingle();
+  if (erroFicha || !fichaVisivel) {
+    return { ok: false, error: "Ficha não encontrada." };
+  }
 
   let payload;
   try {
@@ -68,13 +91,13 @@ export async function criarTarefaCasoAction(
       titulo: dados.titulo,
       responsavelPerfilId: dados.responsavelPerfilId ?? null,
       prazoOpcional: dados.prazoOpcional ?? null,
+      prioridade: dados.prioridade ?? null,
       criadoPor: usuario.perfil.id,
     });
   } catch (erro) {
     return { ok: false, error: erro instanceof Error ? erro.message : "Dados inválidos." };
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase.from("tarefas_caso").insert(payload).select("*").single();
 
   if (error || !data) {
@@ -200,6 +223,48 @@ export async function removerTarefaCasoAction(tarefaId: string): Promise<AcaoTar
   if (error) {
     console.error("[fichas/tarefas-actions] Falha ao remover tarefa do caso:", error, { tarefaId });
     return { ok: false, error: "Não foi possível remover a tarefa. Tente novamente." };
+  }
+
+  revalidatePath(`/app/fichas/${tarefaAtual.ficha_caso_id}`);
+  return { ok: true };
+}
+
+/**
+ * Atualiza a prioridade de uma tarefa (migration 0043). Mesmo padrão das
+ * demais actions de tarefa: validação pura antes do round-trip, busca prévia
+ * escopada pela RLS para revalidar a página certa.
+ */
+export async function atualizarPrioridadeTarefaCasoAction(
+  tarefaId: string,
+  prioridade: string,
+): Promise<AcaoTarefaCasoResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+
+  let payload;
+  try {
+    payload = montarAtualizacaoPrioridadeTarefa(prioridade);
+  } catch (erro) {
+    return { ok: false, error: erro instanceof Error ? erro.message : "Prioridade inválida." };
+  }
+
+  const supabase = await createClient();
+  const { data: tarefaAtual, error: erroBusca } = await supabase
+    .from("tarefas_caso")
+    .select("ficha_caso_id")
+    .eq("id", tarefaId)
+    .maybeSingle<{ ficha_caso_id: string }>();
+
+  if (erroBusca || !tarefaAtual) return { ok: false, error: "Tarefa não encontrada." };
+
+  const { error } = await supabase
+    .from("tarefas_caso")
+    .update({ prioridade: payload.prioridade, atualizado_em: new Date().toISOString() })
+    .eq("id", tarefaId);
+
+  if (error) {
+    console.error("[fichas/tarefas-actions] Falha ao atualizar prioridade da tarefa:", error, { tarefaId });
+    return { ok: false, error: "Não foi possível atualizar a prioridade. Tente novamente." };
   }
 
   revalidatePath(`/app/fichas/${tarefaAtual.ficha_caso_id}`);

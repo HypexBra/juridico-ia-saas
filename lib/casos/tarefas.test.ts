@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compararTarefasPorUrgencia,
   montarAtualizacaoStatusTarefa,
   montarNovaTarefaCaso,
   statusTarefaCasoEhValido,
@@ -35,9 +36,26 @@ describe("montarNovaTarefaCaso", () => {
       titulo: "Revisar contrato",
       responsavel_perfil_id: null,
       status: "pendente",
+      prioridade: "media",
       prazo_opcional: null,
       criado_por: null,
     });
+  });
+
+  it("aplica prioridade válida e cai para 'media' quando inválida (fail-safe)", () => {
+    expect(montarNovaTarefaCaso({ ...baseInput, prioridade: "alta" }).prioridade).toBe("alta");
+    expect(montarNovaTarefaCaso({ ...baseInput, prioridade: "urgente" }).prioridade).toBe("media");
+    expect(montarNovaTarefaCaso({ ...baseInput, prioridade: null }).prioridade).toBe("media");
+  });
+
+  it("ordenacao por urgencia: alta antes de media; prazo proximo primeiro; sem prazo no fim", () => {
+    const altaSemPrazo = { prioridade: "alta" as const, prazo_opcional: null };
+    const mediaComPrazo = { prioridade: "media" as const, prazo_opcional: "2026-09-01" };
+    const altaComPrazo = { prioridade: "alta" as const, prazo_opcional: "2026-08-25" };
+    const lista = [mediaComPrazo, altaSemPrazo, altaComPrazo].sort(compararTarefasPorUrgencia);
+    expect(lista[0]).toBe(altaComPrazo);
+    expect(lista[1]).toBe(altaSemPrazo);
+    expect(lista[2]).toBe(mediaComPrazo);
   });
 
   it("lança erro quando o título é vazio", () => {

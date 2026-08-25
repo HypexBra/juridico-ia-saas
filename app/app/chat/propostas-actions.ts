@@ -167,6 +167,25 @@ export async function aprovarPropostaAction(propostaId: string): Promise<Resulta
   revalidatePath("/app/prazos");
   revalidatePath("/app/fichas");
   revalidatePath("/app/dashboard");
+
+  // Webhooks de saída (Fase 22): a ação aplicada pela IA é um evento real
+  // do escritório. Fire-and-forget best-effort — nunca bloqueia a resposta
+  // nem falha a operação se não houver endpoints configurados.
+  const eventoProposta: Record<typeof proposta.tipo, "prazo.criado" | "prazo.atualizado" | "caso.criado" | "caso.atualizado"> = {
+    create_prazo: "prazo.criado",
+    update_prazo: "prazo.atualizado",
+    create_ficha: "caso.criado",
+    update_ficha: "caso.atualizado",
+    generate_documento: "caso.atualizado",
+  };
+  void import("@/lib/webhooks/emitir").then(({ emitirEventoWebhook }) =>
+    emitirEventoWebhook(supabase, escritorioId, eventoProposta[proposta.tipo], {
+      proposta_id: proposta.id,
+      tipo: proposta.tipo,
+      resumo: proposta.resumo,
+    }),
+  );
+
   return { ok: true };
 }
 

@@ -17,7 +17,7 @@ export function CadastroForm() {
         <p className="font-medium text-green">Quase lá! Confirme seu e-mail.</p>
         <p className="mt-1 text-muted">
           Enviamos um link de confirmação para o e-mail informado. Depois de confirmar, faça{" "}
-          <Link href="/login" className="font-medium text-silver hover:text-silver-2">
+          <Link href="/login" className="font-medium text-silver underline underline-offset-4 hover:text-silver-2">
             login
           </Link>{" "}
           para começar a usar o Jurídico IA.
@@ -63,7 +63,7 @@ export function CadastroForm() {
       </div>
 
       {state.error && (
-        <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-300">
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
           {state.error}
         </p>
       )}
@@ -74,7 +74,7 @@ export function CadastroForm() {
 
       <p className="text-center text-sm text-muted">
         Já tem conta?{" "}
-        <Link href="/login" className="font-medium text-silver hover:text-silver-2">
+        <Link href="/login" className="font-medium text-silver underline underline-offset-4 hover:text-silver-2">
           Entrar
         </Link>
       </p>

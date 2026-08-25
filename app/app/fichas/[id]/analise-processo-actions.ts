@@ -11,7 +11,6 @@ import {
 import {
   analisarDocumentoProcesso,
   TIPOS_ARQUIVO_ANALISE_PROCESSO,
-  type TipoArquivoAnaliseProcesso,
 } from "@/lib/analise-processo/analisar";
 import { montarPayloadPessoaCaso } from "@/lib/casos/pessoas";
 import { registrarEventoCaso } from "@/lib/casos/timeline";
@@ -26,39 +25,15 @@ import {
   verificarPodeAplicarWriteback,
   type ContagemWritebackAnaliseProcesso,
 } from "@/lib/analise-processo/writeback";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AnaliseProcesso } from "@/lib/types";
 
 /** Mesmo teto de `app/app/base-conhecimento/actions.ts` (ADR 0004, seção 6). */
 const MAX_TAMANHO_ARQUIVO_ANALISE = 15 * 1024 * 1024;
-
-const EXTENSOES_POR_TIPO: Record<TipoArquivoAnaliseProcesso, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO: Record<TipoArquivoAnaliseProcesso, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/**
- * Decide o `tipo_arquivo` (`analises_processo.tipo_arquivo`) a partir do MIME
- * type e/ou extensão do arquivo enviado — mesma tolerância de
- * `uploadDocumentoAction` (base de conhecimento), que já lida com navegadores
- * reportando MIME type vazio/genérico para alguns formatos. Devolve `null`
- * quando o arquivo não bate com nenhum dos 3 formatos suportados.
- */
-function inferirTipoArquivoAnaliseProcesso(arquivo: File): TipoArquivoAnaliseProcesso | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of TIPOS_ARQUIVO_ANALISE_PROCESSO) {
-    if (MIME_POR_TIPO[tipo].includes(arquivo.type) || EXTENSOES_POR_TIPO[tipo].some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -110,9 +85,14 @@ export async function uploadEAnalisarProcessoAction(
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoAnaliseProcesso(arquivo);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_ANALISE_PROCESSO);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const supabase = await createClient();
@@ -147,8 +127,11 @@ export async function uploadEAnalisarProcessoAction(
     return { ok: false, error: "Não foi possível registrar a análise. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await analisarDocumentoProcesso({ buffer, tipoArquivo, nomeArquivo: arquivo.name });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
 
   const agora = new Date().toISOString();
 
@@ -189,7 +172,13 @@ export async function uploadEAnalisarProcessoAction(
   // expõe contagem de tokens hoje (chamada isolada em `lib/analise-processo/analisar.ts`,
   // fora de `lib/ia/provider.ts`), então tokens_in/tokens_out ficam no
   // default (0) da coluna em vez de um número inventado.
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Fase 27: agora com duração e origem para a página /app/uso.
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "analise_processo",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath(`/app/fichas/${fichaCasoId}`);
   return { ok: true, analise: analiseAtualizada };

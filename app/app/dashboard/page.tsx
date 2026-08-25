@@ -11,8 +11,12 @@ import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 import { DonutChart } from "@/components/app/charts/donut-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
 import { PropostaAcaoCard } from "@/components/app/proposta-acao-card";
-import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
-import type { FichaCaso, Prazo } from "@/lib/types";
+import { TarefaDashboardItem } from "@/components/app/tarefa-dashboard-item";
+import { RadarHoje } from "@/components/app/radar-hoje";
+import { coletarSinaisRadar, classificarSinais } from "@/lib/radar/radar";
+import { compararTarefasPorUrgencia } from "@/lib/casos/tarefas";
+import { limiteMensagensIaPara } from "@/lib/types";
+import type { FichaCaso, Prazo, TarefaCaso } from "@/lib/types";
 
 /** Quantas propostas pendentes renderizar direto no dashboard antes de "e mais N". */
 const LIMITE_PROPOSTAS_INBOX = 5;
@@ -60,7 +64,13 @@ export default async function DashboardPage() {
 
   // Recalcula pendente -> atrasado antes de agregar o card financeiro (mesma
   // garantia usada em app/app/financeiro/page.tsx antes de qualquer leitura).
-  await sincronizarParcelasAtrasadas(usuario.perfil.escritorio_id);
+  // Radar Jurídico (Fase 10/11): sinais determinísticos coletados na mesma
+  // rodada de carregamento — a seção "O que preciso saber hoje" nunca espera
+  // rede extra nem depende de IA para existir.
+  const [sinaisRadar] = await Promise.all([
+    coletarSinaisRadar(supabase),
+    sincronizarParcelasAtrasadas(usuario.perfil.escritorio_id).then(() => undefined as void),
+  ]);
 
   const [
     prazosRes,
@@ -71,6 +81,7 @@ export default async function DashboardPage() {
     propostasPendentesRes,
     totalPropostasPendentesRes,
     parcelasRes,
+    tarefasRes,
   ] = await Promise.all([
     supabase
       .from("prazos")
@@ -121,19 +132,38 @@ export default async function DashboardPage() {
       .from("parcelas_honorario")
       .select("valor, vencimento, status, pago_em")
       .returns<ParcelaResumoInput[]>(),
+    // Tarefas internas do caso (Fase 1 — distinto de `prazos`, que é
+    // processual). Fase 19 do roadmap: dashboard mostrava só prazos, nunca
+    // tarefas — advogado tinha que abrir cada ficha pra ver o checklist.
+    // Sem responsável definido entra pra todo mundo ver (equipe pequena);
+    // com responsável, só aparece pra quem foi atribuído — evita lista
+    // lotada de tarefas de colegas.
+    supabase
+      .from("tarefas_caso")
+      .select("*")
+      .neq("status", "concluida")
+      .or(`responsavel_perfil_id.is.null,responsavel_perfil_id.eq.${usuario.perfil.id}`)
+      .order("prazo_opcional", { ascending: true, nullsFirst: false })
+      .limit(6)
+      .returns<TarefaCaso[]>(),
   ]);
 
   const prazos = prazosRes.data ?? [];
   const alertasPrazo = alertasPrazoRes.data ?? [];
   const fichas = fichasRes.data ?? [];
   const usoMes = usoRes.data?.length ?? 0;
-  const percentualUso = Math.min(100, Math.round((usoMes / LIMITE_MENSAGENS_FREE) * 100));
+// BUG do círculo "/25": o denominador era sempre LIMITE_MENSAGENS_FREE (25),
+  // mesmo para escritório Pro (limite 300) — um Pro com 25 usos aparecia com
+  // anel em 100% cheio. Agora usa o limite REAL do plano do escritório.
+  const limiteIaEscritorio = limiteMensagensIaPara(usuario.perfil.escritorio.plano);
+  const percentualUso = Math.min(100, Math.round((usoMes / limiteIaEscritorio) * 100));
 
   const propostasPendentes = propostasPendentesRes.data ?? [];
   const totalPropostasPendentes = totalPropostasPendentesRes.count ?? propostasPendentes.length;
   const propostasExtras = Math.max(0, totalPropostasPendentes - propostasPendentes.length);
 
   const resumoFinanceiro = calcularResumoFinanceiro(parcelasRes.data ?? [], mesRef);
+  const tarefas = [...(tarefasRes.data ?? [])].sort((a, b) => compararTarefasPorUrgencia(a, b));
 
   const distribuicaoPrazos = { vencidos: 0, urgentes: 0, semana: 0, futuros: 0 };
   for (const prazo of todosPrazosRes.data ?? []) {
@@ -143,11 +173,13 @@ export default async function DashboardPage() {
     else if (dias <= 7) distribuicaoPrazos.semana += 1;
     else distribuicaoPrazos.futuros += 1;
   }
+  // Paleta clara legível (papel-e-tinta): vermelho/âmbar AA para atraso,
+  // tinta para janela próxima e verde para o futuro tranquilo.
   const segmentosPrazos = [
-    { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#f87171" },
-    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#e3ebf7" },
-    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#c7d2e8" },
-    { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#22c55e" },
+    { label: "Vencidos", value: distribuicaoPrazos.vencidos, color: "#b91c1c" },
+    { label: "Urgentes (≤1 dia)", value: distribuicaoPrazos.urgentes, color: "#b45309" },
+    { label: "Esta semana", value: distribuicaoPrazos.semana, color: "#44423b" },
+    { label: "Futuros", value: distribuicaoPrazos.futuros, color: "#15803d" },
   ];
 
   return (
@@ -159,11 +191,13 @@ export default async function DashboardPage() {
         <p className="mt-1 text-sm text-muted">Visão geral do escritório {usuario.perfil.escritorio.nome}.</p>
       </div>
 
+      <RadarHoje sinaisIniciais={classificarSinais(sinaisRadar)} />
+
       {alertasPrazo.length > 0 && (
-        <Card className="border-red-500/30 bg-red-950/10">
+        <Card className="border-red-200 bg-red-50">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-red-400" />
+              <span className="flex h-2 w-2 rounded-full bg-red-700" />
               <CardTitle className="text-ice">Prazos que exigem atenção</CardTitle>
             </div>
             <LinkButton href="/app/prazos" variant="ghost" size="sm">
@@ -177,7 +211,7 @@ export default async function DashboardPage() {
               return (
                 <li
                   key={prazo.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-white/5 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] active:bg-navy-3/70"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 bg-navy-3/40 px-3 py-2.5 transition-transform duration-150 ease-out active:scale-[0.98] active:bg-navy-3/70"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
@@ -253,14 +287,16 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
+        {/* Glow suave em papel: fundo claro, lavagem verde-selo e halo dourado
+            de baixa intensidade — o glow forte era artefato do tema escuro. */}
         <BorderGlow
           className="h-full"
           glowColor="42 75 70"
-          backgroundColor="#1c3a66"
+          backgroundColor="#f3f1ea"
           borderRadius={12}
           glowRadius={26}
-          glowIntensity={0.9}
-          colors={["#c7d2e8", "#1c3a66", "#e3ebf7"]}
+          glowIntensity={0.5}
+          colors={["#e8efe9", "#2f6f59", "#f3f1ea"]}
         >
           <div className="flex h-full items-center gap-4 p-5">
             <UsageRing percent={percentualUso} label="Uso de IA no mês" tone={percentualUso >= 90 ? "red" : "silver"} size={72} strokeWidth={7} />
@@ -268,7 +304,7 @@ export default async function DashboardPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-muted">Uso de IA no mês</p>
               <p className="mt-1 font-display text-lg font-bold text-ice">
                 {usoMes}
-                <span className="text-sm font-normal text-muted"> / {LIMITE_MENSAGENS_FREE}</span>
+                <span className="text-sm font-normal text-muted"> / {limiteIaEscritorio}</span>
               </p>
             </div>
           </div>
@@ -302,7 +338,7 @@ export default async function DashboardPage() {
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted">Em atraso</p>
-            <p className="mt-2 font-display text-2xl font-bold text-red-400">
+            <p className="mt-2 font-display text-2xl font-bold text-red-700">
               {formatarMoeda(resumoFinanceiro.totalAtrasado)}
             </p>
             {resumoFinanceiro.parcelasAtrasadasCount > 0 && (
@@ -314,7 +350,22 @@ export default async function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <CardTitle>Minhas tarefas</CardTitle>
+          </div>
+          {tarefas.length === 0 ? (
+            <p className="text-sm text-muted">Nenhuma tarefa pendente. Você está em dia.</p>
+          ) : (
+            <ul className="space-y-3">
+              {tarefas.map((tarefa) => (
+                <TarefaDashboardItem key={tarefa.id} tarefa={tarefa} />
+              ))}
+            </ul>
+          )}
+        </Card>
+
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <CardTitle>Próximos prazos</CardTitle>
@@ -329,7 +380,7 @@ export default async function DashboardPage() {
               {prazos.map((prazo) => {
                 const urgencia = urgenciaPrazo(diasAte(prazo.data_prazo));
                 return (
-                  <li key={prazo.id} className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-colors duration-150 ease-out last:border-0 last:pb-0 active:bg-white/5">
+                  <li key={prazo.id} className="flex items-center justify-between gap-3 rounded-lg border-b border-ink/10 px-1 -mx-1 pb-3 transition-colors duration-150 ease-out last:border-0 last:pb-0 active:bg-ink/5">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">{prazo.titulo}</p>
                       <p className="text-xs text-muted">
@@ -360,7 +411,7 @@ export default async function DashboardPage() {
                 <li key={ficha.id}>
                   <Link
                     href={`/app/fichas/${ficha.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 px-1 -mx-1 pb-3 transition-all duration-150 ease-out last:border-0 last:pb-0 hover:opacity-80 active:scale-[0.98] active:bg-white/5"
+                    className="flex items-center justify-between gap-3 rounded-lg border-b border-ink/10 px-1 -mx-1 pb-3 transition-all duration-150 ease-out last:border-0 last:pb-0 hover:opacity-80 active:scale-[0.98] active:bg-ink/5"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">

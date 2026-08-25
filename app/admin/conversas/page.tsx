@@ -42,13 +42,13 @@ export default async function AdminConversasPage({ searchParams }: PageProps<"/a
             name="q"
             defaultValue={busca}
             placeholder="Buscar por nome, e-mail ou título…"
-            className="flex-1 rounded-lg border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
+            className="flex-1 rounded-lg border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice placeholder:text-muted"
           />
           <div className="flex items-center gap-2 text-xs text-muted">
             <label htmlFor="de">De</label>
-            <input id="de" type="date" name="de" defaultValue={de} className="rounded-lg border border-white/10 bg-navy-3 px-2 py-1.5 text-sm text-ice" />
+            <input id="de" type="date" name="de" defaultValue={de} className="rounded-lg border border-ink/10 bg-navy-3 px-2 py-1.5 text-sm text-ice" />
             <label htmlFor="ate">até</label>
-            <input id="ate" type="date" name="ate" defaultValue={ate} className="rounded-lg border border-white/10 bg-navy-3 px-2 py-1.5 text-sm text-ice" />
+            <input id="ate" type="date" name="ate" defaultValue={ate} className="rounded-lg border border-ink/10 bg-navy-3 px-2 py-1.5 text-sm text-ice" />
           </div>
           <button type="submit" className="rounded-lg bg-silver/15 px-4 py-2 text-sm font-medium text-silver-2 hover:bg-silver/25">
             Buscar
@@ -68,7 +68,7 @@ export default async function AdminConversasPage({ searchParams }: PageProps<"/a
               <th className="pb-3 font-medium text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-ink/10">
             {conversas.map((c) => (
               <tr key={c.id}>
                 <td className="py-3 pr-3 text-ice">{c.autorNome}</td>

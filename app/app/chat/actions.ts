@@ -9,41 +9,16 @@ import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, typ
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara } from "@/lib/types";
+import { blocoContextoEscritorio, carregarMemoriaEscritorio } from "@/lib/ia/contexto-escritorio";
 import type { Conversa, Mensagem } from "@/lib/types";
-
-const MAX_HISTORICO = 20;
-const MAX_TAMANHO_MENSAGEM = 8000;
-// Teto de caracteres por TURNO ANTIGO (tudo exceto a mensagem atual) ao
-// montar o histórico enviado ao Gemini. Uma peça/minuta gerada pela IA pode
-// ter até MAX_OUTPUT_TOKENS_PRO (8192 tokens, ~30-32k chars) — sem este
-// corte, cada turno subsequente da MESMA conversa reenvia essa peça inteira
-// de novo (custo de input token crescendo, sem limite, a cada mensagem nova
-// numa conversa longa). Isso é distinto do bug já corrigido do "thinking"
-// (ver erros-corrigidos.md) e do teto de SAÍDA: aqui o custo é de ENTRADA,
-// vindo do próprio histórico armazenado. O texto completo continua salvo no
-// banco e visível na UI — só o que é reenviado como contexto ao modelo é
-// truncado. ~900 chars (~220 tokens) é suficiente para o modelo saber "o que
-// já foi discutido/gerado" sem pagar o custo total de reenviar cada peça
-// anterior por inteiro a cada novo turno.
-const MAX_CHARS_TURNO_ANTIGO = 900;
-
-function truncarTurnoAntigo(turno: ChatTurno): ChatTurno {
-  if (turno.conteudo.length <= MAX_CHARS_TURNO_ANTIGO) return turno;
-  return {
-    ...turno,
-    conteudo: `${turno.conteudo.slice(0, MAX_CHARS_TURNO_ANTIGO)}\n[…turno anterior truncado para economizar tokens; o conteúdo completo continua salvo nesta conversa, só não é reenviado por inteiro ao modelo…]`,
-  };
-}
-
-function tituloDoTexto(texto: string) {
-  const limpo = texto.trim().replace(/\s+/g, " ");
-  return limpo.length > 60 ? `${limpo.slice(0, 60)}…` : limpo;
-}
-
-async function mesRefAtual() {
-  return new Date().toISOString().slice(0, 7);
-}
-
+import {
+  JANELA_DEDUP_MS,
+  MAX_HISTORICO,
+  MAX_TAMANHO_MENSAGEM,
+  mesRefAtual,
+  tituloDoTexto,
+  truncarTurnoAntigo,
+} from "@/lib/app/chat-shared";
 export type ConversaResumo = Pick<Conversa, "id" | "titulo" | "iniciada_em" | "total_msgs" | "criado_por">;
 
 export async function listarConversasAction(): Promise<ConversaResumo[]> {
@@ -266,7 +241,6 @@ export async function enviarMensagemAction(
   // passa de ~19 mensagens — o Gemini passava a receber contexto
   // desatualizado (início da conversa) em vez da troca recente, justamente
   // quando o histórico mais importa. Corrigido buscando desc e revertendo.
-  const JANELA_DEDUP_MS = 15_000;
   const { data: recentesDesc, error: erroHistorico } = await supabase
     .from("mensagens")
     .select("*")
@@ -306,20 +280,23 @@ export async function enviarMensagemAction(
     { role: "user", conteudo: parsed.data.texto },
   ];
 
-  // Gate de segurança do agente (query de propostas pendentes) e busca RAG
-  // são independentes entre si (não compartilham dado nenhum) e ambas
-  // precisam terminar antes de chamar o Gemini — antes rodavam em sequência
-  // (uma espera a outra à toa). Disparadas em paralelo: a latência total
-  // passa a ser o MAIOR dos dois tempos, não a SOMA. RAG usa `allSettled`
-  // (não `all`) porque falha na busca já é um caso esperado e tratado como
-  // "sem contexto", nunca deve derrubar o turno inteiro.
-  const [propostasPendentesResultado, ragResultado] = await Promise.all([
+  // Gate de segurança do agente (query de propostas pendentes), busca RAG e
+  // memória do escritório (Fase 17) são independentes entre si (não
+  // compartilham dado nenhum) e todas precisam terminar antes de chamar a IA
+  // — antes rodavam em sequência (uma espera a outra à toa). Disparadas em
+  // paralelo: a latência total passa a ser o MAIOR dos tempos, não a SOMA.
+  // RAG usa `.catch` (não `all`) porque falha na busca já é um caso esperado
+  // e tratado como "sem contexto", nunca deve derrubar o turno inteiro; a
+  // memória é fail-safe por construção (carregarMemoriaEscritorio devolve
+  // defaults em qualquer erro).
+  const [propostasPendentesResultado, ragResultado, memoriaEscritorio] = await Promise.all([
     supabase
       .from("propostas_acao")
       .select("id", { count: "exact", head: true })
       .eq("conversa_id", conversaId)
       .eq("status", "pending"),
     buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[]),
+    carregarMemoriaEscritorio(supabase, escritorioId),
   ]);
 
   const propostasPendentes = propostasPendentesResultado.count;
@@ -330,12 +307,18 @@ export async function enviarMensagemAction(
   // que consultou uma base (ver RAG_TOOLING_PROMPT).
   const chunksRag: ChunkRecuperado[] = ragResultado;
   const contextoRag: string | null = montarBlocoContexto(chunksRag);
+  // Memória do escritório (Fase 17): bloco delimitado/truncado ou "" quando
+  // o escritório não configurou nada — undefined mantém o comportamento
+  // idêntico ao anterior à fase dentro de comporSystemInstruction.
+  const blocoMemoria = blocoContextoEscritorio(memoriaEscritorio);
 
+  const inicioGeracaoMs = Date.now();
   let respostaIa;
   try {
     respostaIa = await gerarResposta(historico, {
       contextoRag,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
+      blocoMemoriaEscritorio: blocoMemoria || undefined,
       providerOverride: parsed.data.provider ? { provider: parsed.data.provider } : undefined,
     });
   } catch (erro) {
@@ -362,6 +345,7 @@ export async function enviarMensagemAction(
     console.error("[chat/enviarMensagemAction] Falha ao gerar resposta da IA:", erro);
     return { ok: false, error: "A IA está indisponível no momento. Tente novamente em instantes." };
   }
+  const duracaoGeracaoMs = Date.now() - inicioGeracaoMs;
 
   const { error: erroInsertUser } = await supabase.from("mensagens").insert({
     escritorio_id: escritorioId,
@@ -442,12 +426,18 @@ export async function enviarMensagemAction(
     return { ok: false, error: "A IA respondeu, mas houve um erro ao salvar a resposta." };
   }
 
+  // Observabilidade (Fase 27): origem fixa "chat", duração da geração em ms
+  // e o modelo que DE FATO respondeu (Gemini escolhido/fallback de quota ou
+  // Groq — ver RespostaIa.modelo).
   await supabase.from("uso_ia").insert({
     escritorio_id: escritorioId,
     conversa_id: conversaId,
     tokens_in: respostaIa.tokensIn,
     tokens_out: respostaIa.tokensOut,
     mes_ref: mesRef,
+    origem: "chat",
+    duracao_ms: duracaoGeracaoMs,
+    modelo: respostaIa.modelo ?? null,
   });
 
   const { count: totalMsgs } = await supabase

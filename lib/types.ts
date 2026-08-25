@@ -1,6 +1,8 @@
 import type { ResultadoAnaliseProcesso } from "@/lib/analise-processo/tipos";
 import type { ResultadoAnaliseDocumento, ResultadoComparacaoDocumento } from "@/lib/analise-documento/tipos";
 import type { ResultadoAuditoriaPeca } from "@/lib/auditoria-peca/tipos";
+import type { ResultadoAdvogadoContra } from "@/lib/advogado-contra/tipos";
+import type { ResultadoEstrategiaCaso } from "@/lib/estrategia-caso/tipos";
 
 export type Role = "owner" | "admin" | "advogado";
 
@@ -29,6 +31,21 @@ export type Perfil = {
   ativo: boolean;
   oab: string | null;
   criado_em: string;
+};
+
+export type StatusConviteEquipe = "pendente" | "aceito" | "cancelado" | "expirado";
+
+export type ConviteEquipe = {
+  id: string;
+  escritorio_id: string;
+  email: string;
+  nome: string;
+  role: Extract<Role, "admin" | "advogado">;
+  status: StatusConviteEquipe;
+  criado_por: string;
+  criado_em: string;
+  expira_em: string;
+  aceito_em: string | null;
 };
 
 export type Cliente = {
@@ -221,6 +238,9 @@ export type CasoJurisprudenciaCitada = {
 /** "Caso Inteligente" (Fase 1, migration 0027) — tarefa operacional do caso (distinta de `Prazo`, que é processual/legal). */
 export type StatusTarefaCaso = "pendente" | "em_andamento" | "concluida";
 
+/** Prioridade operacional (migration 0043) — ordena o trabalho do dia. */
+export type PrioridadeTarefaCaso = "baixa" | "media" | "alta";
+
 export type TarefaCaso = {
   id: string;
   escritorio_id: string;
@@ -228,6 +248,7 @@ export type TarefaCaso = {
   titulo: string;
   responsavel_perfil_id: string | null;
   status: StatusTarefaCaso;
+  prioridade: PrioridadeTarefaCaso;
   prazo_opcional: string | null;
   criado_por: string | null;
   criado_em: string;
@@ -657,6 +678,86 @@ export type AuditoriaPeca = {
    * `status = "processando"`.
    */
   resultado_auditoria: ResultadoAuditoriaPeca | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
+/**
+ * Advogado do Contra (Fase 5, migration 0039) — a IA assume a perspectiva da
+ * parte ADVERSÁRIA de uma tese/petição/argumento jurídico e produz achados
+ * adversariais qualitativos (nunca redige nada). Estruturalmente análoga a
+ * `AuditoriaPeca`, mas SEM notas 0-10 por dimensão: só um veredito
+ * categórico final de vulnerabilidade. Distinta também por aceitar uma 3ª
+ * origem (`tese_cadastrada`, vinda de `teses_caso` — Fase 1) além de
+ * `colado`/`upload`, por isso ganha `tese_caso_id`, campo que
+ * `AuditoriaPeca` não tem. Ver docs/adrs/0013-advogado-do-contra.md.
+ *
+ * `resultado_advogado_contra` aponta para `ResultadoAdvogadoContra`
+ * (`lib/advogado-contra/tipos.ts`, entregue na Onda 1 do ADR 0013).
+ */
+export type OrigemAdvogadoContra = "colado" | "upload" | "tese_cadastrada";
+export type StatusAdvogadoContra = "processando" | "pronto" | "erro";
+
+export type AnaliseAdvogadoContra = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string | null;
+  tese_caso_id: string | null;
+  origem: OrigemAdvogadoContra;
+  titulo: string | null;
+  texto_peca_analisado: string | null;
+  nome_arquivo: string | null;
+  tipo_arquivo: TipoArquivoAnaliseDocumento | null;
+  tamanho_bytes: number | null;
+  status: StatusAdvogadoContra;
+  /**
+   * Estrutura `ResultadoAdvogadoContra` (`lib/advogado-contra/tipos.ts`,
+   * entregue na Onda 1 do ADR 0013). `null` enquanto
+   * `status = "processando"`.
+   */
+  resultado_advogado_contra: ResultadoAdvogadoContra | null;
+  modelo_ia_usado: string | null;
+  erro: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  processado_em: string | null;
+};
+
+/**
+ * Estrategista Jurídico (Fase 6, migration 0041) — a IA sintetiza tudo que
+ * já existe sobre um caso já aberto (fatos da ficha, teses cadastradas,
+ * linha do tempo de eventos, pessoas envolvidas, jurisprudência citada,
+ * resumos de análises de documento/processo) e produz objetivo, teses,
+ * provas, riscos, oportunidades, próximos passos e ações recomendadas.
+ * Primeiro "agregador" do produto — diferente de `AuditoriaPeca`/
+ * `AnaliseAdvogadoContra` (analisam um único texto avulso), aqui não há
+ * texto novo do usuário, só leitura de múltiplas tabelas relacionais.
+ * `ficha_caso_id` NÃO é nullable (diferente das 5 tabelas de resultado de IA
+ * anteriores) — o Estrategista não faz sentido sem um caso já aberto. Ver
+ * docs/adrs/0014-estrategista-caso.md.
+ *
+ * `resultado_estrategia` aponta para `ResultadoEstrategiaCaso`
+ * (`lib/estrategia-caso/tipos.ts`, entregue na Onda 1 do ADR 0014).
+ */
+export type StatusEstrategiaCaso = "processando" | "pronto" | "erro";
+
+export type EstrategiaCaso = {
+  id: string;
+  escritorio_id: string;
+  ficha_caso_id: string;
+  status: StatusEstrategiaCaso;
+  /**
+   * Estrutura `ResultadoEstrategiaCaso` (`lib/estrategia-caso/tipos.ts`,
+   * entregue na Onda 1 do ADR 0014). `null` enquanto
+   * `status = "processando"`.
+   */
+  resultado_estrategia: ResultadoEstrategiaCaso | null;
+  /** Snapshot leve (contadores) do que foi lido para gerar esta versão —
+   * `lib/estrategia-caso/gerar.ts#ContextoResumoEstrategiaCaso`. */
+  contexto_resumo: Record<string, unknown> | null;
   modelo_ia_usado: string | null;
   erro: string | null;
   criado_por: string | null;

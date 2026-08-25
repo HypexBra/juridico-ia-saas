@@ -95,7 +95,7 @@ export function RedlineAnaliseForm() {
 
           <div className="space-y-4">
             {resultado.clausulas.map((clausula) => (
-              <div key={clausula.numero} className="rounded-lg border border-white/10 bg-navy-2 p-4">
+              <div key={clausula.numero} className="rounded-lg border border-ink/10 bg-navy-2 p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted">
                     Cláusula {clausula.numero}

@@ -5,7 +5,27 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { reindexarModelo } from "@/lib/rag/indexacao-interna";
 import { AREAS_DIREITO } from "@/lib/types";
+
+// Best-effort: falha do provedor de embedding nunca deve impedir salvar o
+// modelo (já persistido antes desta chamada) — só deixa o RAG servindo a
+// versão anterior até a próxima reindexação manual ou edição bem-sucedida.
+// Fix do bug de staleness: `atualizarModeloAction`/`criarModeloAction`
+// nunca chamavam `reindexarModelo` (só o botão manual "Reindexar dados
+// internos" ou o write-back automático da IA cobriam isso) — editar um
+// modelo direto pela UI nunca atualizava o que o RAG via.
+async function reindexarModeloComTolerancia(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  escritorioId: string,
+  modeloId: string,
+) {
+  try {
+    await reindexarModelo(supabase, escritorioId, modeloId);
+  } catch (erroReindex) {
+    console.error("[modelos/actions] Falha ao reindexar modelo para RAG:", erroReindex);
+  }
+}
 
 const modeloSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome do modelo."),
@@ -51,6 +71,8 @@ export async function criarModeloAction(
 
   if (error || !modelo) return { error: "Não foi possível salvar o modelo. Tente novamente." };
 
+  await reindexarModeloComTolerancia(supabase, usuario.perfil.escritorio_id, modelo.id);
+
   revalidatePath("/app/modelos");
   redirect(`/app/modelos/${modelo.id}`);
 }
@@ -87,6 +109,8 @@ export async function atualizarModeloAction(
     .eq("id", modeloId);
 
   if (error) return { error: "Não foi possível atualizar o modelo. Tente novamente." };
+
+  await reindexarModeloComTolerancia(supabase, usuario.perfil.escritorio_id, modeloId);
 
   revalidatePath("/app/modelos");
   revalidatePath(`/app/modelos/${modeloId}`);

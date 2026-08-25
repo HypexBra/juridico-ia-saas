@@ -132,7 +132,7 @@ export function DocumentoResultado({ resultado }: { resultado: ResultadoAnaliseD
           ) : (
             <ul className="space-y-2">
               {resultado.informacoesAusentes.map((texto, i) => (
-                <li key={i} className="rounded-lg border border-white/10 bg-navy-2 p-3.5 text-sm italic text-muted">
+                <li key={i} className="rounded-lg border border-ink/10 bg-navy-2 p-3.5 text-sm italic text-muted">
                   {texto}
                 </li>
               ))}

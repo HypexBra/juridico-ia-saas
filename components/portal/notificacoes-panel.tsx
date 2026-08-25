@@ -46,13 +46,13 @@ export function NotificacoesPanel({ notificacoes }: { notificacoes: NotificacaoC
         </div>
       )}
 
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
 
       <ul>
         {notificacoes.map((notificacao) => (
           <li
             key={notificacao.id}
-            className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border-b border-white/5 px-2 py-3 last:border-0 ${
+            className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border-b border-ink/10 px-2 py-3 last:border-0 ${
               notificacao.lida ? "" : "bg-silver/5"
             }`}
           >

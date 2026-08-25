@@ -117,7 +117,7 @@ export function UsuarioLinhaAcoes({
   return (
     <div className="flex flex-col items-end gap-1.5">
       <div className="flex flex-wrap justify-end gap-1.5">
-        <Link href={`/admin/usuarios/${perfilId}`} className="rounded-md border border-white/10 px-2 py-1 text-xs text-muted hover:text-ice">
+        <Link href={`/admin/usuarios/${perfilId}`} className="rounded-md border border-ink/10 px-2 py-1 text-xs text-muted hover:text-ink">
           Ver
         </Link>
         <span className="flex items-center gap-1 text-[11px] text-muted" title="Papel do usuário dentro do PRÓPRIO escritório (owner/admin/advogado) — não confundir com admin da plataforma.">
@@ -127,7 +127,7 @@ export function UsuarioLinhaAcoes({
           value={role}
           disabled={isPending}
           onChange={(e) => alterarRole(e.target.value)}
-          className="rounded-md border border-white/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
+          className="rounded-md border border-ink/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
         >
           {Object.entries(ROLE_LABEL).map(([valor, label]) => (
             <option key={valor} value={valor}>
@@ -140,7 +140,7 @@ export function UsuarioLinhaAcoes({
           disabled={isPending}
           onClick={alternarAtivo}
           className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-            ativo ? "border-red-500/30 text-red-300 hover:bg-red-500/10" : "border-green/30 text-green hover:bg-green/10"
+            ativo ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
           }`}
         >
           {ativo ? "Desativar" : "Ativar"}
@@ -152,7 +152,7 @@ export function UsuarioLinhaAcoes({
           value={plano}
           disabled={isPending}
           onChange={(e) => alterarPlano(e.target.value)}
-          className="rounded-md border border-white/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
+          className="rounded-md border border-ink/10 bg-navy-3 px-2 py-1 text-xs text-ice disabled:opacity-50"
         >
           {Object.entries(PLANO_LABEL).map(([valor, label]) => (
             <option key={valor} value={valor}>
@@ -164,7 +164,7 @@ export function UsuarioLinhaAcoes({
           type="button"
           disabled={isPending}
           onClick={redefinirSenha}
-          className="rounded-md border border-white/10 px-2 py-1 text-xs text-muted hover:text-ice disabled:opacity-50"
+          className="rounded-md border border-ink/10 px-2 py-1 text-xs text-muted hover:text-ink disabled:opacity-50"
         >
           Redefinir senha
         </button>
@@ -174,7 +174,7 @@ export function UsuarioLinhaAcoes({
             disabled={isPending}
             onClick={promoverAdmin}
             title="Dá acesso cross-tenant ao painel /admin (todos os escritórios) — diferente do campo Tipo."
-            className="rounded-md border border-amber-500/30 px-2 py-1 text-xs text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
+            className="rounded-md border border-amber-700/30 px-2 py-1 text-xs text-amber-700 hover:bg-amber-700/10 disabled:opacity-50"
           >
             Promover a admin da PLATAFORMA
           </button>
@@ -183,7 +183,7 @@ export function UsuarioLinhaAcoes({
           type="button"
           disabled={isPending}
           onClick={excluir}
-          className="rounded-md border border-red-500/30 px-2 py-1 text-xs text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+          className="rounded-md border border-red-700/30 px-2 py-1 text-xs text-red-700 hover:bg-red-700/10 disabled:opacity-50"
         >
           Excluir
         </button>

@@ -31,7 +31,7 @@ export default async function ConsultarStatusPage({ searchParams }: PageProps<"/
           Jurídico<span className="text-silver">IA</span>
         </Link>
 
-        <div className="rounded-2xl border border-white/10 bg-navy-2/60 p-8 shadow-2xl shadow-black/30">
+        <div className="rounded-2xl border border-ink/10 bg-paper-2 p-8 shadow-sm">
           <h1 className="mb-1 font-display text-2xl font-semibold text-ice">Consultar meu caso</h1>
           <p className="mb-6 text-sm text-muted">
             Confirme rapidamente se o seu caso já está com o escritório, sem precisar de senha.
@@ -41,7 +41,7 @@ export default async function ConsultarStatusPage({ searchParams }: PageProps<"/
 
         <p className="mt-6 text-center text-xs text-muted">
           Já tem convite do portal?{" "}
-          <Link href="/portal/login" className="text-silver-2 hover:underline">
+          <Link href="/portal/login" className="text-silver underline underline-offset-4 hover:text-silver">
             Entrar no portal
           </Link>
         </p>

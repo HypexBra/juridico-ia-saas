@@ -6,11 +6,11 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary:
-    "bg-silver text-navy hover:bg-silver-2 disabled:bg-silver/40 disabled:text-navy/60 shadow-[0_0_0_1px_rgba(199,210,232,0.35)]",
+    "bg-ink text-paper hover:bg-ink/90 disabled:bg-ink/30 disabled:text-paper/60",
   secondary:
-    "bg-navy-3 text-ice border border-white/10 hover:bg-navy-3/70 disabled:opacity-50",
-  ghost: "bg-transparent text-muted hover:text-ice hover:bg-white/5 disabled:opacity-40",
-  danger: "bg-red-950/40 text-red-300 border border-red-500/30 hover:bg-red-950/70 disabled:opacity-40",
+    "bg-navy-3 text-ink border border-ink/15 hover:bg-ink/5 disabled:opacity-50",
+  ghost: "bg-transparent text-muted hover:text-ink hover:bg-ink/5 disabled:opacity-40",
+  danger: "bg-red-700 text-paper hover:bg-red-800 disabled:opacity-50",
 };
 
 const SIZE_CLASSES: Record<Size, string> = {

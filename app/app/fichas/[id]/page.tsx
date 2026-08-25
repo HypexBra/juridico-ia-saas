@@ -17,6 +17,7 @@ import { GerarPeticaoCard, type ModeloParaSelecao } from "@/components/app/gerar
 import { RedacaoAssistidaCard } from "@/components/app/redacao-assistida-card";
 import { AutomacaoCondicionalCard } from "@/components/app/automacao-condicional-card";
 import { listarModelosCondicionaisAction } from "./mail-merge-condicional-actions";
+import { CATALOGO_VARIAVEIS_CASO } from "@/lib/mailmerge-condicional/catalogo-variaveis";
 import { ChatClienteCard } from "@/components/app/chat-cliente-card";
 import { planoTemAcesso } from "@/lib/planos/gating";
 import { listarPessoasCasoAction } from "./pessoas-actions";
@@ -24,11 +25,13 @@ import { listarTarefasCasoAction } from "./tarefas-actions";
 import { listarEventosCasoAction } from "@/lib/casos/timeline";
 import { listarTesesCasoAction } from "../actions";
 import { listarAnalisesProcessoAction } from "./analise-processo-actions";
+import { listarEstrategiasCasoAction } from "./estrategia-actions";
 import { PessoasCasoSection } from "./pessoas-caso-section";
 import { TarefasCasoSection } from "./tarefas-caso-section";
 import { TimelineCasoList } from "./timeline-caso-list";
 import { TesesCasoSection } from "./teses-caso-section";
 import { AnaliseProcessoSection } from "./analise-processo-section";
+import { EstrategiaCasoSecao } from "@/components/app/estrategia-caso-secao";
 import type { ClientePortal, FichaCaso, MensagemPortalCliente } from "@/lib/types";
 
 /**
@@ -116,19 +119,21 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
   // aqui só reduzimos para listas vazias em caso de falha, sem derrubar a
   // página nem propagar o erro para a UI (estado esperado até as migrations
   // rodarem).
-  const [pessoasResultado, eventosResultado, tesesResultado, tarefasResultado, analisesProcessoResultado] =
+  const [pessoasResultado, eventosResultado, tesesResultado, tarefasResultado, analisesProcessoResultado, estrategiasResultado] =
     await Promise.all([
       listarPessoasCasoAction(ficha.id),
       listarEventosCasoAction(ficha.id),
       listarTesesCasoAction(ficha.id),
       listarTarefasCasoAction(ficha.id),
       listarAnalisesProcessoAction(ficha.id),
+      listarEstrategiasCasoAction(ficha.id),
     ]);
   const pessoas = pessoasResultado.ok ? pessoasResultado.pessoas : [];
   const eventos = eventosResultado.ok ? eventosResultado.eventos : [];
   const teses = tesesResultado.ok ? tesesResultado.teses : [];
   const tarefas = tarefasResultado.ok ? tarefasResultado.tarefas : [];
   const analisesProcesso = analisesProcessoResultado.ok ? analisesProcessoResultado.analises : [];
+  const estrategias = estrategiasResultado.ok ? estrategiasResultado.estrategias : [];
 
   const temAcessoChat = planoTemAcesso(usuario.perfil.escritorio, "portal_cliente_rico");
   const clientePortalAtivo = clientePortal?.auth_user_id ? clientePortal : null;
@@ -195,6 +200,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
           </LinkButton>
           <LinkButton href={`/app/auditor?fichaId=${ficha.id}`} variant="secondary" size="sm">
             Auditar peça
+          </LinkButton>
+          <LinkButton href={`/app/advogado-contra/novo?fichaId=${ficha.id}`} variant="secondary" size="sm">
+            Testar tese contra
           </LinkButton>
           <ExcluirFichaButton fichaId={ficha.id} />
         </div>
@@ -280,6 +288,9 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
                   fichaId={ficha.id}
                   modelos={modelosCondicionais}
                   temAcesso={planoTemAcesso(usuario.perfil.escritorio, "automacao_documento_condicional")}
+                  // Catálogo estático puro (zero I/O) — a UI documenta exatamente
+                  // as chaves que o motor resolve, garantido por teste.
+                  catalogoVariaveis={CATALOGO_VARIAVEIS_CASO}
                 />
 
                 <Card>
@@ -365,6 +376,23 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
                   fichaCasoId={ficha.id}
                   analisesIniciais={analisesProcesso}
                   temAcesso={planoTemAcesso(usuario.perfil.escritorio, "analise_inteligente_processo")}
+                />
+              </Card>
+            ),
+          },
+          {
+            id: "estrategia",
+            label: "Estratégia",
+            contador: estrategias.length,
+            content: (
+              <Card>
+                <CardTitle className="mb-4">Estrategista Jurídico</CardTitle>
+                <EstrategiaCasoSecao
+                  fichaCasoId={ficha.id}
+                  temAcesso={planoTemAcesso(usuario.perfil.escritorio, "estrategista_caso")}
+                  estrategias={estrategias}
+                  tesesCaso={teses}
+                  tarefasCaso={tarefas}
                 />
               </Card>
             ),

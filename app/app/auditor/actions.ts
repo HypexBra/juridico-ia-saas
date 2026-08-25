@@ -14,8 +14,12 @@ import {
   auditarPeca,
   TAMANHO_MAXIMO_PECA_AUDITORIA,
   TIPOS_ARQUIVO_AUDITORIA_PECA,
-  type TipoArquivoAuditoriaPeca,
 } from "@/lib/auditoria-peca/auditar";
+import {
+  bufferBateComAssinatura,
+  inferirTipoArquivoUpload,
+  MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO,
+} from "@/lib/uploads/validacao";
 import type { AuditoriaPeca } from "@/lib/types";
 
 /** Mesmo teto de `app/app/documentos/actions.ts` (Fase 3/4, análise estruturada por IA). */
@@ -29,31 +33,6 @@ const MAX_TAMANHO_ARQUIVO_AUDITORIA = 15 * 1024 * 1024;
  * registro em `auditorias_peca` ou chamar a IA.
  */
 const TAMANHO_MINIMO_PECA_AUDITORIA = 200;
-
-const EXTENSOES_POR_TIPO_AUDITORIA: Record<string, string[]> = {
-  pdf: [".pdf"],
-  docx: [".docx"],
-  imagem: [".jpg", ".jpeg", ".png", ".webp"],
-};
-
-const MIME_POR_TIPO_AUDITORIA: Record<string, string[]> = {
-  pdf: ["application/pdf"],
-  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-  imagem: ["image/jpeg", "image/png", "image/webp"],
-};
-
-/** Mesma tolerância MIME/extensão de `inferirTipoArquivoDocumento` (ADR 0011). */
-function inferirTipoArquivoAuditoria(arquivo: File): TipoArquivoAuditoriaPeca | null {
-  const nomeMinusculo = arquivo.name.toLowerCase();
-  for (const tipo of TIPOS_ARQUIVO_AUDITORIA_PECA) {
-    const extensoes = EXTENSOES_POR_TIPO_AUDITORIA[tipo] ?? [];
-    const mimes = MIME_POR_TIPO_AUDITORIA[tipo] ?? [];
-    if (mimes.includes(arquivo.type) || extensoes.some((ext) => nomeMinusculo.endsWith(ext))) {
-      return tipo;
-    }
-  }
-  return null;
-}
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -159,7 +138,11 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Não foi possível registrar a auditoria. Tente novamente." };
   }
 
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await auditarPeca({ origem: "colado", titulo, texto });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -196,7 +179,15 @@ export async function auditarPecaColadaAction(formData: FormData): Promise<Audit
 
   // Mesmo padrão de `analisarDocumentoAction`/`analisarContratoAction`: uma
   // linha por chamada de IA em `uso_ia` (contagem de chamadas, não de tokens).
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos dois modos: colado e upload são a mesma feature
+  // "auditoria_peca").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "auditor_peca",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/auditor");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);
@@ -226,9 +217,14 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
   }
 
-  const tipoArquivo = inferirTipoArquivoAuditoria(arquivo);
+  const tipoArquivo = inferirTipoArquivoUpload(arquivo, TIPOS_ARQUIVO_AUDITORIA_PECA);
   if (!tipoArquivo) {
     return { ok: false, error: "Formato não suportado. Envie um PDF, DOCX ou imagem (jpg/png/webp)." };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  if (!bufferBateComAssinatura(buffer, tipoArquivo)) {
+    return { ok: false, error: MENSAGEM_ARQUIVO_NAO_BATE_COM_TIPO };
   }
 
   const titulo = resolverTituloOpcional(formData);
@@ -264,8 +260,11 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "Não foi possível registrar a auditoria. Tente novamente." };
   }
 
-  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
+  // gravada no insert de `uso_ia` mais adiante.
+  const inicioChamadaIaMs = Date.now();
   const resultado = await auditarPeca({ origem: "upload", titulo, buffer, tipoArquivo, nomeArquivo: arquivo.name });
+  const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
   if (!resultado.ok) {
@@ -300,7 +299,15 @@ export async function auditarPecaUploadAction(formData: FormData): Promise<Audit
     return { ok: false, error: "A IA auditou a peça, mas houve um erro ao salvar o resultado. Tente novamente." };
   }
 
-  await supabase.from("uso_ia").insert({ escritorio_id: escritorioId, mes_ref: agora.slice(0, 7) });
+  // Observabilidade (Fase 27): duração real + origem para a página /app/uso
+  // (rótulo único nos dois modos: colado e upload são a mesma feature
+  // "auditoria_peca").
+  await supabase.from("uso_ia").insert({
+    escritorio_id: escritorioId,
+    duracao_ms: duracaoChamadaIaMs,
+    origem: "auditor_peca",
+    mes_ref: agora.slice(0, 7),
+  });
 
   revalidatePath("/app/auditor");
   if (fichaCasoId) revalidatePath(`/app/fichas/${fichaCasoId}`);

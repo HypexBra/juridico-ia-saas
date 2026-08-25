@@ -42,8 +42,8 @@ export function ParcelaHonorarioRow({ parcela }: { parcela: ParcelaHonorario }) 
 
   return (
     <li
-      className={`flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-1 py-2.5 last:border-0 ${
-        atrasado ? "bg-red-500/5" : ""
+      className={`flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-1 py-2.5 last:border-0 ${
+        atrasado ? "bg-red-700/5" : ""
       }`}
     >
       <div className="flex min-w-0 flex-col">
@@ -54,7 +54,7 @@ export function ParcelaHonorarioRow({ parcela }: { parcela: ParcelaHonorario }) 
           Vencimento {formatarData(parcela.vencimento)}
           {parcela.pago_em ? ` · pago em ${formatarData(parcela.pago_em)}` : ""}
         </span>
-        {erro && <span className="mt-1 text-xs text-red-400">{erro}</span>}
+        {erro && <span className="mt-1 text-xs text-red-700">{erro}</span>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <Badge tone={STATUS_TONE[parcela.status]}>{STATUS_LABEL[parcela.status]}</Badge>

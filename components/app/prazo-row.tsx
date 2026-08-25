@@ -34,7 +34,7 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
   const dias = diasAte(prazo.data_prazo);
 
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-white/5 py-3 last:border-0">
+    <li className="flex flex-wrap items-start justify-between gap-3 border-b border-ink/10 py-3 last:border-0">
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -90,7 +90,7 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
             {prazo.uf && <Badge tone="muted">UF: {prazo.uf}</Badge>}
           </div>
           {prazo.descricao && <p className="mt-1 text-xs text-muted">{prazo.descricao}</p>}
-          {erro && <p className="mt-1 text-xs text-red-400">{erro}</p>}
+          {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export function PrazoRow({ prazo }: { prazo: Prazo }) {
               router.refresh();
             });
           }}
-          className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-950/40 hover:text-red-300 disabled:opacity-40"
+          className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
         >
           Excluir
         </button>

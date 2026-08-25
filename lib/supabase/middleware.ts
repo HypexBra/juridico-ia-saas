@@ -15,28 +15,42 @@ const PUBLIC_PATHS = [
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+  // Fail-open controlado (robustez): env ausente (ex.: ambiente local sem
+  // .env) ou indisponibilidade pontual do Supabase NÃO podem derrubar rotas
+  // públicas com 500. A verificação REAL de autenticação é server-side em
+  // cada página/action (getUsuarioAtual), então seguir como anônimo aqui é
+  // seguro — rotas protegidas redirecionam lá.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn("[middleware] NEXT_PUBLIC_SUPABASE_* ausentes: seguindo sem sessão.");
+    return response;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value);
           response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
+          response.cookies.set(name, value, options);
+        });
       },
     },
-  );
+  });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const resultado = await supabase.auth.getUser();
+    user = resultado.data.user;
+  } catch (erro) {
+    // Rede/env indisponível: segue como anônimo (ver fail-open acima) —
+    // páginas protegidas aplicam a própria verificação server-side.
+    console.warn("[middleware] getUser falhou; seguindo sem sessão:", erro instanceof Error ? erro.message : erro);
+  }
 
   const isPublic = PUBLIC_PATHS.some(
     (path) => request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith("/_next"),

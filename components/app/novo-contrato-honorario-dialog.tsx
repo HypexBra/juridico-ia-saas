@@ -41,8 +41,8 @@ export function NovoContratoHonorarioDialog({
       onFechar={fechar}
       titulo="Novo contrato de honorário"
       mostrarBotaoFechar
-      overlayClassName="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4"
-      painelClassName="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-navy-2 p-6 shadow-2xl"
+      overlayClassName="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink/40 p-4"
+      painelClassName="my-8 w-full max-w-2xl rounded-xl border border-ink/10 bg-navy-2 p-6 shadow-2xl shadow-ink/10"
     >
       <NovoContratoHonorarioForm
         fichas={fichas}

@@ -1,147 +1,154 @@
 import Link from "next/link";
-import { LightBeam } from "./light-beam";
+import { IconCheck } from "./icons";
 import { Reveal } from "./reveal";
-import { IconCheck, IconDash } from "./icons";
-import { BorderGlow } from "@/components/ui/border-glow/border-glow";
-
-interface PlanFeature {
-  label: string;
-  included: boolean;
-}
+import { Section } from "./section";
 
 /** Preço exibido aqui é só cópia/UI — a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx). */
 const PRECO_PRO_MENSAL = "R$ 149";
 
+interface PlanFeature {
+  label: string;
+}
+
 const FREE_FEATURES: PlanFeature[] = [
-  { label: "Uso mensal de IA limitado", included: true },
-  { label: "Chat jurídico (petições, contratos, pareceres)", included: true },
-  { label: "Triagem de clientes", included: true },
-  { label: "Controle de prazos", included: true },
-  { label: "Exportação em DOCX/PDF", included: true },
-  { label: "Biblioteca de modelos", included: false },
-  { label: "Múltiplos advogados no time", included: false },
+  { label: "Uso mensal de IA limitado" },
+  { label: "Casos, clientes, prazos e tarefas" },
+  { label: "Triagem de clientes" },
+  { label: "Chat jurídico com o contexto do caso" },
+  { label: "Portal do cliente" },
 ];
 
 const PRO_FEATURES: PlanFeature[] = [
-  { label: "Tudo do plano Free, sem limite mensal de IA", included: true },
-  { label: "Redação assistida: IA redige a peça inteira, não só responde", included: true },
-  { label: "Análise de risco contratual cláusula-por-cláusula (redline)", included: true },
-  { label: "Relatórios avançados: realization rate e breakdown financeiro", included: true },
-  { label: "Mail-merge condicional (automação de documento avançada)", included: true },
-  { label: "API/integrações abertas", included: true },
-  { label: "Portal do cliente rico: chat bidirecional e notificação em tempo real", included: true },
-  { label: "Múltiplos advogados no time", included: true },
+  { label: "Tudo do Free, sem limite mensal de IA" },
+  { label: "Análise de processos e auditoria de peças" },
+  { label: "Advogado do contra e estratégia por caso" },
+  { label: "Pesquisa jurisprudencial verificável (STJ)" },
+  { label: "Workflows e modelos preenchidos pelo caso" },
+  { label: "Equipe com múltiplos advogados" },
 ];
+
+interface PlanoProps {
+  nome: string;
+  lema: string;
+  preco?: string;
+  destaque?: boolean;
+  features: PlanFeature[];
+  rodape: React.ReactNode;
+}
+
+function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoProps) {
+  return (
+    <div
+      className={`relative flex h-full flex-col rounded-none border p-8 ${
+        destaque ? "border-ink/25 bg-paper-2" : "border-ink/10 bg-paper"
+      }`}
+    >
+      {destaque ? (
+        <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-accent" />
+      ) : null}
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="font-serif-ed text-xl font-semibold text-ink">{nome}</h3>
+        {destaque ? (
+          <span className="font-mono-ed text-[11px] uppercase tracking-[0.16em] text-accent">
+            Recomendado
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-1.5 text-sm text-ink-2">{lema}</p>
+      {preco ? (
+        <p className="mt-6 flex items-baseline gap-1.5">
+          <span className="font-serif-ed text-4xl text-ink">{preco}</span>
+          <span className="text-sm text-ink-3">/mês</span>
+        </p>
+      ) : null}
+      <ul className="mt-7 flex flex-1 flex-col gap-3">
+        {features.map((feature) => (
+          <li key={feature.label} className="flex items-start gap-2.5 text-sm text-ink-2">
+            <IconCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+            {feature.label}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-8">{rodape}</div>
+    </div>
+  );
+}
 
 export function Pricing() {
   return (
-    <section id="precos" className="relative overflow-hidden py-24 sm:py-32">
-      <LightBeam angle={16} origin="top-right" className="-z-10" />
-      <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <div className="mb-16 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-silver">
-            Planos
-          </p>
-          <h2 className="font-display text-3xl font-bold leading-tight text-ice sm:text-4xl">
-            Comece sem custo, cresça quando precisar
-          </h2>
-          <p className="mt-4 text-muted">
-            Assine quando quiser, cancele quando quiser — sem fidelidade.
-          </p>
-        </div>
-
-        {/* Colunas com largura e deslocamento vertical assimétricos — o card
-            Pro é mais largo e desce (md:mt-10), quebrando o par de cards
-            idênticos lado a lado. */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.1fr] md:items-start">
-          <Reveal>
-            <div className="flex h-full flex-col rounded-md border border-white/10 bg-navy-2/50 p-8 transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5">
-              <h3 className="font-display text-lg font-bold text-ice">Free</h3>
-              <p className="mt-1.5 text-sm text-muted">
-                Para advogados autônomos testarem o copiloto no dia a dia.
-              </p>
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-ice">
-                  R$ 0
-                </span>
-                <span className="text-sm text-muted">/mês</span>
-              </div>
-              <ul className="mt-7 flex flex-1 flex-col gap-3">
-                {FREE_FEATURES.map((feature) => (
-                  <li
-                    key={feature.label}
-                    className={`flex items-center gap-2.5 text-sm ${
-                      feature.included ? "text-ice-2" : "text-muted/60"
-                    }`}
-                  >
-                    {feature.included ? (
-                      <IconCheck className="h-4 w-4 shrink-0 text-silver" />
-                    ) : (
-                      <IconDash className="h-4 w-4 shrink-0 text-muted/60" />
-                    )}
-                    {feature.label}
-                  </li>
-                ))}
-              </ul>
+    <Section
+      id="planos"
+      numero="14"
+      kicker="Planos"
+      titulo={
+        <>
+          Comece sem custo. Automatize quando fizer sentido.
+        </>
+      }
+      intro="Assine quando quiser, cancele quando quiser — sem fidelidade."
+    >
+      {/* Três larguras deliberadamente diferentes e alturas assimétricas
+          (Pro mais largo e descido) — nada de trio de cards idênticos. */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.15fr_0.85fr] md:items-start">
+        <Reveal>
+          <Plano
+            nome="Free"
+            lema="Para experimentar."
+            preco="R$ 0"
+            features={FREE_FEATURES}
+            rodape={
               <Link
                 href="/cadastro"
-                className="mt-8 rounded-sm border border-white/15 px-5 py-3 text-center text-sm font-semibold text-ice transition-colors hover:border-white/30 hover:bg-white/5"
+                className="block rounded-none border border-ink/20 px-5 py-3 text-center text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-paper-2"
               >
                 Criar conta grátis
               </Link>
-            </div>
-          </Reveal>
+            }
+          />
+        </Reveal>
 
-          <Reveal delayMs={100} className="md:mt-10">
-            <BorderGlow
-              className="h-full transition-transform duration-300 ease-out will-change-transform hover:-translate-y-1.5"
-              backgroundColor="#24466f"
-              borderRadius={10}
-              glowColor="42 80 72"
-              glowRadius={44}
-              glowIntensity={1.1}
-              coneSpread={30}
-              colors={["#c7d2e8", "#24466f", "#f5f8fc"]}
-              fillOpacity={0.35}
-            >
-              <div className="relative flex h-full flex-col overflow-hidden p-8">
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-silver to-silver-2"
-                />
-              <span className="mb-4 inline-flex w-fit items-center rounded-full bg-gradient-to-br from-silver to-silver-2 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-navy">
-                Mais popular
-              </span>
-              <h3 className="font-display text-lg font-bold text-ice">Pro</h3>
-              <p className="mt-1.5 text-sm text-muted">
-                Para escritórios com mais de um advogado e volume maior de
-                peças por mês.
-              </p>
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="font-display text-4xl font-black text-ice">
-                  {PRECO_PRO_MENSAL}
-                </span>
-                <span className="text-sm text-muted">/mês</span>
-              </div>
-              <ul className="mt-7 flex flex-1 flex-col gap-3">
-                {PRO_FEATURES.map((feature) => (
-                  <li key={feature.label} className="flex items-center gap-2.5 text-sm text-ice-2">
-                    <IconCheck className="h-4 w-4 shrink-0 text-silver" />
-                    {feature.label}
-                  </li>
-                ))}
-              </ul>
+        <Reveal delayMs={100} className="md:mt-10">
+          <Plano
+            nome="Pro"
+            lema="Para quem quer automatizar."
+            preco={PRECO_PRO_MENSAL}
+            destaque
+            features={PRO_FEATURES}
+            rodape={
               <Link
                 href="/cadastro"
-                className="mt-8 rounded-sm bg-gradient-to-br from-silver to-silver-2 px-5 py-3 text-center text-sm font-semibold text-navy transition-transform hover:-translate-y-0.5"
+                className="block rounded-none bg-ink px-5 py-3 text-center text-sm font-medium text-paper transition-colors hover:bg-ink/90"
               >
-                Assinar Plano Pro
+                Assinar o plano Pro
               </Link>
-              </div>
-            </BorderGlow>
-          </Reveal>
-        </div>
+            }
+          />
+        </Reveal>
+
+        <Reveal delayMs={200}>
+          <Plano
+            nome="Firm"
+            lema="Para escritórios."
+            features={[
+              { label: "Múltiplos usuários e permissões" },
+              { label: "Modelos e conhecimento privados" },
+              { label: "Workflows avançados" },
+            ]}
+            rodape={
+              <p className="font-mono-ed text-xs uppercase tracking-[0.16em] text-ink-3">
+                Em breve
+              </p>
+            }
+          />
+        </Reveal>
       </div>
-    </section>
+
+      <Reveal delayMs={250}>
+        <p className="mx-auto mt-12 max-w-md text-center text-sm text-ink-3">
+          O plano Pro é cobrado mensamente pelo Stripe. Cancele quando quiser,
+          direto no perfil.
+        </p>
+      </Reveal>
+    </Section>
   );
 }

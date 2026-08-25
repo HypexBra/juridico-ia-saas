@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { reindexarFichaCaso } from "@/lib/rag/indexacao-interna";
 import { gerarResposta } from "@/lib/ia/provider";
 import { classificarRiscoFicha } from "@/lib/ia/risco";
 import { gerarDocumentoDaFicha } from "@/lib/peticoes/gerar-documento-ficha";
@@ -56,6 +57,16 @@ export async function criarFichaAction(
 
   if (error || !ficha) {
     return { error: "Não foi possível salvar a ficha. Tente novamente." };
+  }
+
+  // Best-effort: indisponibilidade momentânea do provedor de embedding não
+  // deve impedir o salvamento da ficha (já persistida acima) — só deixa o
+  // RAG servindo a versão anterior (vazia, neste caso de criação) até a
+  // próxima reindexação manual ou edição bem-sucedida.
+  try {
+    await reindexarFichaCaso(supabase, usuario.perfil.escritorio_id, ficha.id);
+  } catch (erroReindex) {
+    console.error("[fichas/criarFichaAction] Falha ao reindexar ficha para RAG:", erroReindex);
   }
 
   revalidatePath("/app/fichas");
@@ -209,6 +220,8 @@ ${MARCADOR_QUESTOES}
 ${MARCADOR_ESTRATEGIA}
 [Estratégias possíveis e a recomendação do advogado sênior, incluindo documentos a solicitar e próximos passos]`;
 
+  // Observabilidade (Fase 27, migration 0045): duração real da chamada de IA.
+  const inicioChamadaIaMs = Date.now();
   let respostaIa;
   try {
     respostaIa = await gerarResposta([{ role: "user", conteudo: prompt }]);
@@ -259,6 +272,13 @@ ${MARCADOR_ESTRATEGIA}
     tokens_in: respostaIa.tokensIn,
     tokens_out: respostaIa.tokensOut,
     mes_ref: mesRef,
+    // Observabilidade (Fase 27): `RespostaIa` não expõe o modelo que de fato
+    // respondeu — registramos o modelo PRIMÁRIO da cadeia configurada em
+    // lib/ia/gemini.ts (MODELO_FLASH = "gemini-flash-latest"; fallbacks por
+    // quota "gemini-flash-lite-latest" e Groq podem divergir pontualmente).
+    modelo: "gemini-flash-latest",
+    duracao_ms: Date.now() - inicioChamadaIaMs,
+    origem: "analise_ficha",
   });
 
   revalidatePath(`/app/fichas/${fichaId}`);

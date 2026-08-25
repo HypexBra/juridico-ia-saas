@@ -21,7 +21,7 @@ export function AtivarForm({ token }: { token: string }) {
         <p className="text-sm text-ice-2">
           Quase lá! Enviamos um e-mail de confirmação. Depois de confirmar, volte e entre pelo portal.
         </p>
-        <Link href="/portal/login" className="inline-block text-sm font-medium text-silver hover:text-silver-2">
+        <Link href="/portal/login" className="inline-block text-sm font-medium text-silver underline underline-offset-4 hover:text-silver-2">
           Ir para o login
         </Link>
       </div>
@@ -60,13 +60,13 @@ export function AtivarForm({ token }: { token: string }) {
 
       {state.error && (
         <div>
-          <p role="alert" className="rounded-lg border border-red-500/30 bg-red-950/30 px-3.5 py-2.5 text-sm text-red-300">
+          <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
             {state.error}
           </p>
           {state.emailJaExiste && (
             <Link
               href={`/portal/login?token=${encodeURIComponent(token)}`}
-              className="mt-2 inline-block text-sm font-medium text-silver hover:text-silver-2"
+              className="mt-2 inline-block text-sm font-medium text-silver underline underline-offset-4 hover:text-silver-2"
             >
               Entrar com minha conta existente
             </Link>

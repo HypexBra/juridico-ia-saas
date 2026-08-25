@@ -86,13 +86,13 @@ export function DocumentoLoteForm({ fichaCasoId }: { fichaCasoId?: string | null
       {resultado && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-ice">Resultado do lote ({resultado.length} documento(s))</h3>
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-ink/10">
             {resultado.map((analise) => (
               <li key={analise.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm text-ice">{analise.nome_arquivo}</p>
                   {analise.status === "erro" && analise.erro && (
-                    <p className="text-xs text-red-400">{analise.erro}</p>
+                    <p className="text-xs text-red-700">{analise.erro}</p>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

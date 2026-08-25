@@ -5,6 +5,14 @@ import { getGsap, prefersReducedMotion } from "@/lib/motion/gsap";
 
 type Knot = [xFraction: number, yFraction: number];
 
+// Tinta sobre papel (spec redesign v3): a linha é um fio condutor quase
+// imperceptível em tinta (#141412 @ 16%), sem gradiente e sem glow — o
+// gesto visual vem do desenho progressivo no scroll e dos nós-lacre, não
+// de profundidade artificial.
+const THREAD_STROKE = "rgba(20,20,18,0.16)";
+const NODE_FILL = "#1d5b46" // verde-selo (ADR 0016);
+const LABEL_FILL = "rgba(20,20,18,0.45)";
+
 // Desktop: an organic sway crossing left/right roughly six times down the
 // page, loosely tracking where each section's asymmetric content sits (hero
 // visual on the right, features numerals on the left, how-it-works zigzag,
@@ -29,12 +37,29 @@ const DESKTOP_KNOTS: Knot[] = [
 // sits flush left in every mobile section, cutting through the words. The
 // right edge is never used by text (mobile sections are single-column,
 // left-aligned), so the thread reads as a margin rule instead of a redline
-// through the copy.
+// through the copy. Mobile renders ONLY the bare ink line: no knots, no
+// labels (responsive spec — less visual complexity on small screens).
 const MOBILE_KNOTS: Knot[] = [
   [0.94, 0],
   [0.97, 0.5],
   [0.94, 1],
 ];
+
+/**
+ * Case milestones pinned to VERTICAL fractions of the page height. The x
+ * position of each node is NOT a fixed fraction: it always follows the real
+ * curve (see `placeNodes`), so every node sits exactly on the thread even
+ * though the curve sways horizontally. Labels are desktop-only (>= lg),
+ * matching the breakpoint guard used for the organic curve itself.
+ */
+const CASE_NODES = [
+  { yFraction: 0.06, label: "CASO" },
+  { yFraction: 0.22, label: "DOCUMENTO" },
+  { yFraction: 0.4, label: "ANÁLISE" },
+  { yFraction: 0.56, label: "ESTRATÉGIA" },
+  { yFraction: 0.74, label: "TAREFA" },
+  { yFraction: 0.92, label: "AÇÃO" },
+] as const;
 
 /** Catmull-Rom -> cubic Bezier conversion for a smooth curve through knots. */
 function buildPathD(knots: Knot[], width: number, height: number): string {
@@ -55,38 +80,61 @@ function buildPathD(knots: Knot[], width: number, height: number): string {
 }
 
 /**
- * The "silver thread": one continuous organic SVG path running the full
- * height of the marketing page (hero -> cta-final), physically stitching
- * every section together instead of leaving them as disconnected stacked
- * blocks. It draws itself progressively as the user scrolls (a
- * `stroke-dashoffset` scrub) — the thread's narrative job is to guide the
- * eye downward and imply "one continuous document/case file", not to
- * decorate.
+ * Arc length `s` where the drawn path crosses `targetY`.
  *
- * Geometry note: the path's control points and total length depend on the
- * *measured* pixel size of the page and must be rebuilt per breakpoint
- * (mobile gets a cheaper, near-straight line). That's why this uses GSAP
- * ScrollTrigger rather than a pure CSS `animation-timeline: scroll()`: CSS
- * scroll-driven animations can't recompute an organic curve's control
- * points on resize, only interpolate fixed keyframes — fine for the nav
- * progress bar and cta glow (already CSS-only in this codebase), not for a
- * geometry that must be regenerated responsively.
+ * Both knot tables have strictly increasing y-fractions and the Catmull-Rom
+ * construction keeps y monotonic between consecutive knots (each segment's
+ * control-point ys stay between its endpoints' ys), so y along the arc is
+ * monotonic non-decreasing — bisection over arc length converges on THE one
+ * crossing instead of guessing that arc-length fractions map linearly to
+ * height fractions (they don't: horizontal sway makes arc length uneven).
+ */
+function findLengthAtY(path: SVGPathElement, targetY: number, totalLength: number): number {
+  let lo = 0;
+  let hi = totalLength;
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (path.getPointAtLength(mid).y < targetY) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * O "Fio do Caso": uma única linha SVG contínua em tinta sobre papel,
+ * atravessando toda a altura da landing (hero -> cta-final) e costurando as
+ * seções num documento só. Desenha-se progressivamente no scroll (scrub de
+ * `stroke-dashoffset`). Sobre o fio, seis nós-lacre (CASO -> AÇÃO) surgem
+ * quando o scroll os alcança — desktop apenas; no mobile sobra só a linha
+ * em tinta na margem direita. Sem gradiente, sem blur, sem glow: a assinatura
+ * é tipográfica e posicional, não luminosa.
+ *
+ * Geometry note: the path's control points, total length AND node positions
+ * depend on the *measured* pixel size of the page and must be rebuilt per
+ * breakpoint (mobile gets a cheaper, near-straight line). That's why this
+ * uses GSAP ScrollTrigger rather than a pure CSS `animation-timeline:
+ * scroll()`: CSS scroll-driven animations can't recompute an organic curve's
+ * control points on resize, only interpolate fixed keyframes.
  */
 export function SilverThread() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const pathRef = useRef<SVGPathElement | null>(null);
-  const glowRef = useRef<SVGPathElement | null>(null);
+  const nodesRef = useRef<SVGGElement | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     const svg = svgRef.current;
     const path = pathRef.current;
-    const glow = glowRef.current;
-    if (!container || !svg || !path || !glow) return;
+    const nodesRoot = nodesRef.current;
+    if (!container || !svg || !path || !nodesRoot) return;
+
+    const nodeEls = Array.from(nodesRoot.querySelectorAll<SVGGElement>("[data-case-node]"));
 
     const reduced = prefersReducedMotion();
 
+    // Rebuilds the curve AND re-seats every milestone node exactly on the
+    // new curve (x comes from the path itself, never from a fixed fraction).
     const draw = (): number => {
       const width = container.clientWidth;
       const height = container.scrollHeight;
@@ -95,30 +143,35 @@ export function SilverThread() {
       svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
       const d = buildPathD(isMobile ? MOBILE_KNOTS : DESKTOP_KNOTS, width, height);
       path.setAttribute("d", d);
-      glow.setAttribute("d", d);
-      return path.getTotalLength();
+      const total = path.getTotalLength();
+      for (let i = 0; i < nodeEls.length && i < CASE_NODES.length; i++) {
+        const s = findLengthAtY(path, CASE_NODES[i].yFraction * height, total);
+        const pt = path.getPointAtLength(s);
+        nodeEls[i].setAttribute("transform", `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+      }
+      return total;
     };
 
     let length = draw();
 
     if (reduced) {
-      // Static, fully-drawn thread — no scroll-linked motion, still connects
-      // the sections visually.
+      // Static, fully-drawn thread with all milestones visible — no
+      // scroll-linked motion, still connects the sections visually.
       path.style.strokeDasharray = `${length}`;
       path.style.strokeDashoffset = "0";
-      glow.style.strokeDasharray = `${length}`;
-      glow.style.strokeDashoffset = "0";
+      for (const el of nodeEls) {
+        el.style.opacity = "1";
+        el.style.visibility = "visible";
+      }
       return;
     }
 
     path.style.strokeDasharray = `${length}`;
     path.style.strokeDashoffset = `${length}`;
-    glow.style.strokeDasharray = `${length}`;
-    glow.style.strokeDashoffset = `${length}`;
 
     const { gsap, ScrollTrigger } = getGsap();
 
-    const tween = gsap.to([path, glow], {
+    const tween = gsap.to(path, {
       strokeDashoffset: 0,
       ease: "none",
       scrollTrigger: {
@@ -130,6 +183,28 @@ export function SilverThread() {
       },
     });
 
+    // Each milestone fades in when its vertical fraction of the page hits
+    // the viewport center — i.e., roughly when the drawing stroke reaches
+    // it (the stroke is scrubbed across the same full-page span). Plain
+    // toggles (not scrubbed): a node is a stamp, not a dial. Reverse on
+    // leave-back so scrolling up re-hides it consistently with the thread
+    // un-drawing. Groups start at opacity 0 in the markup (no flash before
+    // hydration); on mobile they're display:none via `hidden lg:block`,
+    // so these tweens are inert there.
+    const nodeTweens = nodeEls.map((el, i) =>
+      gsap.to(el, {
+        autoAlpha: 1,
+        duration: 0.5,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: container,
+          start: `${CASE_NODES[i].yFraction * 100}% center`,
+          scrub: false,
+          toggleActions: "play none none reverse",
+        },
+      }),
+    );
+
     let resizeTimer: ReturnType<typeof setTimeout>;
     let lastWidth = window.innerWidth;
     const onResize = () => {
@@ -137,12 +212,11 @@ export function SilverThread() {
       // expands during scroll — a height-only change, not an actual layout
       // change. Rebuilding the thread's path and force-calling
       // `ScrollTrigger.refresh()` on every one of those (mid-scroll, often
-      // right on top of the pinned "Art. 1º...7º" section) recalculates
-      // every trigger's start/end — including the pin's own `end`, which
-      // depends on `window.innerHeight` — out from under the user's current
-      // scroll position. That produced both reported bugs: content that had
-      // already revealed re-hiding (mobile "não aparece") and the pinned
-      // stage visibly jumping backward mid-scroll (desktop "voltando").
+      // right on top of the pinned stage) recalculates every trigger's
+      // start/end out from under the user's current scroll position. That
+      // produced both reported bugs: content that had already revealed
+      // re-hiding (mobile "não aparece") and the pinned stage visibly
+      // jumping backward mid-scroll (desktop "voltando").
       // `ScrollTrigger.config({ ignoreMobileResize: true })` only guards
       // ScrollTrigger's own internal listener, not this app-level one, so
       // it must be guarded here too: only redraw/refresh when the width
@@ -154,7 +228,6 @@ export function SilverThread() {
       resizeTimer = setTimeout(() => {
         length = draw();
         path.style.strokeDasharray = `${length}`;
-        glow.style.strokeDasharray = `${length}`;
         ScrollTrigger.refresh();
       }, 150);
     };
@@ -163,6 +236,10 @@ export function SilverThread() {
     return () => {
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", onResize);
+      for (const nt of nodeTweens) {
+        nt.scrollTrigger?.kill();
+        nt.kill();
+      }
       tween.scrollTrigger?.kill();
       tween.kill();
     };
@@ -174,55 +251,34 @@ export function SilverThread() {
       aria-hidden
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      {/* Ambient depth blobs replacing the old flat per-section bg-navy/
-          bg-navy-2 rectangles — soft, borderless, so sections read as one
-          continuous scene instead of stacked colored blocks. */}
-      <div
-        className="absolute inset-x-0 top-0 h-[60vh]"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 55% at 20% 0%, rgba(199,210,232,.07), transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute inset-x-0 top-[42%] h-[55vh]"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 55% at 82% 50%, rgba(15,32,64,.85), transparent 70%)",
-        }}
-      />
-      <div
-        className="absolute inset-x-0 top-[78%] h-[50vh]"
-        style={{
-          background:
-            "radial-gradient(ellipse 65% 55% at 12% 50%, rgba(199,210,232,.05), transparent 70%)",
-        }}
-      />
-
       <svg ref={svgRef} className="h-full w-full" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="thread-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c7d2e8" stopOpacity="0.85" />
-            <stop offset="45%" stopColor="#e3ebf7" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#c7d2e8" stopOpacity="0.85" />
-          </linearGradient>
-        </defs>
-        <path
-          ref={glowRef}
-          fill="none"
-          stroke="#e3ebf7"
-          strokeWidth={10}
-          strokeLinecap="round"
-          opacity={0.1}
-          style={{ filter: "blur(7px)" }}
-        />
         <path
           ref={pathRef}
           fill="none"
-          stroke="url(#thread-gradient)"
-          strokeWidth={1.4}
+          stroke={THREAD_STROKE}
+          strokeWidth={1}
           strokeLinecap="round"
         />
+        {/* Milestones live on the curve; hidden below lg (bare ink line on
+            mobile). Each group is translated onto the path in JS. */}
+        <g ref={nodesRef} className="hidden lg:block">
+          {CASE_NODES.map(({ label }) => (
+            <g key={label} data-case-node opacity={0}>
+              <circle r={3} fill={NODE_FILL} />
+              <text
+                x={14}
+                y={0}
+                dominantBaseline="central"
+                fill={LABEL_FILL}
+                fontSize={10}
+                letterSpacing="0.15em"
+                className="font-mono-ed"
+              >
+                {label}
+              </text>
+            </g>
+          ))}
+        </g>
       </svg>
     </div>
   );

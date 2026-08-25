@@ -80,6 +80,18 @@ export async function criarPrazoAction(
 
   if (error) return { error: "Não foi possível salvar o prazo. Tente novamente." };
 
+  // Webhooks de saída (Fase 22): notifica endpoints cadastrados do escritório.
+  // Fire-and-forget BEST-EFFORT — falha de entrega nunca bloqueia a operação
+  // nem chega ao usuário (ver lib/webhooks/emitir.ts).
+  void import("@/lib/webhooks/emitir").then(({ emitirEventoWebhook }) =>
+    emitirEventoWebhook(supabase, usuario.perfil.escritorio_id, "prazo.criado", {
+      titulo: parsed.data.titulo,
+      data_prazo: parsed.data.dataPrazo,
+      processo: parsed.data.processo ?? null,
+      cliente_nome: parsed.data.clienteNome ?? null,
+    }),
+  );
+
   revalidatePath("/app/prazos");
   revalidatePath("/app/dashboard");
   return { error: null };

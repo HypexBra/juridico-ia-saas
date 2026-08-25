@@ -4,9 +4,12 @@ import { validarAssinaturaWebhookStripe } from "@/lib/billing/verificar-assinatu
 import type { StatusAssinaturaStripe } from "@/lib/types";
 
 /**
- * Webhook do Stripe: única rota autorizada a escrever `escritorios.plano`
+ * Webhook do Stripe: rota autorizada a escrever `escritorios.plano`
  * (RLS em `escritorios_update`, migration 0012, bloqueia qualquer troca de
  * `plano`/`features_overrides` vinda do client — só `service_role` passa).
+ * A ÚNICA outra escrita de plano é administrativa:
+ * `alterarPlanoEscritorioAction` (app/admin/usuarios/actions.ts), que usa o
+ * mesmo padrão service_role e registra em audit log.
  *
  * Sem `STRIPE_WEBHOOK_SECRET` configurada, `validarAssinaturaWebhookStripe`
  * sempre retorna `false` e esta rota responde 401 para QUALQUER payload —

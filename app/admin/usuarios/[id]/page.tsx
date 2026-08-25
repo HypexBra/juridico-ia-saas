@@ -123,7 +123,7 @@ export default async function AdminUsuarioDetalhePage({ params }: PageProps<"/ad
                   <th className="pb-2 font-medium">Mensagens</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-ink/10">
                 {usuario.conversas.map((c) => (
                   <tr key={c.id}>
                     <td className="py-2 pr-3 text-ice">

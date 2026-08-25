@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { criarEscritorioEPerfil } from "@/lib/onboarding";
+import { criarEscritorioEPerfil, aceitarConviteEquipeSePendente } from "@/lib/onboarding";
 import type { Escritorio, Perfil } from "@/lib/types";
 
 export type PerfilAtual = Perfil & { escritorio: Escritorio };
@@ -29,6 +29,12 @@ export type UsuarioAtual = {
  * cada requisição paga o custo de rede (auth + query no Supabase).
  */
 export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
+  // Sem credenciais do Supabase no ambiente (ex.: local sem .env preenchido),
+  // não há sessão possível — evita 500 na criação do client.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
   const supabase = await createClient();
 
   // O middleware já validou a sessão e expôs id+email via header — evita
@@ -46,8 +52,17 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
     userIdDoHeader ? { id: userIdDoHeader, email: userEmailDoHeader } : null;
 
   if (!user) {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    // Falha de rede/indisponibilidade do provider NÃO pode virar 500 em toda
+    // página: sem resposta de auth, trata como anônimo — as rotas protegidas
+    // redirecionam para /login e o usuário retenta (mesmo espírito do
+    // fail-open controlado do middleware).
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    } catch (erro) {
+      console.warn("[current-user/getUsuarioAtual] auth.getUser indisponível; tratando como anônimo:", erro instanceof Error ? erro.message : erro);
+      return null;
+    }
   }
 
   if (!user) return null;
@@ -78,10 +93,18 @@ export const getUsuarioAtual = cache(async (): Promise<UsuarioAtual | null> => {
 
     const nomeUsuario = user.user_metadata?.nome_usuario as string | undefined;
     const nomeEscritorio = user.user_metadata?.nome_escritorio as string | undefined;
-    if (!nomeUsuario || !nomeEscritorio) return null;
 
     try {
-      await criarEscritorioEPerfil(supabase, user.id, nomeUsuario, nomeEscritorio);
+      // Convite de equipe (migration 0038) tem prioridade: um usuário
+      // convidado por `auth.admin.inviteUserByEmail` nunca tem
+      // `nome_usuario`/`nome_escritorio` no metadata (esses só existem no
+      // fluxo de cadastro normal) — sem este passo, ele ficaria preso sem
+      // perfil algum após definir a senha.
+      const escritorioViaConvite = await aceitarConviteEquipeSePendente(supabase, user.id);
+      if (!escritorioViaConvite && (!nomeUsuario || !nomeEscritorio)) return null;
+      if (!escritorioViaConvite) {
+        await criarEscritorioEPerfil(supabase, user.id, nomeUsuario!, nomeEscritorio!);
+      }
     } catch (erro) {
       // Não deixa o onboarding adiado derrubar o layout inteiro com um erro
       // não tratado (contrato documentado desta função é retornar `null`

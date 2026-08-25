@@ -46,7 +46,7 @@ export function StatusProcessualSelect({
         value={statusProcessual}
         disabled={isPending}
         onChange={(evento) => alterar(evento.target.value)}
-        className="block w-full max-w-xs rounded-md border border-white/10 bg-navy-3 px-3 py-2 text-sm text-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-50"
+        className="block w-full max-w-xs rounded-md border border-ink/10 bg-navy-3 px-3 py-2 text-sm text-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-silver disabled:opacity-50"
       >
         {OPCOES.map((opcao) => (
           <option key={opcao.valor} value={opcao.valor}>
@@ -54,7 +54,7 @@ export function StatusProcessualSelect({
           </option>
         ))}
       </select>
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+      {erro && <p className="text-xs text-red-700">{erro}</p>}
       <p className="text-xs text-muted">
         Usado na projeção de recebíveis de honorário de êxito: casos ganhos/com acordo confirmam a
         expectativa; casos perdidos/arquivados a zeram.

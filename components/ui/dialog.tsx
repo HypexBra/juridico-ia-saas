@@ -6,9 +6,9 @@ import { createPortal } from "react-dom";
 const SELETOR_FOCAVEL =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-const OVERLAY_PADRAO = "fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4";
+const OVERLAY_PADRAO = "fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4";
 const PAINEL_PADRAO =
-  "w-full max-w-lg rounded-xl border border-white/10 bg-navy-2 p-6 shadow-2xl";
+  "w-full max-w-lg rounded-xl border border-ink/10 bg-paper p-6 shadow-xl shadow-ink/[0.12]";
 
 type DialogProps = {
   aberto: boolean;
@@ -88,7 +88,7 @@ export function Dialog({
               type="button"
               onClick={onFechar}
               aria-label="Fechar"
-              className="cursor-pointer rounded-md px-2 py-1 text-muted transition-colors hover:bg-white/5 hover:text-ice"
+              className="cursor-pointer rounded-md px-2 py-1 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
             >
               ✕
             </button>

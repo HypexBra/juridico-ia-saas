@@ -44,7 +44,7 @@ export default async function AdminIaChavesPage() {
               <th className="pb-3 font-medium text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-ink/10">
             {chaves.map((chave) => (
               <ChaveIaLinha key={chave.id} chave={chave} />
             ))}

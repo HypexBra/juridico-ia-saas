@@ -106,7 +106,7 @@ export function NovoPrazoForm() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-navy/40 p-3.5">
+      <div className="rounded-lg border border-ink/10 bg-paper-2 p-3.5">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
           Calculadora de prazo (opcional — sugere a data acima, você pode ajustar)
         </p>
@@ -177,7 +177,7 @@ export function NovoPrazoForm() {
 
         {isCalculando && <p className="mt-2 text-xs text-muted">Calculando data sugerida…</p>}
         {!isCalculando && sugestaoInfo && <p className="mt-2 text-xs text-silver">{sugestaoInfo}</p>}
-        {!isCalculando && sugestaoErro && <p className="mt-2 text-xs text-red-400">{sugestaoErro}</p>}
+        {!isCalculando && sugestaoErro && <p className="mt-2 text-xs text-red-700">{sugestaoErro}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

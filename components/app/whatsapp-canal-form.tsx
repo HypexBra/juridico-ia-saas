@@ -39,7 +39,7 @@ export function WhatsappCanalForm({
   return (
     <div className="space-y-4">
       {canalExistente && (
-        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-navy-3/40 px-3.5 py-2.5">
+        <div className="flex items-center justify-between rounded-lg border border-ink/10 bg-navy-3/40 px-3.5 py-2.5">
           <div>
             <p className="text-sm font-medium text-ice">
               Canal cadastrado{canalExistente.numeroExibicao ? ` — ${canalExistente.numeroExibicao}` : ""}
@@ -120,7 +120,7 @@ export function WhatsappCanalForm({
         </Button>
 
         {(state.error || toggleState.error) && (
-          <p className="text-xs text-red-400">{state.error ?? toggleState.error}</p>
+          <p className="text-xs text-red-700">{state.error ?? toggleState.error}</p>
         )}
         {(state.sucesso || toggleState.sucesso) && (
           <p className="text-xs text-muted">{state.sucesso ?? toggleState.sucesso}</p>

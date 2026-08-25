@@ -6,7 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 export const metadata = { title: "Dashboard Admin — Jurídico IA" };
 
 function StatCard({ label, valor, tone }: { label: string; valor: number | string; tone?: "green" | "red" | "amber" }) {
-  const cor = tone === "green" ? "text-green" : tone === "red" ? "text-red-400" : tone === "amber" ? "text-amber-300" : "text-ice";
+  const cor = tone === "green" ? "text-green" : tone === "red" ? "text-red-700" : tone === "amber" ? "text-amber-700" : "text-ice";
   return (
     <Card>
       <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>

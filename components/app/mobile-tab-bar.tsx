@@ -61,7 +61,7 @@ export function MobileTabBar({ onMore }: { onMore: () => void }) {
   return (
     <nav
       aria-label="Navegação principal"
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/10 bg-navy-2/95 backdrop-blur-md md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink/10 bg-navy-2/95 backdrop-blur-md md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {TABS.map((tab) => {
@@ -71,7 +71,7 @@ export function MobileTabBar({ onMore }: { onMore: () => void }) {
             key={tab.href}
             href={tab.href}
             aria-current={isActive ? "page" : undefined}
-            className={`relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10.5px] font-medium transition-colors duration-150 ease-out active:scale-95 active:bg-white/[.06] ${
+            className={`relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10.5px] font-medium transition-colors duration-150 ease-out active:scale-95 active:bg-ink/5 ${
               isActive ? "text-silver-2" : "text-muted"
             }`}
           >
@@ -87,7 +87,7 @@ export function MobileTabBar({ onMore }: { onMore: () => void }) {
         type="button"
         onClick={onMore}
         aria-label="Mais opções"
-        className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10.5px] font-medium text-muted transition-colors duration-150 ease-out active:scale-95 active:bg-white/[.06]"
+        className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10.5px] font-medium text-muted transition-colors duration-150 ease-out active:scale-95 active:bg-ink/5"
       >
         <TabIcon name="more" />
         Mais

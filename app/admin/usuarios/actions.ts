@@ -6,6 +6,7 @@ import { getAdminAtual } from "@/lib/admin/auth";
 import { registrarLogAdmin } from "@/lib/admin/log";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { obterAppUrl } from "@/lib/app/url";
 import type { Role } from "@/lib/types";
 
 export type AdminActionResultado = { ok: true; mensagem: string } | { ok: false; error: string };
@@ -169,7 +170,13 @@ export async function alterarPlanoEscritorioAction(
     return { ok: false, error: "Plano inválido." };
   }
 
-  const supabase = await createClient();
+  // Service_role (createAdminClient), NÃO o client da sessão: a policy
+  // UPDATE de `escritorios` (migration 0012) só permite membros owner do
+  // PRÓPRIO escritório e proíbe explicitamente alterar `plano`/features via
+  // client de usuário. O admin da plataforma não é membro dos escritórios
+  // que administra, então a RLS bloquearia qualquer update aqui — esta é
+  // uma operação administrativa legítima, auditada por registrarLogAdmin.
+  const supabase = createAdminClient();
   const { error } = await supabase.from("escritorios").update({ plano: novoPlano }).eq("id", parsedId.data);
   if (error) {
     console.error("[admin/usuarios] Falha ao alterar plano do escritório:", error);
@@ -222,7 +229,9 @@ export async function redefinirSenhaUsuarioAction(perfilId: string): Promise<Adm
     return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY não configurada." };
   }
 
-  const { error } = await adminClient.auth.resetPasswordForEmail(alvo.email);
+  const { error } = await adminClient.auth.resetPasswordForEmail(alvo.email, {
+    redirectTo: `${obterAppUrl()}/auth/callback?next=/auth/definir-senha`,
+  });
   if (error) {
     console.error("[admin/usuarios] Falha ao enviar e-mail de redefinição de senha:", error);
     return { ok: false, error: "Não foi possível enviar o e-mail de redefinição de senha." };
