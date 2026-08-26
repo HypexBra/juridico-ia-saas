@@ -31,7 +31,7 @@ export function BarChart({
   data,
   height = 120,
   format = "numero",
-  color = "#1d5b46",
+  color = "var(--color-accent)",
 }: {
   data: BarDatum[];
   height?: number;
@@ -64,7 +64,7 @@ export function BarChart({
                   className="w-full origin-bottom rounded-t-sm"
                   style={{
                     height: "100%",
-                    background: isLast ? color : "rgba(199,210,232,0.35)",
+                    background: isLast ? color : "color-mix(in oklab, var(--color-ink) 12%, transparent)",
                     transform: `scaleY(${mounted ? Math.max(ratio, 0.02) : 0})`,
                     transformOrigin: "bottom",
                     transition: `transform 600ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms`,

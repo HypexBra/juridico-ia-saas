@@ -37,7 +37,7 @@ export function CriarChaveIaForm() {
           {isPending ? "Cadastrando…" : "Cadastrar chave"}
         </Button>
         {state && (
-          <p className={`text-xs ${state.ok ? "text-muted" : "text-red-700"}`}>{state.ok ? state.mensagem : state.error}</p>
+          <p className={`text-xs ${state.ok ? "text-muted" : "text-danger"}`}>{state.ok ? state.mensagem : state.error}</p>
         )}
       </div>
     </form>
@@ -58,7 +58,7 @@ const STATUS_LABEL: Record<ChaveIaAdmin["status"], string> = {
 const STATUS_CLASSE: Record<ChaveIaAdmin["status"], string> = {
   ativa: "text-green",
   desativada_temporariamente_por_quota: "text-amber-700",
-  desativada_manual: "text-red-700",
+  desativada_manual: "text-danger",
 };
 
 export function ChaveIaLinha({ chave }: { chave: ChaveIaAdmin }) {
@@ -101,7 +101,7 @@ export function ChaveIaLinha({ chave }: { chave: ChaveIaAdmin }) {
             disabled={isPending}
             onClick={alternar}
             className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-              ativa ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
+              ativa ? "border-danger/30 text-danger hover:bg-danger/10" : "border-green/30 text-green hover:bg-green/10"
             }`}
           >
             {ativa ? "Desativar" : "Reativar"}

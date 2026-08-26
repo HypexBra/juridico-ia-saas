@@ -6,12 +6,15 @@ import { getGsap, prefersReducedMotion } from "@/lib/motion/gsap";
 type Knot = [xFraction: number, yFraction: number];
 
 // Tinta sobre papel (spec redesign v3): a linha é um fio condutor quase
-// imperceptível em tinta (#141412 @ 16%), sem gradiente e sem glow — o
+// imperceptível em tinta (ink @ 16%), sem gradiente e sem glow — o
 // gesto visual vem do desenho progressivo no scroll e dos nós-lacre, não
-// de profundidade artificial.
-const THREAD_STROKE = "rgba(20,20,18,0.16)";
-const NODE_FILL = "#1d5b46" // verde-selo (ADR 0016);
-const LABEL_FILL = "rgba(20,20,18,0.45)";
+// de profundidade artificial. Cores via `color-mix`/`var()` (não hex fixo):
+// `--color-ink` inverte de valor no tema escuro (ver globals.css), então o
+// fio continua "tinta sobre papel" nos dois temas em vez de ficar preto
+// sobre fundo já escuro.
+const THREAD_STROKE = "color-mix(in oklab, var(--color-ink) 16%, transparent)";
+const NODE_FILL = "var(--color-accent)"; // verde-selo (ADR 0016)
+const LABEL_FILL = "color-mix(in oklab, var(--color-ink) 45%, transparent)";
 
 // Desktop: an organic sway crossing left/right roughly six times down the
 // page, loosely tracking where each section's asymmetric content sits (hero

@@ -34,7 +34,7 @@ export function UsageRing({
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(100, Math.max(0, percent));
   const offset = circumference - (mounted ? clamped / 100 : 0) * circumference;
-  const color = tone === "red" ? "#b91c1c" : "#1d5b46";
+  const color = tone === "red" ? "var(--color-danger)" : "var(--color-silver)";
 
   return (
     <div
@@ -49,7 +49,7 @@ export function UsageRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(20,20,18,0.08)"
+          stroke="color-mix(in oklab, var(--color-ink) 8%, transparent)"
           strokeWidth={strokeWidth}
         />
         <circle

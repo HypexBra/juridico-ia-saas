@@ -19,10 +19,11 @@ export type AnalisarContratoResultado =
 
 /**
  * Análise de risco contratual clause-by-clause (feature Pro
- * "analise_risco_contratual", migration 0017) — irmã de
- * `gerarPecaCompletaAction` (`app/app/fichas/[id]/pecas-actions.ts`), mesmo
- * padrão de gate de plano ANTES de qualquer I/O e de nunca salvar/exibir
- * resposta vazia/inválida da IA como se fosse uma análise real.
+ * "analise_risco_contratual", migration 0017) — mesmo padrão de gate de
+ * plano ANTES de qualquer I/O e de nunca salvar/exibir resposta
+ * vazia/inválida da IA como se fosse uma análise real que a redação
+ * assistida de peças usa (agora via streaming SSE — ver
+ * app/api/pecas/gerar/route.ts).
  *
  * Avulsa por decisão de v1: não recebe `fichaId` (a coluna
  * `ficha_caso_id` existe na migration para o futuro, mas esta action sempre

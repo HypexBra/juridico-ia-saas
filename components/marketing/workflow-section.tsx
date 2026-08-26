@@ -85,8 +85,8 @@ const STEPPER_CSS = `
     }
     @keyframes jur-wf-preencher {
       from {
-        background-color: #faf9f5;
-        border-color: rgb(20 20 18 / 0.25);
+        background-color: var(--color-paper);
+        border-color: color-mix(in oklab, var(--color-ink) 25%, transparent);
       }
       to {
         background-color: var(--color-accent);
@@ -122,7 +122,7 @@ export function WorkflowSection() {
         {PASSOS.map(({ indice, nome, descricao }, i) => (
           <li
             key={indice}
-            className={`relative border-l border-ink/15 pb-12 pl-8 last:border-transparent last:pb-0 md:pl-10 ${
+            className={`relative border-l border-ink/15 pb-7 pl-8 last:border-transparent last:pb-0 md:pl-10 ${
               i === 0 ? "" : "pt-1"
             }`}
           >

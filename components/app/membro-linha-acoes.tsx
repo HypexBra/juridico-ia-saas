@@ -73,13 +73,13 @@ export function MembroLinhaAcoes({
           disabled={isPending || !podeAlterarRole}
           onClick={alternarAtivo}
           className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-            ativo ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
+            ativo ? "border-danger/30 text-danger hover:bg-danger/10" : "border-green/30 text-green hover:bg-green/10"
           }`}
         >
           {ativo ? "Desativar" : "Ativar"}
         </button>
       </div>
-      {erro && <p className="text-[11px] text-red-700">{erro}</p>}
+      {erro && <p className="text-[11px] text-danger">{erro}</p>}
       {mensagem && <p className="text-[11px] text-muted">{mensagem}</p>}
     </div>
   );

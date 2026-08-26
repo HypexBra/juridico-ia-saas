@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { IconClose, IconMenu } from "./icons";
 
 /* Nav editorial "papel-e-tinta": transparente sobre o papel e, depois de
@@ -103,6 +104,7 @@ export function Nav() {
         {/* Par de ações: "Entrar" (link textual) + CTA primário. Quem já tem
             conta não precisa passar pelo cadastro para logar. */}
         <div className="hidden items-center gap-5 md:flex">
+          <ThemeToggle className="flex h-9 w-9 items-center justify-center rounded-none border border-ink/15 text-ink-2 transition-colors hover:border-ink/30 hover:text-ink" />
           <Link
             href={LOGIN_HREF}
             className="font-sans-ed text-sm font-medium text-ink-2 transition-colors hover:text-ink"
@@ -117,16 +119,19 @@ export function Nav() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls="menu-mobile"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
-          onClick={() => setOpen((value) => !value)}
-          className="flex h-10 w-10 items-center justify-center rounded-none border border-ink/15 text-ink transition-colors hover:border-ink/30 md:hidden"
-        >
-          {open ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-none border border-ink/15 text-ink transition-colors hover:border-ink/30" />
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls="menu-mobile"
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            onClick={() => setOpen((value) => !value)}
+            className="flex h-10 w-10 items-center justify-center rounded-none border border-ink/15 text-ink transition-colors hover:border-ink/30"
+          >
+            {open ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Painel mobile: página inteira em papel sob a barra fixa (h-16).
