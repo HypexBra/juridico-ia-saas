@@ -15,6 +15,7 @@ import {
   TAMANHO_MAXIMO_TESE_ADVOGADO_CONTRA,
   TIPOS_ARQUIVO_ADVOGADO_CONTRA,
 } from "@/lib/advogado-contra/analisar";
+import { buscarContextoJurisprudencia, recortarConsultaRag } from "@/lib/rag/contexto-juridico";
 import {
   bufferBateComAssinatura,
   inferirTipoArquivoUpload,
@@ -141,7 +142,17 @@ export async function analisarColadoAction(formData: FormData): Promise<Analisar
   // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
   // gravada no insert de `uso_ia` mais adiante.
   const inicioChamadaIaMs = Date.now();
-  const resultado = await analisarComoAdvogadoContra({ origem: "colado", titulo, texto });
+  // RAG (P0.4): recupera jurisprudência relevante ANTES de montar o prompt,
+  // para o ataque à tese se apoiar em precedente real e datado em vez de só
+  // no conhecimento congelado do modelo. Nunca bloqueia a análise: sem nada
+  // relevante na base, `bloco` é null e o comportamento é o de antes.
+  const { bloco: contextoJuridico } = await buscarContextoJurisprudencia(
+    supabase,
+    escritorioId,
+    recortarConsultaRag([titulo, texto].filter(Boolean).join(" ")),
+  );
+
+  const resultado = await analisarComoAdvogadoContra({ origem: "colado", titulo, texto, contextoJuridico });
   const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 
@@ -263,6 +274,13 @@ export async function analisarUploadAction(formData: FormData): Promise<Analisar
   // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
   // gravada no insert de `uso_ia` mais adiante.
   const inicioChamadaIaMs = Date.now();
+  // SEM contexto RAG neste caminho, de propósito: o texto do PDF/DOCX só é
+  // extraído DENTRO de `analisarComoAdvogadoContra`, então aqui não existe
+  // ainda a consulta a fazer no RAG (o título sozinho é sinal fraco demais
+  // para uma busca por similaridade útil, e uma busca ruim entrega precedente
+  // irrelevante como se fosse fundamentado). Plugar isso exige mover a
+  // extração para fora de `analisar.ts` · registrado como próximo passo em
+  // docs/P0.4-rag-diario-integracao.md, não fingido aqui.
   const resultado = await analisarComoAdvogadoContra({
     origem: "upload",
     titulo,
@@ -385,10 +403,17 @@ export async function analisarTeseCadastradaAction(teseCasoId: string): Promise<
   // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
   // gravada no insert de `uso_ia` mais adiante.
   const inicioChamadaIaMs = Date.now();
+  const { bloco: contextoJuridico } = await buscarContextoJurisprudencia(
+    supabase,
+    escritorioId,
+    recortarConsultaRag([tese.tese, tese.fundamentacao].filter(Boolean).join(" ")),
+  );
+
   const resultado = await analisarComoAdvogadoContra({
     origem: "tese_cadastrada",
     tese: tese.tese,
     fundamentacao: tese.fundamentacao,
+    contextoJuridico,
   });
   const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();

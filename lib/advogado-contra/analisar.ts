@@ -58,7 +58,7 @@ function inferirMimeTypeImagem(nomeArquivo: string): string {
  * sem upload/extração nenhuma, o texto do prompt é montado direto a partir
  * de `teses_caso.tese`/`teses_caso.fundamentacao`, Fase 1).
  */
-export type ParametrosAnalisarComoAdvogadoContra =
+type OrigemAdvogadoContra =
   | { origem: "colado"; titulo: string | null; texto: string }
   | {
       origem: "upload";
@@ -68,6 +68,18 @@ export type ParametrosAnalisarComoAdvogadoContra =
       nomeArquivo: string;
     }
   | { origem: "tese_cadastrada"; tese: string; fundamentacao: string | null };
+
+/**
+ * `contextoJuridico`: bloco de jurisprudência recuperada do RAG, já
+ * delimitado e marcado como NÃO CONFIÁVEL por
+ * `lib/rag/contexto-juridico.ts#buscarContextoJurisprudencia`. Opcional de
+ * propósito: `null`/ausente é o comportamento anterior (análise só com o
+ * conhecimento do modelo), e é o que acontece quando a base não tem nada
+ * relevante · nunca se inventa contexto para preencher o campo.
+ */
+export type ParametrosAnalisarComoAdvogadoContra = OrigemAdvogadoContra & {
+  contextoJuridico?: string | null;
+};
 
 export type ResultadoAnalisarComoAdvogadoContra =
   | { ok: true; resultado: ResultadoAdvogadoContra; modeloIaUsado: string }
@@ -133,6 +145,17 @@ export async function analisarComoAdvogadoContra(
         paginas,
         truncado,
       });
+    }
+
+    // Contexto do RAG entra DEPOIS do texto a analisar, como bloco separado:
+    // o modelo precisa saber o que é o alvo da análise (turno do usuário) e o
+    // que é referência recuperada (dado externo, não instrução). Concatenar
+    // antes misturaria os dois e enfraqueceria a marcação anti-injeção que
+    // `montarBlocoContexto` estabelece.
+    if (parametros.contextoJuridico) {
+      promptTexto = `${promptTexto}
+
+${parametros.contextoJuridico}`;
     }
 
     const jsonBruto = await gerarRespostaEstruturada({

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { autorizarChamadaCron } from "@/lib/cron/autorizar";
 import { processarLembretesWhatsapp } from "@/lib/whatsapp/lembretes";
 
 export const maxDuration = 60;
@@ -15,14 +16,9 @@ export const maxDuration = 60;
  * escritórios com canal WhatsApp ativo, não só o de um usuário logado.
  */
 export async function GET(request: NextRequest) {
-  const secretEsperado = process.env.CRON_SECRET;
-  if (!secretEsperado) {
-    return NextResponse.json({ error: "CRON_SECRET não configurado no servidor." }, { status: 500 });
-  }
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${secretEsperado}`) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  const auth = autorizarChamadaCron(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status });
   }
 
   try {

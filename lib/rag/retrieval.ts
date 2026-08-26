@@ -3,27 +3,24 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { gerarEmbedding } from "./embeddings";
 import { obterEmbeddingCacheado, guardarEmbeddingCache } from "./embedding-cache";
+import { selecionarChunks, SELECAO_PADRAO } from "./selecao";
 
-// Revisão destas constantes (item de melhoria contínua de RAG jurídico):
-// 1800 chars (~500-700 tokens) com overlap de 200 (~10%) já está dentro da
-// faixa recomendada para RAG sobre texto jurídico (parágrafos/artigos de lei
-// raramente precisam de mais que isso para carregar contexto suficiente sem
-// diluir a relevância do chunk). TOP_K=6 e distância máx. 0.7 também seguem
-// prática comum (4-8 chunks, corte de cosine distance entre 0.6-0.8). Testado
-// e mantido como está — não mudar só por mudar. A única mudança real feita
-// aqui foi de DIVERSIDADE (ver MAX_CHUNKS_POR_FONTE abaixo), motivada pela
-// entrada de jurisprudência (migration 0008) no mesmo pool de busca: um único
-// acórdão longo poderia, em tese, ocupar vários dos 6 slots e afogar fontes
-// internas do próprio escritório (ficha/prazo/modelo) que são normalmente
-// mais específicas para a pergunta do usuário.
-const TOP_K = 6;
-// Distância de cosseno (0 = idêntico, 2 = oposto). Acima disso o chunk é
-// considerado ruído e descartado — nunca vira "contexto" pro prompt.
-const DISTANCIA_MAXIMA_RELEVANTE = 0.7;
-// Limite de chunks por fonte_tipo dentro do TOP_K final, para garantir
-// diversidade de fontes na resposta (nunca um único tipo de fonte monopoliza
-// todo o contexto). Vagas não usadas por um tipo sobram para os demais.
-const MAX_CHUNKS_POR_FONTE = 4;
+// Parâmetros de relevância/diversidade/orçamento vivem em `./selecao.ts`
+// (SELECAO_PADRAO), junto da lógica que os aplica — antes estavam soltos aqui
+// e a lógica de seleção estava inline no meio da função de busca.
+//
+// 1800 chars por chunk (~500-700 tokens) com overlap de 200 já está dentro da
+// faixa recomendada para RAG sobre texto jurídico; topK=6 e corte de cosseno
+// em 0.7 seguem prática comum (4-8 chunks, 0.6-0.8). Isso continua valendo.
+// O que mudou é que esses tetos deixaram de ser o ÚNICO filtro: um chunk
+// agora também precisa estar perto do primeiro colocado em relevância, não
+// ser texto repetido de um chunk já escolhido, e caber no orçamento de
+// caracteres da mensagem.
+
+// Quantos candidatos pedir à RPC. Mais que o topK final, para a seleção ter
+// margem de descartar redundante/irrelevante e ainda preencher o orçamento.
+// 3x (era 2x) porque agora existem dois filtros a mais depois da busca.
+const MULTIPLICADOR_CANDIDATOS = 3;
 
 export type FonteTipoChunk = "documento_upload" | "ficha_caso" | "prazo" | "modelo" | "jurisprudencia";
 
@@ -46,6 +43,7 @@ export async function buscarContextoRelevante(
   supabase: SupabaseClient,
   escritorioId: string,
   pergunta: string,
+  opcoes: { fonteTipos?: readonly FonteTipoChunk[] } = {},
 ): Promise<ChunkRecuperado[]> {
   // Cache best-effort do embedding da QUERY (ver lib/rag/embedding-cache.ts)
   // — evita gastar uma chamada de embedding quando a mesma pergunta (ou uma
@@ -57,15 +55,17 @@ export async function buscarContextoRelevante(
     guardarEmbeddingCache(pergunta, embeddingConsulta);
   }
 
-  // Busca mais candidatos do que o TOP_K final (2x) para sobrar margem de
-  // reordenar por diversidade de fonte sem perder qualidade — o corte por
-  // distância abaixo continua sendo a garantia de relevância, a diversidade
-  // só decide QUAIS dos candidatos relevantes entram no orçamento de 6.
+  // Busca mais candidatos que o topK final para a seleção ter de onde
+  // escolher depois de descartar redundância e irrelevância (ver ./selecao.ts).
   const { data, error } = await supabase.rpc("buscar_chunks_similares", {
     p_escritorio_id: escritorioId,
     p_query_embedding: embeddingConsulta,
-    p_match_count: TOP_K * 2,
-    p_fonte_tipos: null,
+    p_match_count: SELECAO_PADRAO.topK * MULTIPLICADOR_CANDIDATOS,
+    // `null` = todas as fontes (comportamento do chat). Um subconjunto é
+    // usado por features que só têm sentido com um tipo de contexto · ex:
+    // o Advogado do Contra busca só jurisprudência, porque contra-argumentar
+    // uma tese com a ficha interna do próprio caso seria circular.
+    p_fonte_tipos: opcoes.fonteTipos?.length ? [...opcoes.fonteTipos] : null,
   });
 
   if (error || !data) return [];
@@ -78,7 +78,6 @@ export async function buscarContextoRelevante(
     metadata: Record<string, unknown>;
     distancia: number;
   }>)
-    .filter((linha) => linha.distancia <= DISTANCIA_MAXIMA_RELEVANTE)
     .map((linha) => ({
       id: linha.id,
       fonteTipo: linha.fonte_tipo,
@@ -88,30 +87,36 @@ export async function buscarContextoRelevante(
       distancia: linha.distancia,
     }));
 
-  // Já vem ordenado por distância (ver ORDER BY na RPC); aplica o teto por
-  // fonte_tipo respeitando essa ordem (greedy: pega o mais relevante de cada
-  // tipo primeiro) e completa o restante do orçamento com o que sobrar dos
-  // candidatos mais relevantes, de qualquer tipo.
-  const porTipo = new Map<string, number>();
-  const selecionados: ChunkRecuperado[] = [];
-  const sobras: ChunkRecuperado[] = [];
+  // Selecao final delegada a `lib/rag/selecao.ts` (funcao pura, testada):
+  // corte relativo ao melhor resultado, teto por fonte, deduplicacao por
+  // sobreposicao de texto e orcamento de caracteres. Antes daqui saiam ate 6
+  // chunks de ate 1800 chars (~3.000 tokens) em TODA mensagem nao-trivial,
+  // inclusive quando o 5o e o 6o eram vizinhos sobrepostos do mesmo documento
+  // ou estavam muito atras do primeiro colocado em relevancia.
+  const { selecionados, descartes, charsUsados } = selecionarChunks(candidatos, SELECAO_PADRAO);
 
-  for (const chunk of candidatos) {
-    const usados = porTipo.get(chunk.fonteTipo) ?? 0;
-    if (usados < MAX_CHUNKS_POR_FONTE) {
-      porTipo.set(chunk.fonteTipo, usados + 1);
-      selecionados.push(chunk);
-    } else {
-      sobras.push(chunk);
-    }
-    if (selecionados.length >= TOP_K) break;
-  }
-  for (const chunk of sobras) {
-    if (selecionados.length >= TOP_K) break;
-    selecionados.push(chunk);
+  // Observabilidade barata do que a selecao economizou. `console.error` para
+  // sair no log da Vercel (mesmo padrao dos demais eventos estruturados do
+  // projeto) e so quando houve descarte · nao polui o log do caminho comum.
+  const totalDescartado =
+    descartes.porDistanciaAbsoluta +
+    descartes.porMargemRelativa +
+    descartes.porRedundancia +
+    descartes.porOrcamento +
+    descartes.porTetoDeFonte;
+  if (totalDescartado > 0) {
+    console.error(
+      JSON.stringify({
+        evento: "rag_selecao_chunks",
+        candidatos: candidatos.length,
+        selecionados: selecionados.length,
+        charsUsados,
+        descartes,
+      }),
+    );
   }
 
-  return selecionados.slice(0, TOP_K);
+  return selecionados;
 }
 
 const RÓTULO_FONTE: Record<FonteTipoChunk, string> = {

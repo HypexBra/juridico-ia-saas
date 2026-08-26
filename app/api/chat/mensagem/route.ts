@@ -17,13 +17,14 @@ import {
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara, type Mensagem } from "@/lib/types";
-import { mensagemTrivial } from "@/lib/ia/gate-trivialidade";
+import { decidirContexto } from "@/lib/ia/roteador-contexto";
 import { blocoContextoEscritorio, carregarMemoriaEscritorio } from "@/lib/ia/contexto-escritorio";
 import {
   JANELA_DEDUP_MS,
   MAX_HISTORICO,
   MAX_TAMANHO_MENSAGEM,
   mesRefAtual,
+  recortarHistoricoPorOrcamento,
   tituloDoTexto,
   truncarTurnoAntigo,
 } from "@/lib/app/chat-shared";
@@ -164,15 +165,21 @@ export async function POST(request: NextRequest) {
         }
 
         const historicoRows = [...recentes].reverse().slice(-(MAX_HISTORICO - 1));
-        const historico: ChatTurno[] = [
-          ...historicoRows.map((m) => truncarTurnoAntigo({ role: m.role, conteudo: m.conteudo } as ChatTurno)),
-          { role: "user", conteudo: input.texto },
-        ];
+        // Dois cortes complementares: por TURNO (uma peca gerada nao volta
+        // inteira) e pelo TOTAL (a soma dos turnos nao cresce sem teto ao
+        // longo da conversa). Ver chat-shared.ts.
+        const anteriores = recortarHistoricoPorOrcamento(
+          historicoRows.map((m) => truncarTurnoAntigo({ role: m.role, conteudo: m.conteudo } as ChatTurno)),
+        );
+        const historico: ChatTurno[] = [...anteriores, { role: "user", conteudo: input.texto }];
 
-        // Gate de trivialidade decidido ANTES do RAG: mensagem trivial não
-        // paga nem a busca no banco (~50-200ms), nem o grounding server-side
-        // (segundos). Mensagem real mantém comportamento completo.
-        const trivial = mensagemTrivial(input.texto);
+        // Roteamento de contexto ANTES de qualquer chamada cara (ver
+        // lib/ia/roteador-contexto.ts). Decide, de uma vez, se esta mensagem
+        // paga busca no banco (RAG) e se paga pesquisa web (grounding
+        // server-side, de segundos). Antes so havia trivial/nao-trivial, e
+        // toda mensagem nao-trivial pagava as duas coisas.
+        const contexto = decidirContexto(input.texto);
+        const trivial = contexto.modo === "rapido";
 
         // Três consultas INDEPENDENTES em paralelo (a latência total é o
         // maior dos três tempos, não a soma): propostas pendentes (gate do
@@ -185,14 +192,14 @@ export async function POST(request: NextRequest) {
             .select("id", { count: "exact", head: true })
             .eq("conversa_id", conversaId)
             .eq("status", "pending"),
-          trivial
-            ? Promise.resolve([] as ChunkRecuperado[])
-            : buscarContextoRelevante(supabase, escritorioId, input.texto).catch(() => [] as ChunkRecuperado[]),
+          contexto.usarRag
+            ? buscarContextoRelevante(supabase, escritorioId, input.texto).catch(() => [] as ChunkRecuperado[])
+            : Promise.resolve([] as ChunkRecuperado[]),
           carregarMemoriaEscritorio(supabase, escritorioId),
         ]);
 
         const propostasPendentes = propostasPendentesResultado.count;
-        const contextoRag: string | null = trivial ? null : montarBlocoContexto(ragResultado);
+        const contextoRag: string | null = contexto.usarRag ? montarBlocoContexto(ragResultado) : null;
         // Bloco vazio (escritório sem memória configurada) vira undefined:
         // comporSystemInstruction trata os dois como "nada a injetar" —
         // comportamento idêntico ao anterior à Fase 17.
@@ -210,6 +217,7 @@ export async function POST(request: NextRequest) {
             contextoRag,
             habilitarFerramentas: (propostasPendentes ?? 0) === 0,
             modoRapido: trivial,
+            modoContexto: contexto.modo,
             blocoMemoriaEscritorio: blocoMemoria || undefined,
             providerOverride: input.provider ? { provider: input.provider } : undefined,
           })) {
@@ -372,6 +380,7 @@ export async function POST(request: NextRequest) {
           tokensIn,
           tokensOut,
           modoRapido: trivial,
+          modoContexto: contexto.modo,
           interrompida,
         });
       } catch (erro) {

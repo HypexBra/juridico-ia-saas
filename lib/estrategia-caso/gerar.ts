@@ -42,6 +42,15 @@ export type ContextoResumoEstrategiaCaso = {
 
 export type ParametrosGerarEstrategiaCaso = {
   dados: DadosContextoEstrategiaCaso;
+  /**
+   * Bloco de jurisprudencia recuperada do RAG, ja delimitado e marcado como
+   * NAO CONFIAVEL por `lib/rag/contexto-juridico.ts`. Opcional: ausente/null
+   * e o comportamento anterior (estrategia montada so com o material interno
+   * do caso). Nunca se fabrica contexto para preencher o campo · sem nada
+   * relevante na base, o campo fica vazio e a IA e instruida a nao fingir
+   * que consultou jurisprudencia.
+   */
+  contextoJuridico?: string | null;
 };
 
 export type ResultadoGerarEstrategiaCaso =
@@ -100,7 +109,16 @@ export async function gerarEstrategiaCaso(
     const contextoResumo = montarContextoResumo(dados);
 
     const contexto = montarContextoEstrategiaCaso(dados);
-    const promptTexto = montarPromptEstrategiaCaso(contexto);
+    // Contexto recuperado entra DEPOIS do dossie do caso, como bloco
+    // separado: o modelo precisa distinguir o material do proprio caso
+    // (fato) da jurisprudencia externa recuperada (referencia). Concatenar
+    // antes misturaria os dois e enfraqueceria a marcacao anti-injecao.
+    const promptBase = montarPromptEstrategiaCaso(contexto);
+    const promptTexto = parametros.contextoJuridico
+      ? `${promptBase}
+
+${parametros.contextoJuridico}`
+      : promptBase;
 
     const jsonBruto = await gerarRespostaEstruturada({
       promptTexto,

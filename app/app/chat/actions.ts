@@ -6,6 +6,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from "@/lib/ia/provider";
 import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
+import { decidirContexto } from "@/lib/ia/roteador-contexto";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara } from "@/lib/types";
@@ -17,6 +18,7 @@ import {
   MAX_TAMANHO_MENSAGEM,
   mesRefAtual,
   tituloDoTexto,
+  recortarHistoricoPorOrcamento,
   truncarTurnoAntigo,
 } from "@/lib/app/chat-shared";
 export type ConversaResumo = Pick<Conversa, "id" | "titulo" | "iniciada_em" | "total_msgs" | "criado_por">;
@@ -275,10 +277,21 @@ export async function enviarMensagemAction(
   // mensagem atual do usuário ocupa a última posição, adicionada abaixo).
   const historicoRows = [...recentes].reverse().slice(-(MAX_HISTORICO - 1));
 
-  const historico: ChatTurno[] = [
-    ...historicoRows.map((m) => truncarTurnoAntigo({ role: m.role, conteudo: m.conteudo } as ChatTurno)),
-    { role: "user", conteudo: parsed.data.texto },
-  ];
+  // Mesmos dois cortes da rota de streaming: por TURNO (uma peca gerada nao
+  // volta inteira a cada mensagem) e pelo TOTAL da janela (a soma dos turnos
+  // nao cresce sem teto conforme a conversa avanca). Ver chat-shared.ts.
+  const anteriores = recortarHistoricoPorOrcamento(
+    historicoRows.map((m) => truncarTurnoAntigo({ role: m.role, conteudo: m.conteudo } as ChatTurno)),
+  );
+
+  const historico: ChatTurno[] = [...anteriores, { role: "user", conteudo: parsed.data.texto }];
+
+  // Roteamento de contexto (lib/ia/roteador-contexto.ts): decide se esta
+  // mensagem paga busca RAG e se paga pesquisa web. Antes, a Server Action
+  // rodava RAG em TODA mensagem (inclusive "oi") e deixava o provider decidir
+  // sozinho sobre a pesquisa · agora as duas decisoes saem do mesmo lugar
+  // que a rota de streaming usa, para os dois caminhos nao divergirem.
+  const contexto = decidirContexto(parsed.data.texto);
 
   // Gate de segurança do agente (query de propostas pendentes), busca RAG e
   // memória do escritório (Fase 17) são independentes entre si (não
@@ -295,7 +308,9 @@ export async function enviarMensagemAction(
       .select("id", { count: "exact", head: true })
       .eq("conversa_id", conversaId)
       .eq("status", "pending"),
-    buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[]),
+    contexto.usarRag
+      ? buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[])
+      : Promise.resolve([] as ChunkRecuperado[]),
     carregarMemoriaEscritorio(supabase, escritorioId),
   ]);
 
@@ -317,6 +332,7 @@ export async function enviarMensagemAction(
   try {
     respostaIa = await gerarResposta(historico, {
       contextoRag,
+      modoContexto: contexto.modo,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
       blocoMemoriaEscritorio: blocoMemoria || undefined,
       providerOverride: parsed.data.provider ? { provider: parsed.data.provider } : undefined,
