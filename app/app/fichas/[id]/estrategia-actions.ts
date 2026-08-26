@@ -11,6 +11,7 @@ import {
 } from "@/lib/ia/limite-concorrencia";
 import { MAXIMO_EVENTOS_CONTEXTO_ESTRATEGIA, type DadosContextoEstrategiaCaso } from "@/lib/estrategia-caso/contexto";
 import { gerarEstrategiaCaso } from "@/lib/estrategia-caso/gerar";
+import { buscarContextoJurisprudencia, recortarConsultaRag } from "@/lib/rag/contexto-juridico";
 import type { EstrategiaCaso, FichaCaso } from "@/lib/types";
 
 /**
@@ -251,10 +252,27 @@ export async function gerarEstrategiaCasoAction(fichaCasoId: string): Promise<Ge
   }
 
   const dados = await buscarDadosContextoEstrategiaCaso(supabase, ficha, parsedFichaId.data);
+
+  // RAG: jurisprudencia relevante para a materia do caso, recuperada ANTES de
+  // montar o prompt. A consulta e montada a partir do que identifica o caso
+  // juridicamente (area do direito + fatos + teses ja cadastradas), nao do
+  // dossie inteiro · um texto longo demais dilui o vetor de busca e devolve
+  // resultado generico (ver recortarConsultaRag).
+  const consultaRag = recortarConsultaRag(
+    [
+      dados.ficha.areaDireito,
+      dados.ficha.resumoFatos,
+      ...dados.teses.map((tese) => tese.tese),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+  const { bloco: contextoJuridico } = await buscarContextoJurisprudencia(supabase, escritorioId, consultaRag);
+
   // Observabilidade (Fase 27): duração real da chamada de IA medida aqui e
   // gravada no insert de `uso_ia` mais adiante.
   const inicioChamadaIaMs = Date.now();
-  const resultado = await gerarEstrategiaCaso({ dados });
+  const resultado = await gerarEstrategiaCaso({ dados, contextoJuridico });
   const duracaoChamadaIaMs = Date.now() - inicioChamadaIaMs;
   const agora = new Date().toISOString();
 

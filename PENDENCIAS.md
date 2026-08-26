@@ -6,11 +6,28 @@ Histórico detalhado por sessão: ver `HANDOFF_2026-08-*.md`.
 
 ## 1. CRÍTICO — ação manual do usuário
 
-### 1.1 Migrations 0037–0047 no Supabase
+### 1.1 Migrations 0037–0048 no Supabase
 Features das sessões 4–6 dependem delas (equipe, Advogado do Contra, Estrategista,
 pesquisa STJ, prioridade de tarefas, workflows, observabilidade de uso e memória do
 escritório estão DEGRADADOS/INERTES no ar até a aplicação).
 Passo a passo, ordem e SQL de verificação: **`docs/MIGRATIONS_PENDENTES.md`**.
+
+**0048 (novo, sessão 8)** — `rag_fonte_cursor` + `rag_execucao_log` +
+`rag_saude_fontes()`. Sem ela o job diário da base jurídica
+(`/api/cron/atualizar-base-juridica`, já agendado no `vercel.json`) falha em
+toda execução ao tentar gravar o log. Contexto completo:
+`docs/P0.4-rag-diario-integracao.md`.
+
+### 1.4 Cron do STJ nunca rodou (corrigido, exige redeploy)
+`/api/cron/sync-stj` só exportava `POST`, e o Vercel Cron dispara sempre
+`GET`: toda execução agendada respondia 405 desde a criação. O sync do STJ
+passou para dentro do job diário e a rota ganhou `export const GET = POST`
+para disparo manual por URL. Nada a fazer além do deploy.
+
+### 1.5 Canal de alerta da base jurídica (opcional)
+`RAG_ALERTA_WEBHOOK_URL` na Vercel (Slack/Discord/Teams, POST JSON com
+`text`). Sem ela, o alerta "base jurídica sem atualização há mais de 26h"
+fica só no log da Vercel, como `evento: rag_base_juridica_desatualizada`.
 
 ### 1.2 Redirect URL no Supabase
 Authentication → URL Configuration → Redirect URLs:

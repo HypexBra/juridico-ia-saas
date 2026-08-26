@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { autorizarChamadaCron } from "@/lib/cron/autorizar";
 import { indexarJurisprudencias, jurisprudenciaInputSchema } from "@/lib/rag/jurisprudencia";
 
 export const maxDuration = 60;
@@ -27,14 +28,9 @@ const bodySchema = z.object({
  * convertida para este formato. Não é um scraper automático.
  */
 export async function POST(request: NextRequest) {
-  const secretEsperado = process.env.CRON_SECRET;
-  if (!secretEsperado) {
-    return NextResponse.json({ error: "CRON_SECRET não configurado no servidor." }, { status: 500 });
-  }
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${secretEsperado}`) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  const auth = autorizarChamadaCron(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.erro }, { status: auth.status });
   }
 
   let json: unknown;

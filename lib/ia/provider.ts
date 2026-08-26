@@ -6,6 +6,7 @@ import {
   gerarRespostaGeminiStream,
   resolverModoRapido,
   type ChatTurno,
+  type ModoContexto,
   type OpcoesGeracao,
   type RespostaIa,
   type StreamEvento,
@@ -13,7 +14,7 @@ import {
 import { gerarRespostaGroq, gerarRespostaGroqStream } from "./groq";
 import { QuotaExcedidaError, TodosProvidersIndisponiveisError } from "@/lib/ia/erros";
 
-export type { ChatTurno, RespostaIa, StreamEvento, OpcoesGeracao };
+export type { ChatTurno, RespostaIa, StreamEvento, OpcoesGeracao, ModoContexto };
 export { TodosProvidersIndisponiveisError };
 
 /**
@@ -40,6 +41,13 @@ export async function gerarResposta(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     responseSchema?: Schema;
+    /**
+     * Modo de contexto resolvido por `lib/ia/roteador-contexto.ts`. Repassado
+     * ao provider acionado; decide se o grounding `googleSearch` entra na
+     * config (ver OpcoesGeracao em lib/ia/gemini.ts). Ausente = o provider
+     * resolve sozinho pela ultima mensagem.
+     */
+    modoContexto?: ModoContexto;
     /**
      * Bloco de memória do escritório (Fase 17) repassado INTEGRO ao provider
      * que for de fato acionado — inclusive no caminho com `providerOverride`
@@ -106,6 +114,13 @@ export async function* gerarRespostaStream(
     habilitarFerramentas?: boolean;
     systemPromptOverride?: string;
     modoRapido?: boolean;
+    /**
+     * Modo de contexto resolvido por `lib/ia/roteador-contexto.ts`. Repassado
+     * ao provider acionado; decide se o grounding `googleSearch` entra na
+     * config (ver OpcoesGeracao em lib/ia/gemini.ts). Ausente = o provider
+     * resolve sozinho pela ultima mensagem.
+     */
+    modoContexto?: ModoContexto;
     /**
      * Bloco de memória do escritório (Fase 17) repassado INTEGRO ao provider
      * acionado — inclusive no caminho com `providerOverride` (gemini e groq

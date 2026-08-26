@@ -12,14 +12,41 @@ const PUBLIC_PATHS = [
   "/portal/consultar",
 ];
 
+/**
+ * Headers de identidade que ESTE middleware injeta para o fast path de
+ * `lib/app/current-user.ts` / `lib/app/current-client-portal.ts`. Como são
+ * lidos server-side como se fossem confiáveis, um header de MESMO NOME vindo
+ * do cliente jamais pode sobreviver até a rota: `new Headers(request.headers)`
+ * copia o que veio na requisição, e no caminho "sem sessão" a requisição
+ * seguia adiante intacta · bastava um `curl -H "x-user-id: <uuid>"` para
+ * `getUsuarioAtual()` resolver uma identidade que o Supabase Auth nunca
+ * emitiu. Hoje a RLS ainda barra a leitura (as policies resolvem
+ * `auth.uid()` pelo JWT do cookie, não pelo header), mas isso é sorte de
+ * defesa em profundidade, não desenho: qualquer rota futura que troque o
+ * client de sessão por `createAdminClient()` depois de identificar o usuário
+ * por `getUsuarioAtual()` viraria bypass de autenticação direto.
+ * Por isso: sempre remover o header do cliente ANTES de qualquer coisa, e só
+ * o middleware ter o direito de escrevê-lo.
+ */
+const HEADERS_IDENTIDADE_INJETADOS = ["x-user-id", "x-user-email"] as const;
+
+function semHeadersDeIdentidadeDoCliente(request: NextRequest): Headers {
+  const headers = new Headers(request.headers);
+  for (const nome of HEADERS_IDENTIDADE_INJETADOS) headers.delete(nome);
+  return headers;
+}
+
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Qualquer x-user-id/x-user-email que o cliente tenha mandado é descartado
+  // aqui e nunca chega à rota. Todo `NextResponse.next` abaixo (inclusive os
+  // caminhos de fail-open) parte desta versão saneada, nunca de `request` cru.
+  let response = NextResponse.next({ request: { headers: semHeadersDeIdentidadeDoCliente(request) } });
 
   // Fail-open controlado (robustez): env ausente (ex.: ambiente local sem
   // .env) ou indisponibilidade pontual do Supabase NÃO podem derrubar rotas
   // públicas com 500. A verificação REAL de autenticação é server-side em
   // cada página/action (getUsuarioAtual), então seguir como anônimo aqui é
-  // seguro — rotas protegidas redirecionam lá.
+  // seguro · rotas protegidas redirecionam lá.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -35,7 +62,9 @@ export async function updateSession(request: NextRequest) {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
           request.cookies.set(name, value);
-          response = NextResponse.next({ request });
+          // Recalcula a partir do `request` já mutado (para o cookie
+          // renovado propagar), passando de novo pelo saneamento.
+          response = NextResponse.next({ request: { headers: semHeadersDeIdentidadeDoCliente(request) } });
           response.cookies.set(name, value, options);
         });
       },
@@ -47,7 +76,7 @@ export async function updateSession(request: NextRequest) {
     const resultado = await supabase.auth.getUser();
     user = resultado.data.user;
   } catch (erro) {
-    // Rede/env indisponível: segue como anônimo (ver fail-open acima) —
+    // Rede/env indisponível: segue como anônimo (ver fail-open acima) ·
     // páginas protegidas aplicam a própria verificação server-side.
     console.warn("[middleware] getUser falhou; seguindo sem sessão:", erro instanceof Error ? erro.message : erro);
   }
@@ -72,7 +101,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user) {
-    const requestHeaders = new Headers(request.headers);
+    const requestHeaders = semHeadersDeIdentidadeDoCliente(request);
     requestHeaders.set("x-user-id", user.id);
     if (user.email) requestHeaders.set("x-user-email", user.email);
     const finalResponse = NextResponse.next({ request: { headers: requestHeaders } });

@@ -40,3 +40,50 @@ export function tituloDoTexto(texto: string) {
 export async function mesRefAtual() {
   return new Date().toISOString().slice(0, 7);
 }
+
+/**
+ * Orcamento TOTAL de caracteres do historico reenviado ao modelo (soma de
+ * todos os turnos anteriores, sem contar a mensagem atual).
+ *
+ * `MAX_CHARS_TURNO_ANTIGO` limita cada turno isoladamente, mas nao a soma:
+ * 19 turnos anteriores no teto de 900 chars sao ~17.100 caracteres (~4.500
+ * tokens) reenviados a CADA mensagem, crescendo ate esse patamar conforme a
+ * conversa avanca. Como o custo de input e pago em toda mensagem, uma
+ * conversa longa fica progressivamente mais cara e mais lenta sem que a
+ * qualidade da resposta melhore · turnos de 15 mensagens atras quase nunca
+ * mudam a resposta atual.
+ *
+ * 8.000 chars (~2.000 tokens) cobre com folga as ultimas trocas relevantes.
+ */
+export const ORCAMENTO_CHARS_HISTORICO = 8_000;
+
+/**
+ * Recorta o historico de tras para frente (do mais recente para o mais
+ * antigo) ate estourar o orcamento. Sempre preserva pelo menos o ULTIMO
+ * turno anterior, mesmo que sozinho ja estoure: perder a pergunta/resposta
+ * imediatamente anterior quebra qualquer continuidade de conversa, e esse e
+ * o unico turno que quase sempre importa.
+ *
+ * Recebe os turnos ANTERIORES ja em ordem cronologica (antigo -> recente) e
+ * devolve na mesma ordem. A mensagem atual nao entra aqui: ela e sempre
+ * enviada inteira, nunca truncada por orcamento.
+ */
+export function recortarHistoricoPorOrcamento(
+  anteriores: readonly ChatTurno[],
+  orcamentoChars: number = ORCAMENTO_CHARS_HISTORICO,
+): ChatTurno[] {
+  if (anteriores.length === 0) return [];
+
+  const mantidos: ChatTurno[] = [];
+  let total = 0;
+
+  for (let i = anteriores.length - 1; i >= 0; i--) {
+    const turno = anteriores[i];
+    const custo = turno.conteudo.length;
+    if (mantidos.length > 0 && total + custo > orcamentoChars) break;
+    mantidos.push(turno);
+    total += custo;
+  }
+
+  return mantidos.reverse();
+}

@@ -3,10 +3,6 @@
     {
       "path": "/api/cron/atualizar-base-juridica",
       "schedule": "0 5 * * *"
-    },
-    {
-      "path": "/api/cron/lembretes-whatsapp",
-      "schedule": "0 12 * * *"
     }
   ]
 }

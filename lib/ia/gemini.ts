@@ -2,11 +2,14 @@ import "server-only";
 
 import { GoogleGenAI, type Schema } from "@google/genai";
 import { SYSTEM_PROMPT } from "./system-prompt";
-import { RAG_TOOLING_PROMPT } from "./rag-prompt";
+import { PESQUISA_ATUALIZADA_PROMPT, RAG_TOOLING_PROMPT } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
 import { selecionarChave, registrarFalhaQuota } from "@/lib/ia/chaves/pool";
 import { QuotaExcedidaError } from "@/lib/ia/erros";
 import { mensagemTrivial } from "./gate-trivialidade";
+import { decidirContexto, type ModoContexto } from "./roteador-contexto";
+
+export type { ModoContexto };
 
 export { QuotaExcedidaError };
 
@@ -88,6 +91,20 @@ export type OpcoesGeracao = {
    */
   modoRapido?: boolean;
   /**
+   * Modo de contexto resolvido por `lib/ia/roteador-contexto.ts`. Quando
+   * presente, tem PRECEDÊNCIA sobre `modoRapido` e é o que decide se o
+   * grounding `googleSearch` entra na config:
+   *
+   *   "rapido"     -> sem tools, thinking 0 (idêntico a modoRapido: true)
+   *   "interno"    -> function-calling sim, googleSearch NÃO
+   *   "atualizado" -> googleSearch + function-calling, mais o bloco
+   *                   PESQUISA_ATUALIZADA_PROMPT na systemInstruction
+   *
+   * Ausente = comportamento legado (googleSearch sempre ligado fora do modo
+   * rápido), para nenhum caller antigo mudar de comportamento sem migrar.
+   */
+  modoContexto?: ModoContexto;
+  /**
    * Bloco de "Memória do escritório" (Fase 17) já montado/truncado por
    * blocoContextoEscritorio (lib/ia/contexto-escritorio.ts). Quando presente
    * E não-vazio E SEM `systemPromptOverride`, entra ENTRE o SYSTEM_PROMPT e o
@@ -112,7 +129,9 @@ export type OpcoesGeracao = {
  * de memória não-vazio entra entre SYSTEM_PROMPT e RAG_TOOLING_PROMPT; caso
  * contrário, composição clássica `SYSTEM_PROMPT\nRAG_TOOLING_PROMPT`.
  */
-export function comporSystemInstruction(opcoes: Pick<OpcoesGeracao, "systemPromptOverride" | "blocoMemoriaEscritorio">): string {
+export function comporSystemInstruction(
+  opcoes: Pick<OpcoesGeracao, "systemPromptOverride" | "blocoMemoriaEscritorio" | "modoContexto">,
+): string {
   const override = opcoes.systemPromptOverride;
   if (override) return override;
 
@@ -121,8 +140,14 @@ export function comporSystemInstruction(opcoes: Pick<OpcoesGeracao, "systemPromp
   // blocoContextoEscritorio nunca produz bordas de whitespace, então isso é
   // idempotente na prática e defensivo contra callers futuros.
   const bloco = opcoes.blocoMemoriaEscritorio?.trim();
-  if (!bloco) return `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}`;
-  return `${SYSTEM_PROMPT}\n${bloco}\n${RAG_TOOLING_PROMPT}`;
+
+  // Bloco de pesquisa datada SO no modo "atualizado": instruir a datar a
+  // pesquisa quando nao ha pesquisa ligada e convite a inventar data (ver
+  // PESQUISA_ATUALIZADA_PROMPT em ./rag-prompt.ts).
+  const sufixoPesquisa = opcoes.modoContexto === "atualizado" ? `\n${PESQUISA_ATUALIZADA_PROMPT}` : "";
+
+  if (!bloco) return `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}`;
+  return `${SYSTEM_PROMPT}\n${bloco}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}`;
 }
 
 /**
@@ -131,7 +156,11 @@ export function comporSystemInstruction(opcoes: Pick<OpcoesGeracao, "systemPromp
  */
 export function configPara(opcoes: OpcoesGeracao, modelo: string) {
   const usaSchema = Boolean(opcoes.responseSchema);
-  const trivial = Boolean(opcoes.modoRapido);
+  // `modoContexto` tem precedencia sobre `modoRapido`; sem ele, o
+  // comportamento e o legado (ver comentario do campo em OpcoesGeracao).
+  const trivial = opcoes.modoContexto ? opcoes.modoContexto === "rapido" : Boolean(opcoes.modoRapido);
+  // Legado (sem modoContexto): pesquisa web ligada sempre que nao for trivial.
+  const usarPesquisaWeb = opcoes.modoContexto ? opcoes.modoContexto === "atualizado" : !trivial;
   // Composição centralizada em comporSystemInstruction (mesma função usada
   // pelo Groq): override > bloco de memória > composição clássica.
   const systemInstruction = comporSystemInstruction(opcoes);
@@ -152,18 +181,24 @@ export function configPara(opcoes: OpcoesGeracao, modelo: string) {
     };
   }
 
+  // Tools montadas por necessidade, nao "tudo ou nada":
+  //  - googleSearch entra so quando `usarPesquisaWeb`. Antes ficava ligado em
+  //    100% das mensagens nao-triviais, e e uma busca server-side de segundos
+  //    cobrada em tokens de prompt · a maior fonte de latencia e custo do chat
+  //    em perguntas que nao dependem do estado atual do mundo.
+  //  - function-calling propose_* segue a decisao do caller, independente da
+  //    pesquisa: uma pergunta interna ainda pode gerar uma proposta de acao.
+  const tools = [
+    ...(usarPesquisaWeb ? [{ googleSearch: {} }] : []),
+    ...(!trivial && opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
+  ];
+
   return {
     systemInstruction,
-    // `googleSearch` (grounding nativo) fica ligado sempre que tools são
-    // permitidas — EXCETO em modo rápido (trivial), onde busca server-side
-    // é latência de segundos sem nenhum ganho pra "oi"/"obrigado".
-    tools: trivial
-      ? undefined
-      : [
-          { googleSearch: {} },
-          ...(opcoes.habilitarFerramentas ? [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }] : []),
-        ],
-    toolConfig: trivial ? undefined : { includeServerSideToolInvocations: true },
+    tools: tools.length > 0 ? tools : undefined,
+    // `includeServerSideToolInvocations` so faz sentido junto de uma tool
+    // server-side (googleSearch); com function-calling puro e ruido na config.
+    toolConfig: usarPesquisaWeb ? { includeServerSideToolInvocations: true } : undefined,
     maxOutputTokens,
     thinkingConfig: { thinkingBudget },
     responseMimeType: undefined,
@@ -176,6 +211,29 @@ export function configPara(opcoes: OpcoesGeracao, modelo: string) {
  * explicitamente. Centralizado aqui para que TODOS os callers do provider
  * (chat, futuros fluxos) herdem o atalho de graça.
  */
+/**
+ * Resolve o modo de contexto quando o caller nao decidiu. Mesma guarda de
+ * `resolverModoRapido`: pipelines com `responseSchema`/`systemPromptOverride`
+ * (triagem de lead, score de risco, analises estruturadas) NAO entram no
+ * roteamento · eles ja substituem a persona e nunca usaram pesquisa web nem
+ * RAG, entao aplicar o roteador ali so acrescentaria comportamento novo a
+ * features que ninguem pediu para mudar.
+ *
+ * Devolver `undefined` significa "sem modo": `configPara` cai no
+ * comportamento legado, preservando o que essas features ja faziam.
+ */
+export function resolverModoContexto(
+  historico: ChatTurno[],
+  opcoes: OpcoesGeracao,
+): ModoContexto | undefined {
+  if (opcoes.modoContexto) return opcoes.modoContexto;
+  if (opcoes.responseSchema || opcoes.systemPromptOverride) return undefined;
+  // Caller antigo que so passa `modoRapido: true` continua valendo.
+  if (opcoes.modoRapido === true) return "rapido";
+  const ultima = historico[historico.length - 1];
+  return ultima ? decidirContexto(ultima.conteudo).modo : undefined;
+}
+
 export function resolverModoRapido(historico: ChatTurno[], opcoes: OpcoesGeracao): boolean {
   if (opcoes.modoRapido !== undefined || opcoes.responseSchema || opcoes.systemPromptOverride) {
     return Boolean(opcoes.modoRapido);
@@ -287,6 +345,7 @@ export async function gerarRespostaGemini(
 
   const modeloEscolhido = escolherModelo(ultima.conteudo);
   const modoRapido = resolverModoRapido(historico, opcoes);
+  const modoContexto = resolverModoContexto(historico, opcoes);
 
   const mensagemFinal = opcoes.contextoRag
     ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
@@ -324,7 +383,7 @@ export async function gerarRespostaGemini(
           role: turno.role === "assistant" ? "model" : "user",
           parts: [{ text: turno.conteudo }],
         })),
-        config: configPara({ ...opcoes, modoRapido }, modelo),
+        config: configPara({ ...opcoes, modoRapido, modoContexto }, modelo),
       });
 
       try {
@@ -415,6 +474,7 @@ export async function* gerarRespostaGeminiStream(
 
   const modeloEscolhido = escolherModelo(ultima.conteudo);
   const modoRapido = resolverModoRapido(historico, opcoes);
+  const modoContexto = resolverModoContexto(historico, opcoes);
 
   const mensagemFinal = opcoes.contextoRag
     ? `${ultima.conteudo}\n\n${opcoes.contextoRag}`
@@ -441,7 +501,7 @@ export async function* gerarRespostaGeminiStream(
           role: turno.role === "assistant" ? "model" : "user",
           parts: [{ text: turno.conteudo }],
         })),
-        config: configPara({ ...opcoes, modoRapido }, modelo),
+        config: configPara({ ...opcoes, modoRapido, modoContexto }, modelo),
       });
 
       let stream;
