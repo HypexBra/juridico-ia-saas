@@ -19,6 +19,11 @@ const MAX_TENTATIVAS = 3;
 const BASE_DELAY_MS = 600;
 const BASE_DELAY_MS_QUOTA = 15_000;
 
+// Sem teto explícito, um hang do SDK (nem erro, nem resposta) prende o
+// `await` pra sempre — o retry/fallback abaixo só reage a erro lançado,
+// nunca a silêncio. Mesmo bug corrigido em lib/rag/embeddings.ts.
+const TIMEOUT_CHAMADA_MS = 45_000;
+
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -107,6 +112,7 @@ export async function gerarRespostaEstruturada({
             thinkingConfig: { thinkingBudget },
             responseMimeType: "application/json",
             responseSchema,
+            httpOptions: { timeout: TIMEOUT_CHAMADA_MS },
           },
         });
 
