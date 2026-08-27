@@ -69,11 +69,18 @@ export async function compararDocumentos({
   nomeArquivoB,
 }: ParametrosCompararDocumentos): Promise<ResultadoCompararDocumentos> {
   try {
-    let paginasExtraidasA;
-    let paginasExtraidasB;
-    try {
-      paginasExtraidasA = await extrairTextoPorTipo(bufferA, tipoArquivoA);
-    } catch (erroExtracao) {
+    // Extração de A e B são independentes (nenhuma depende do resultado da
+    // outra) — antes rodavam em sequência (await A, depois await B), somando
+    // os dois tempos de parsing de PDF/DOCX à toa. `allSettled` (não `all`)
+    // porque cada lado precisa da SUA PRÓPRIA mensagem de erro específica
+    // ("Documento A" vs "Documento B"), preservada exatamente como antes.
+    const [resultadoA, resultadoB] = await Promise.allSettled([
+      extrairTextoPorTipo(bufferA, tipoArquivoA),
+      extrairTextoPorTipo(bufferB, tipoArquivoB),
+    ]);
+
+    if (resultadoA.status === "rejected") {
+      const erroExtracao = resultadoA.reason;
       return {
         ok: false,
         erro:
@@ -82,9 +89,8 @@ export async function compararDocumentos({
             : "Falha ao extrair texto do Documento A.",
       };
     }
-    try {
-      paginasExtraidasB = await extrairTextoPorTipo(bufferB, tipoArquivoB);
-    } catch (erroExtracao) {
+    if (resultadoB.status === "rejected") {
+      const erroExtracao = resultadoB.reason;
       return {
         ok: false,
         erro:
@@ -93,6 +99,9 @@ export async function compararDocumentos({
             : "Falha ao extrair texto do Documento B.",
       };
     }
+
+    const paginasExtraidasA = resultadoA.value;
+    const paginasExtraidasB = resultadoB.value;
 
     const { paginas: paginasA, truncado: truncadoA } = truncarTextoExtraido(paginasExtraidasA);
     const { paginas: paginasB, truncado: truncadoB } = truncarTextoExtraido(paginasExtraidasB);

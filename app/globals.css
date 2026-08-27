@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Habilita variante `dark:` por CLASSE (Tailwind v4 é media-query-first por
+   padrão: `dark:` só reagiria a `prefers-color-scheme`). O tema é alternado
+   via classe `.dark` no `<html>` (ver `components/theme/theme-script.tsx`),
+   para permitir override manual do usuário + persistência em localStorage
+   sem depender só da preferência do SO. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
    PALETA UNIFICADA — "papel-e-tinta" (landing + app interno)
    ------------------------------------------------------------
@@ -44,6 +51,14 @@
      ilegível como texto sobre papel). */
   --color-green: #15803d;
 
+  /* Erro/aviso: tokens novos (dark mode) para status que hoje usam
+     Tailwind red-700/amber-700 fixos — mesmo valor de hoje em claro
+     (zero mudança visual aqui), variante própria em escuro porque
+     red-700/amber-700 ficam ilegíveis sobre fundo escuro (contraste
+     <3:1, ver auditoria da sessão de dark mode). */
+  --color-danger: #b91c1c;
+  --color-warning: #b45309;
+
   /* ---- Tokens editoriais (landing + painéis tinta) ---- */
   --color-paper: #faf9f5;
   --color-paper-2: #f3f1ea;
@@ -59,6 +74,74 @@
   --color-accent-bright: #6fb594;
 }
 
+/* ============================================================
+   TEMA ESCURO — mesma identidade "papel-e-tinta", adaptada
+   ------------------------------------------------------------
+   Estratégia: os tokens de superfície (paper/navy) e de texto
+   (ink/ice/muted) trocam de VALOR, não de PAPEL — continuam
+   significando "fundo base → mais elevado" e "texto principal →
+   texto de apoio → legenda", só que a escala de luminância
+   inverte (fundo escuro, texto claro). Isso é o que faz TODO
+   componente que já usa esses tokens (bg-navy, text-ice, bg-paper,
+   text-ink, border-ink/10 via color-mix…) virar dark mode sozinho,
+   sem precisar de `dark:` espalhado por ~140 arquivos.
+   Efeito colateral aceito e intencional: o "painel tinta" da seção
+   proativa da landing (`bg-ink text-paper`, docs/redesign-landing-v3.md
+   §5) e o botão primário do design system (`bg-ink text-paper` em
+   `components/ui/button.tsx`) usam ink/paper como par de alto
+   contraste "carimbo" — em claro é tinta-escura-sobre-papel-claro,
+   em escuro vira claro-sobre-escuro. Mesma linguagem visual (bloco
+   de contraste máximo), adaptada — não quebra o desenho, inverte
+   o carimbo de propósito, exatamente como o resto da paleta.
+   Contraste validado (WCAG, ver script de auditoria da sessão):
+   paper/ink ≈ 16.9:1 (AAA) · paper/ink-2 ≈ 11.1:1 (AAA) ·
+   paper/ink-3 ≈ 5.8:1 (AA) · paper/accent ≈ 7.8:1 (AAA) ·
+   ink(painel)/accent-bright ≈ 7.2:1 (AAA) · paper-3/ink-3 ≈ 4.8:1 (AA).
+   ============================================================ */
+:root.dark {
+  /* Superfícies: base escura quase-preta (quente, mesma família de
+     matiz do "ink" claro) → elevação sobe em luminância. */
+  --color-navy: #131210;
+  --color-navy-2: #1c1a15;
+  --color-navy-3: #26231c;
+
+  /* Acento: MESMO verde-selo, mas a variante "clara" vira a padrão
+     (precisa ser legível sobre fundo agora escuro). */
+  --color-silver: #6fb594;
+  --color-silver-2: #8fc7ab;
+  /* Fundo de acento pálido em modo escuro: verde bem escuro (era
+     quase-branco esverdeado em modo claro). */
+  --color-silver-3: #16241d;
+
+  /* Texto: claro sobre fundo escuro, degradê de ênfase. */
+  --color-ice: #f5f3ec;
+  --color-ice-2: #cbc7ba;
+  --color-muted: #948f7d;
+
+  /* Sucesso: verde mais claro, legível sobre fundo escuro (o
+     #15803d claro fica sem contraste suficiente aqui). */
+  --color-green: #34d399;
+
+  /* Erro/aviso em modo escuro: red-500/amber-600 (≈5:1-6:1 sobre
+     --color-paper escuro), em vez dos red-700/amber-700 do modo claro. */
+  --color-danger: #ef4444;
+  --color-warning: #d97706;
+
+  /* ---- Tokens editoriais (landing + painéis tinta) ---- */
+  --color-paper: #131210;
+  --color-paper-2: #1c1a15;
+  --color-paper-3: #26231c;
+  --color-ink: #f5f3ec;
+  --color-ink-2: #cbc7ba;
+  --color-ink-3: #948f7d;
+  --color-accent: #6fb594;
+  /* accent-bright = "legível sobre ink" — em modo escuro `ink` vira a
+     cor CLARA (ex: fundo do painel tinta invertido), então a variante
+     "legível sobre ink" agora precisa ser um verde ESCURO. Reaproveita
+     o valor do accent padrão do tema claro (já validado ≈7.2:1 aqui). */
+  --color-accent-bright: #1d5b46;
+}
+
 @theme inline {
   --color-navy: var(--color-navy);
   --color-navy-2: var(--color-navy-2);
@@ -70,6 +153,8 @@
   --color-ice-2: var(--color-ice-2);
   --color-muted: var(--color-muted);
   --color-green: var(--color-green);
+  --color-danger: var(--color-danger);
+  --color-warning: var(--color-warning);
 
   /* Mapeamento dos tokens editoriais (gera utilitários bg-paper,
      text-ink, border-accent etc.). Nomes com sufixo -ed nas fontes para
@@ -111,9 +196,23 @@
    anchor jumps later should go through GSAP's own ScrollToPlugin (which
    is ScrollTrigger-aware) rather than native CSS. */
 
+/* `color-scheme` sincroniza UI nativa do navegador (scrollbar, controles
+   de formulário, autofill) com o tema ativo — sem isso eles ficam sempre
+   claros mesmo com `.dark` aplicado nos tokens do produto. */
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   background: var(--color-navy);
   color: var(--color-ice);
+  transition:
+    background-color 200ms ease-out,
+    color 200ms ease-out;
 }
 
 /* Disables native browser scroll anchoring site-wide. Scroll anchoring tries

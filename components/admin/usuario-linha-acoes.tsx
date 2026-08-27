@@ -140,7 +140,7 @@ export function UsuarioLinhaAcoes({
           disabled={isPending}
           onClick={alternarAtivo}
           className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-            ativo ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
+            ativo ? "border-danger/30 text-danger hover:bg-danger/10" : "border-green/30 text-green hover:bg-green/10"
           }`}
         >
           {ativo ? "Desativar" : "Ativar"}
@@ -183,7 +183,7 @@ export function UsuarioLinhaAcoes({
           type="button"
           disabled={isPending}
           onClick={excluir}
-          className="rounded-md border border-red-700/30 px-2 py-1 text-xs text-red-700 hover:bg-red-700/10 disabled:opacity-50"
+          className="rounded-md border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
         >
           Excluir
         </button>

@@ -4,16 +4,21 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label, Select, Textarea, FieldError } from "@/components/ui/input";
-import { gerarPecaCompletaAction } from "@/app/app/fichas/[id]/pecas-actions";
 import { RÓTULO_TIPO_PECA, TIPOS_PECA, type TipoPeca } from "@/lib/pecas/tipos";
+
+/** Eventos SSE emitidos por `app/api/pecas/gerar/route.ts` (ver doc do arquivo). */
+type EventoStreamPeca =
+  | { tipo: "delta"; texto: string }
+  | { tipo: "done"; conteudoGerado: string; modeloIaUsado: string }
+  | { tipo: "error"; error: string };
 
 /**
  * "Redação assistida (Pro)": evolução do mail-merge de `GerarPeticaoCard`
  * (petição por modelo, plano free) — aqui a IA REDIGE a minuta completa da
  * peça a partir dos fatos da ficha, sem exigir um modelo cadastrado.
- * Gate de plano acontece no servidor (`gerarPecaCompletaAction`); quando o
- * escritório é free, mostra o mesmo padrão de upsell da seção premium de
- * `/app/relatorios`.
+ * Gate de plano acontece no servidor (rota SSE `/api/pecas/gerar`, ver
+ * app/api/pecas/gerar/route.ts); quando o escritório é free, mostra o mesmo
+ * padrão de upsell da seção premium de `/app/relatorios`.
  */
 export function RedacaoAssistidaCard({ fichaId, temAcesso }: { fichaId: string; temAcesso: boolean }) {
   const [tipoPeca, setTipoPeca] = useState<TipoPeca>("peticao_inicial");
@@ -42,14 +47,82 @@ export function RedacaoAssistidaCard({ fichaId, temAcesso }: { fichaId: string; 
   function gerar() {
     setErro(null);
     setCopiado(false);
+    setConteudoGerado(null);
+
     startTransition(async () => {
-      const resultado = await gerarPecaCompletaAction(fichaId, tipoPeca, instrucoesExtras);
-      if (!resultado.ok) {
-        setErro(resultado.error);
-        setConteudoGerado(null);
-        return;
+      // STREAMING via SSE (rota /api/pecas/gerar) — mesmo transporte do
+      // chat (app/api/chat/mensagem/route.ts): a minuta aparece conforme a
+      // IA gera, em vez do usuário ver "Gerando peça completa…" parado por
+      // 15-40s (peças roteiam para o modelo com teto de saída maior).
+      let textoAcumulado = "";
+      let falha: string | null = null;
+      let concluida = false;
+
+      try {
+        const resposta = await fetch("/api/pecas/gerar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fichaId, tipoPeca, instrucoesExtras }),
+        });
+
+        if (!resposta.ok || !resposta.body) {
+          let mensagem = "Não foi possível gerar a peça.";
+          try {
+            const corpo = await resposta.json();
+            if (corpo?.error) mensagem = corpo.error;
+          } catch {
+            /* mantém mensagem genérica */
+          }
+          throw new Error(mensagem);
+        }
+
+        const leitor = resposta.body.getReader();
+        const decodificador = new TextDecoder();
+        let buffer = "";
+
+        for (;;) {
+          const { done, value } = await leitor.read();
+          if (done) break;
+          buffer += decodificador.decode(value, { stream: true });
+          const partes = buffer.split("\n\n");
+          buffer = partes.pop() ?? "";
+          for (const parte of partes) {
+            const linha = parte.trim();
+            if (!linha.startsWith("data:")) continue;
+            let evento: EventoStreamPeca;
+            try {
+              evento = JSON.parse(linha.slice(5).trim());
+            } catch {
+              continue;
+            }
+
+            if (evento.tipo === "delta") {
+              textoAcumulado += evento.texto;
+              setConteudoGerado(textoAcumulado);
+            } else if (evento.tipo === "done") {
+              concluida = true;
+              textoAcumulado = evento.conteudoGerado;
+              setConteudoGerado(evento.conteudoGerado);
+            } else if (evento.tipo === "error") {
+              falha = evento.error;
+            }
+          }
+        }
+      } catch (erroRede) {
+        falha =
+          erroRede instanceof Error
+            ? erroRede.message
+            : "Não foi possível gerar a peça. Verifique sua conexão.";
       }
-      setConteudoGerado(resultado.conteudoGerado);
+
+      // Erro reportado pelo servidor (antes ou durante o stream) OU conexão
+      // que caiu sem nunca emitir "done": nunca deixa a UI travada em
+      // "gerando" para sempre nem finge que uma peça incompleta é o
+      // resultado final — remove o texto parcial e mostra o erro.
+      if (falha || !concluida) {
+        setErro(falha ?? "A geração foi interrompida antes de concluir a peça. Tente novamente.");
+        setConteudoGerado(null);
+      }
     });
   }
 
@@ -129,13 +202,15 @@ export function RedacaoAssistidaCard({ fichaId, temAcesso }: { fichaId: string; 
           <div className="space-y-3">
             <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap rounded-lg border border-ink/10 bg-navy-2 p-4 text-sm leading-relaxed text-ice-2">
               {conteudoGerado}
+              {isPending && <span className="animate-pulse text-muted">▍</span>}
             </pre>
 
+            {/* Ações só liberadas depois do stream concluir (evita copiar/baixar peça pela metade). */}
             <div className="flex flex-wrap gap-3">
-              <Button type="button" variant="secondary" size="sm" onClick={copiar}>
+              <Button type="button" variant="secondary" size="sm" onClick={copiar} disabled={isPending}>
                 {copiado ? "Copiado!" : "Copiar texto"}
               </Button>
-              <Button type="button" variant="secondary" size="sm" onClick={baixar}>
+              <Button type="button" variant="secondary" size="sm" onClick={baixar} disabled={isPending}>
                 Baixar (.txt)
               </Button>
             </div>

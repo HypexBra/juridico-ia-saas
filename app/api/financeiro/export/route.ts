@@ -42,12 +42,24 @@ function formatarValorBr(valor: number): string {
   return valor.toFixed(2).replace(".", ",");
 }
 
-/** Escapa um campo para CSV: envolve em aspas duplas se contiver o delimitador, aspas ou quebra de linha. */
+/**
+ * Escapa um campo para CSV: envolve em aspas duplas se contiver o delimitador,
+ * aspas ou quebra de linha.
+ *
+ * Neutraliza tambem CSV/Formula Injection (CWE-1236): campos vindos de dado
+ * de escritorio podem ter sido digitados por alguem nao confiavel (ex: nome
+ * de cliente originado de um formulario publico de triagem) - se o campo
+ * comecar com um caractere que Excel/Sheets interpretam como inicio de
+ * formula (=, +, -, @, tab, CR), uma formula maliciosa rodaria ao abrir a
+ * planilha. Prefixamos com um apostrofo (forca texto literal no Excel) ANTES
+ * de aplicar o escaping normal de aspas/delimitador.
+ */
 function escaparCampoCsv(campo: string): string {
-  if (/[";\n\r]/.test(campo)) {
-    return `"${campo.replace(/"/g, '""')}"`;
+  const semFormula = /^[=+\-@\t\r]/.test(campo) ? `'${campo}` : campo;
+  if (/[";\n\r]/.test(semFormula)) {
+    return `"${semFormula.replace(/"/g, '""')}"`;
   }
-  return campo;
+  return semFormula;
 }
 
 function linhaCsv(campos: string[]): string {

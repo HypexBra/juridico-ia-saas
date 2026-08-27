@@ -28,7 +28,7 @@ export function AdicionarAdminForm() {
         {isPending ? "Adicionando…" : "Adicionar administrador"}
       </Button>
       {state && (
-        <p className={`text-xs sm:ml-3 ${state.ok ? "text-muted" : "text-red-700"}`}>{state.ok ? state.mensagem : state.error}</p>
+        <p className={`text-xs sm:ml-3 ${state.ok ? "text-muted" : "text-danger"}`}>{state.ok ? state.mensagem : state.error}</p>
       )}
     </form>
   );
@@ -64,7 +64,7 @@ export function AdministradorLinha({ admin, souVoce }: { admin: PlataformaAdmin;
       <td className="py-3 pr-3 text-muted">{admin.email}</td>
       <td className="py-3 pr-3 text-muted">{new Date(admin.criado_em).toLocaleDateString("pt-BR")}</td>
       <td className="py-3 pr-3">
-        <span className={admin.ativo ? "text-green" : "text-red-700"}>{admin.ativo ? "Ativo" : "Inativo"}</span>
+        <span className={admin.ativo ? "text-green" : "text-danger"}>{admin.ativo ? "Ativo" : "Inativo"}</span>
       </td>
       <td className="py-3">
         <div className="flex flex-col items-end gap-1">
@@ -74,7 +74,7 @@ export function AdministradorLinha({ admin, souVoce }: { admin: PlataformaAdmin;
               disabled={isPending}
               onClick={alternarAtivo}
               className={`rounded-md border px-2 py-1 text-xs disabled:opacity-50 ${
-                admin.ativo ? "border-red-700/30 text-red-700 hover:bg-red-700/10" : "border-green/30 text-green hover:bg-green/10"
+                admin.ativo ? "border-danger/30 text-danger hover:bg-danger/10" : "border-green/30 text-green hover:bg-green/10"
               }`}
             >
               {admin.ativo ? "Desativar" : "Ativar"}
@@ -83,7 +83,7 @@ export function AdministradorLinha({ admin, souVoce }: { admin: PlataformaAdmin;
               type="button"
               disabled={isPending}
               onClick={remover}
-              className="rounded-md border border-red-700/30 px-2 py-1 text-xs text-red-700 hover:bg-red-700/10 disabled:opacity-50"
+              className="rounded-md border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
             >
               Remover
             </button>

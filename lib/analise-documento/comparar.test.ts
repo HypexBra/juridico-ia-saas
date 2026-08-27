@@ -69,6 +69,7 @@ describe("compararDocumentos", () => {
 
   it("erro de extração do Documento A (PDF corrompido) é tratado sem lançar, identifica o lado A", async () => {
     extrairTextoDePdfPorPaginaMock.mockRejectedValueOnce(new Error("PDF sem camada de texto."));
+    extrairTextoDeDocxMock.mockResolvedValueOnce([{ pagina: null, texto: "Conteúdo B." }]);
 
     const resultado = await compararDocumentos(PARAMETROS_BASE);
 
@@ -76,7 +77,11 @@ describe("compararDocumentos", () => {
     if (!resultado.ok) {
       expect(resultado.erro).toContain("Documento A");
     }
-    expect(extrairTextoDeDocxMock).not.toHaveBeenCalled();
+    // Extração de A e B roda em paralelo (Promise.allSettled) — B é extraído
+    // mesmo quando A falha, já que nenhum dos dois depende do resultado do
+    // outro. O resultado final ainda é erro, só o trabalho de extração de B
+    // não é aproveitado.
+    expect(extrairTextoDeDocxMock).toHaveBeenCalledTimes(1);
     expect(gerarRespostaEstruturadaMock).not.toHaveBeenCalled();
   });
 

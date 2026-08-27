@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { LogoutButton } from "./logout-button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import type { Role } from "@/lib/types";
 
 const NAV_ITEMS = [
@@ -249,6 +250,10 @@ export function Sidebar({
         )}
 
         <div className="border-t border-ink/10 px-3 py-3">
+          <ThemeToggle
+            comRotulo
+            className="mb-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+          />
           <LogoutButton />
         </div>
       </aside>
