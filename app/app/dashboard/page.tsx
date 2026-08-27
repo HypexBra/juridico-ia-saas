@@ -288,11 +288,16 @@ export default async function DashboardPage() {
         </Link>
 
         {/* Glow suave em papel: fundo claro, lavagem verde-selo e halo dourado
-            de baixa intensidade — o glow forte era artefato do tema escuro. */}
+            de baixa intensidade — o glow forte era artefato do tema escuro.
+            `backgroundColor` usa o token de superfície (var(--color-paper-2))
+            em vez de hex fixo: hex fixo #f3f1ea é a cor do PAPEL CLARO, então
+            no tema escuro o card ficava claro enquanto text-ice/text-muted
+            (que também adaptam por tema) viravam claros — texto claro sobre
+            fundo claro, ilegível. O var() acompanha o tema junto do texto. */}
         <BorderGlow
           className="h-full"
           glowColor="42 75 70"
-          backgroundColor="#f3f1ea"
+          backgroundColor="var(--color-paper-2)"
           borderRadius={12}
           glowRadius={26}
           glowIntensity={0.5}

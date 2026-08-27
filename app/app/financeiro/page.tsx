@@ -10,7 +10,7 @@ import { calcularResumoFinanceiro } from "@/lib/financeiro/resumo";
 import { BorderGlow } from "@/components/ui/border-glow/border-glow";
 import { BarChart } from "@/components/app/charts/bar-chart";
 import { UsageRing } from "@/components/app/charts/usage-ring";
-import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { limiteMensagensIaPara } from "@/lib/types";
 
 export const metadata = { title: "Financeiro — Jurídico IA" };
 
@@ -84,7 +84,11 @@ export default async function FinanceiroPage() {
 
   const usoIaMesAtual = (usoRows ?? []).filter((linha) => linha.mes_ref === mesAtual);
   const chamadasIaNoMes = usoIaMesAtual.length;
-  const percentualUsoIa = Math.min(100, Math.round((chamadasIaNoMes / LIMITE_MENSAGENS_FREE) * 100));
+  // Mesmo bug já corrigido em app/app/dashboard/page.tsx: usava sempre o
+  // teto do plano FREE (25) como denominador, então um escritório Pro (300)
+  // aparecia sempre perto de 100% mesmo com uso baixo.
+  const limiteIaEscritorio = limiteMensagensIaPara(usuario.perfil.escritorio.plano);
+  const percentualUsoIa = Math.min(100, Math.round((chamadasIaNoMes / limiteIaEscritorio) * 100));
 
   // Faturamento (parcelas pagas) dos últimos 6 meses — alimenta o gráfico de
   // barras mobile. Mês corrente à direita, sempre em destaque.
@@ -183,13 +187,13 @@ export default async function FinanceiroPage() {
         <div className="flex flex-wrap items-center gap-5 p-5">
           <UsageRing
             percent={percentualUsoIa}
-            label="Uso de IA no plano gratuito"
+            label="Uso de IA no mês"
             tone={percentualUsoIa >= 90 ? "red" : "silver"}
           />
           <div className="min-w-0">
-            <CardTitle>Uso de IA no plano gratuito</CardTitle>
+            <CardTitle>Uso de IA no mês</CardTitle>
             <p className="mt-1 text-xs text-muted">
-              {chamadasIaNoMes} / {LIMITE_MENSAGENS_FREE} chamadas de IA usadas este mês.
+              {chamadasIaNoMes} / {limiteIaEscritorio} chamadas de IA usadas este mês.
             </p>
           </div>
         </div>
