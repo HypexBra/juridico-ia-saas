@@ -178,6 +178,7 @@ export function configPara(opcoes: OpcoesGeracao, modelo: string) {
       thinkingConfig: { thinkingBudget },
       responseMimeType: "application/json" as const,
       responseSchema: opcoes.responseSchema,
+      httpOptions: { timeout: TIMEOUT_CHAMADA_MS },
     };
   }
 
@@ -203,6 +204,7 @@ export function configPara(opcoes: OpcoesGeracao, modelo: string) {
     thinkingConfig: { thinkingBudget },
     responseMimeType: undefined,
     responseSchema: undefined,
+    httpOptions: { timeout: TIMEOUT_CHAMADA_MS },
   };
 }
 
@@ -250,6 +252,11 @@ const BASE_DELAY_MS = 600;
 // resolvê-lo. Backoff bem mais longo (mín. 15s) dá tempo da janela de quota
 // (tipicamente por minuto) resetar antes da próxima tentativa.
 const BASE_DELAY_MS_QUOTA = 15_000;
+
+// Sem teto, um hang do SDK (nem erro nem resposta) prende o `await` pra
+// sempre e o retry/fallback abaixo nunca dispara — mesmo bug corrigido em
+// lib/ia/chamada-estruturada.ts e lib/rag/embeddings.ts.
+const TIMEOUT_CHAMADA_MS = 45_000;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

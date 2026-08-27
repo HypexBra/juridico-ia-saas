@@ -14,6 +14,13 @@ const DIMENSOES_EMBEDDING = 768; // bate com embeddings_chunks.embedding vector(
 const MAX_TENTATIVAS = 3;
 const BASE_DELAY_MS = 500;
 
+// Sem isto o SDK não tem teto: se a API do Google travar sem responder (nem
+// erro, nem sucesso), o `await` fica pendurado pra sempre — o retry abaixo só
+// dispara em cima de um erro lançado, nunca em cima de um hang. Era esse o
+// bug por trás do "fica só processando" no Advogado do Contra (RAG busca a
+// jurisprudência ANTES da chamada de IA) e em toda feature que usa RAG.
+const TIMEOUT_EMBEDDING_MS = 20_000;
+
 // Sem fallback para Groq aqui (ao contrário de lib/ia/provider.ts): a Groq
 // tem um endpoint de embeddings (`nomic-embed-text-v1_5`), mas é um espaço
 // vetorial DIFERENTE do `gemini-embedding-001` já usado para indexar toda a
@@ -53,7 +60,11 @@ export async function gerarEmbedding(
       const resultado = await genAI.models.embedContent({
         model: MODELO_EMBEDDING,
         contents: texto,
-        config: { taskType, outputDimensionality: DIMENSOES_EMBEDDING },
+        config: {
+          taskType,
+          outputDimensionality: DIMENSOES_EMBEDDING,
+          httpOptions: { timeout: TIMEOUT_EMBEDDING_MS },
+        },
       });
       const valores = resultado.embeddings?.[0]?.values;
       if (!valores) throw new Error("Resposta de embedding sem vetor.");
