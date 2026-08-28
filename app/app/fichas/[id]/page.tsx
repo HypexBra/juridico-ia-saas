@@ -32,6 +32,7 @@ import { TimelineCasoList } from "./timeline-caso-list";
 import { TesesCasoSection } from "./teses-caso-section";
 import { AnaliseProcessoSection } from "./analise-processo-section";
 import { EstrategiaCasoSecao } from "@/components/app/estrategia-caso-secao";
+import { formatarData } from "@/lib/app/formatar-data";
 import type { ClientePortal, FichaCaso, MensagemPortalCliente } from "@/lib/types";
 
 /**
@@ -270,7 +271,7 @@ export default async function FichaDetalhePage({ params }: PageProps<"/app/ficha
                       <Badge tone={RISCO_TONE[ficha.nivel_risco]}>Risco {RISCO_LABEL[ficha.nivel_risco]}</Badge>
                       {ficha.risco_calculado_em && (
                         <span className="text-xs text-muted">
-                          Calculado em {new Date(ficha.risco_calculado_em).toLocaleDateString("pt-BR")}
+                          Calculado em {formatarData(ficha.risco_calculado_em)}
                         </span>
                       )}
                     </div>

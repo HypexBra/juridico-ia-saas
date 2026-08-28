@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { AdminLog } from "@/lib/types";
 
 export const metadata = { title: "Logs — Admin" };
@@ -19,10 +20,6 @@ const ACOES_LABEL: Record<string, string> = {
   atualizar_configuracao_plataforma: "Alterou configuração da plataforma",
   acesso_painel_admin: "Acessou o painel admin",
 };
-
-function formatarDataHora(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR");
-}
 
 export default async function AdminLogsPage({ searchParams }: PageProps<"/admin/logs">) {
   const params = await searchParams;

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { EventoCaso, OrigemEventoCaso } from "@/lib/types";
 
 const ORIGEM_LABEL: Record<OrigemEventoCaso, string> = {
@@ -16,7 +17,7 @@ const ORIGEM_TONE: Record<OrigemEventoCaso, "silver" | "green" | "blue" | "muted
 };
 
 function formatarDataEvento(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
+  return formatarDataHora(iso, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

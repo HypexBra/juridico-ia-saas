@@ -5,6 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AuditorResultado } from "@/components/app/auditor-resultado";
 import { buscarAuditoriaPecaAction } from "../actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { StatusAuditoriaPeca } from "@/lib/types";
 
 export const metadata = { title: "Resultado da auditoria — Jurídico IA" };
@@ -53,7 +54,7 @@ export default async function DetalheAuditoriaPecaPage({ params }: PageProps<"/a
               {auditoria.titulo ?? auditoria.nome_arquivo ?? "Peça sem título"}
             </h1>
             <p className="mt-1 text-sm text-muted">
-              {new Date(auditoria.criado_em).toLocaleString("pt-BR")} ·{" "}
+              {formatarDataHora(auditoria.criado_em)} ·{" "}
               {auditoria.origem === "colado" ? "Texto colado" : "Upload"}
               {auditoria.tipo_arquivo ? ` (${auditoria.tipo_arquivo.toUpperCase()})` : ""}
               {auditoria.modelo_ia_usado ? ` · ${auditoria.modelo_ia_usado}` : ""}

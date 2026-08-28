@@ -24,7 +24,11 @@ export async function alternarAtivoUsuarioAction(perfilId: string, novoAtivo: bo
   const { error } = await supabase.from("perfis").update({ ativo: novoAtivo }).eq("id", parsed.data);
   if (error) {
     console.error("[admin/usuarios] Falha ao alternar ativo:", error);
-    return { ok: false, error: "Não foi possível atualizar o status do usuário." };
+    // Trigger `impedir_remocao_ultimo_owner_escritorio` (migration 0021)
+    // bloqueia desativar o ÚLTIMO owner ativo do escritório e já levanta uma
+    // mensagem clara em pt-BR — repassar ela em vez de um genérico evita que
+    // essa proteção legítima pareça "o botão não funciona".
+    return { ok: false, error: error.message || "Não foi possível atualizar o status do usuário." };
   }
 
   await registrarLogAdmin(admin, {
@@ -87,7 +91,9 @@ export async function excluirUsuarioAction(perfilId: string): Promise<AdminActio
   const { error } = await supabase.from("perfis").delete().eq("id", parsed.data);
   if (error) {
     console.error("[admin/usuarios] Falha ao excluir perfil:", error);
-    return { ok: false, error: "Não foi possível excluir o usuário." };
+    // Mesmo trigger de proteção do último owner (ver alternarAtivoUsuarioAction) —
+    // repassa a mensagem real em vez de um genérico.
+    return { ok: false, error: error.message || "Não foi possível excluir o usuário." };
   }
 
   let avisoContaAuth = "";

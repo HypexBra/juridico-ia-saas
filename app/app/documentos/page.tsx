@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { listarAnalisesDocumentoAction } from "./actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { StatusAnaliseDocumento, TipoArquivoAnaliseDocumento } from "@/lib/types";
 
 export const metadata = { title: "Documentos — Jurídico IA" };
@@ -154,7 +155,7 @@ export default async function DocumentosPage({
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ice">{analise.nome_arquivo}</p>
                       <p className="text-xs text-muted">
-                        {new Date(analise.criado_em).toLocaleString("pt-BR")} ·{" "}
+                        {formatarDataHora(analise.criado_em)} ·{" "}
                         {TIPO_ARQUIVO_LABEL[analise.tipo_arquivo]}
                         {analise.resultado_analise ? ` · ${analise.resultado_analise.tipoDocumento}` : ""}
                       </p>

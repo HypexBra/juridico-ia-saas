@@ -130,6 +130,61 @@ export async function excluirTodasConversasAction(): Promise<ExcluirConversaResu
   return { ok: true };
 }
 
+export type ExcluirMensagemResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * Exclui UMA mensagem da conversa (estilo WhatsApp: apaga uma bolha, não a
+ * conversa inteira). Mesma regra de posse de `excluirConversaAction` — só
+ * quem criou a conversa pode apagar mensagens dela, mesmo apagando uma
+ * resposta da IA (a conversa é dele, a resposta só existe porque ele
+ * perguntou). Depois de apagar, recalcula `conversas.total_msgs` do mesmo
+ * jeito que o envio de mensagem já faz (contagem real, nunca incremento
+ * manual — ver final de `enviarMensagemAction`).
+ */
+export async function excluirMensagemAction(mensagemId: string): Promise<ExcluirMensagemResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Não autenticado." };
+
+  const parsed = z.string().uuid().safeParse(mensagemId);
+  if (!parsed.success) return { ok: false, error: "Mensagem inválida." };
+
+  const supabase = await createClient();
+
+  const { data: mensagem, error: erroBusca } = await supabase
+    .from("mensagens")
+    .select("id, conversa_id")
+    .eq("id", parsed.data)
+    .maybeSingle<{ id: string; conversa_id: string }>();
+  if (erroBusca) return { ok: false, error: "Não foi possível localizar a mensagem." };
+  if (!mensagem) return { ok: false, error: "Mensagem não encontrada." };
+
+  const { data: conversa, error: erroConversa } = await supabase
+    .from("conversas")
+    .select("id, criado_por")
+    .eq("id", mensagem.conversa_id)
+    .maybeSingle<{ id: string; criado_por: string | null }>();
+  if (erroConversa) return { ok: false, error: "Não foi possível localizar a conversa." };
+  if (!conversa || conversa.criado_por !== usuario.perfil.id) {
+    return { ok: false, error: "Você só pode excluir mensagens de conversas criadas por você." };
+  }
+
+  const { error: erroExclusao } = await supabase.from("mensagens").delete().eq("id", parsed.data);
+  if (erroExclusao) {
+    console.error("[chat/excluirMensagemAction] Falha ao excluir mensagem:", erroExclusao);
+    return { ok: false, error: "Não foi possível excluir a mensagem." };
+  }
+
+  const { count: totalMsgs } = await supabase
+    .from("mensagens")
+    .select("id", { count: "exact", head: true })
+    .eq("conversa_id", mensagem.conversa_id);
+
+  await supabase.from("conversas").update({ total_msgs: totalMsgs ?? 0 }).eq("id", mensagem.conversa_id);
+
+  revalidatePath("/app/chat");
+  return { ok: true };
+}
+
 export async function carregarMensagensAction(conversaId: string): Promise<Mensagem[]> {
   const usuario = await getUsuarioAtual();
   if (!usuario) throw new Error("Não autenticado.");

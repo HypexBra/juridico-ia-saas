@@ -5,6 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdvogadoContraResultado } from "@/components/app/advogado-contra-resultado";
 import { buscarAnaliseAdvogadoContraAction } from "../actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { StatusAdvogadoContra } from "@/lib/types";
 
 export const metadata = { title: "Resultado da análise — Advogado do Contra — Jurídico IA" };
@@ -63,7 +64,7 @@ export default async function DetalheAnaliseAdvogadoContraPage({ params }: PageP
                 "Tese sem título"}
             </h1>
             <p className="mt-1 text-sm text-muted">
-              {new Date(analise.criado_em).toLocaleString("pt-BR")} · {ORIGEM_LABEL[analise.origem]}
+              {formatarDataHora(analise.criado_em)} · {ORIGEM_LABEL[analise.origem]}
               {analise.tipo_arquivo ? ` (${analise.tipo_arquivo.toUpperCase()})` : ""}
               {analise.modelo_ia_usado ? ` · ${analise.modelo_ia_usado}` : ""}
             </p>

@@ -10,6 +10,7 @@ import { PropostaAcaoCard } from "./proposta-acao-card";
 import {
   carregarMensagensAction,
   excluirConversaAction,
+  excluirMensagemAction,
   excluirTodasConversasAction,
   type ConversaResumo,
 } from "@/app/app/chat/actions";
@@ -118,6 +119,8 @@ export function ChatApp({
   const [isPendingHistorico, startHistoricoTransition] = useTransition();
   const [isPendingExclusao, startExclusaoTransition] = useTransition();
   const [conversaExcluindo, setConversaExcluindo] = useState<string | null>(null);
+  const [mensagemExcluindoId, setMensagemExcluindoId] = useState<string | null>(null);
+  const [mensagemHoverId, setMensagemHoverId] = useState<string | null>(null);
   const [listaMobileAberta, setListaMobileAberta] = useState(false);
   // ── Ditado por voz (Fase 15) ──
   const [estadoAudio, setEstadoAudio] = useState<EstadoGravacaoAudio>("idle");
@@ -353,6 +356,37 @@ export function ChatApp({
       setConversas((prev) => prev.filter((c) => c.id !== id));
       if (conversaId === id) novaConversa();
       setAvisoConversas("Conversa excluída com sucesso.");
+    });
+  }
+
+  /**
+   * Apaga uma bolha única (estilo WhatsApp), não a conversa inteira. Só
+   * mensagens já persistidas têm UUID real — bolhas otimistas locais
+   * (`local-...`/`stream-...`, ainda em voo) não têm o que excluir no
+   * servidor, então o botão de excluir nem aparece pra elas (ver render).
+   */
+  function excluirMensagem(id: string) {
+    if (!window.confirm("Excluir esta mensagem? Essa ação não pode ser desfeita.")) return;
+
+    const anteriores = mensagens;
+    setMensagemExcluindoId(id);
+    setMensagens((prev) => prev.filter((m) => m.id !== id));
+
+    startExclusaoTransition(async () => {
+      const resultado = await excluirMensagemAction(id);
+      setMensagemExcluindoId(null);
+
+      if (!resultado.ok) {
+        setMensagens(anteriores); // desfaz a remoção otimista
+        setErro(resultado.error);
+        return;
+      }
+
+      if (conversaId) {
+        setConversas((prev) =>
+          prev.map((c) => (c.id === conversaId ? { ...c, total_msgs: Math.max(0, c.total_msgs - 1) } : c)),
+        );
+      }
     });
   }
 
@@ -667,26 +701,58 @@ export function ChatApp({
               </p>
             </div>
           ) : (
-            mensagens.map((m) => (
-              <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
+            mensagens.map((m) => {
+              // Bolhas otimistas locais (envio em voo / streaming da IA) ainda
+              // não existem no banco — nada pra excluir até persistirem.
+              const persistida = !m.id.startsWith("local-") && !m.id.startsWith("stream-");
+              return (
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    m.role === "user"
-                      ? "bg-silver/15 text-ice"
-                      : "border border-ink/10 bg-paper-2 text-ice"
-                  }`}
+                  key={m.id}
+                  className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                  onMouseEnter={() => setMensagemHoverId(m.id)}
+                  onMouseLeave={() => setMensagemHoverId((atual) => (atual === m.id ? null : atual))}
                 >
-                  {m.role === "assistant" ? (
-                    <MarkdownLite texto={m.conteudo} />
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm">{m.conteudo}</p>
-                  )}
-                  {m.role === "assistant" && <FontesCitadas fontes={m.fontes} />}
-                  <p className="mt-1.5 text-right text-[10px] text-muted">{formatarHora(m.criado_em)}</p>
+                  <div className={`relative flex items-center gap-1.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        m.role === "user"
+                          ? "bg-silver/15 text-ice"
+                          : "border border-ink/10 bg-paper-2 text-ice"
+                      }`}
+                    >
+                      {m.role === "assistant" ? (
+                        <MarkdownLite texto={m.conteudo} />
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm">{m.conteudo}</p>
+                      )}
+                      {m.role === "assistant" && <FontesCitadas fontes={m.fontes} />}
+                      <p className="mt-1.5 text-right text-[10px] text-muted">{formatarHora(m.criado_em)}</p>
+                    </div>
+                    {persistida && (
+                      <button
+                        type="button"
+                        onClick={() => excluirMensagem(m.id)}
+                        disabled={mensagemExcluindoId === m.id}
+                        aria-label="Excluir esta mensagem"
+                        title="Excluir mensagem"
+                        className={`shrink-0 rounded-md p-1.5 text-muted opacity-0 transition-opacity hover:text-red-600 disabled:opacity-50 ${
+                          mensagemHoverId === m.id ? "opacity-100" : ""
+                        }`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {m.role === "assistant" && m.proposta_id && <PropostaAcaoCard propostaId={m.proposta_id} />}
                 </div>
-                {m.role === "assistant" && m.proposta_id && <PropostaAcaoCard propostaId={m.proposta_id} />}
-              </div>
-            ))
+              );
+            })
           )}
           {isPending && (
             <div className="flex justify-start">

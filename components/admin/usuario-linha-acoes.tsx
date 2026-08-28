@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   alternarAtivoUsuarioAction,
@@ -30,6 +31,7 @@ export function UsuarioLinhaAcoes({
   escritorioId: string;
   plano: "free" | "pro";
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mensagem, setMensagem] = useState<string | null>(null);
 
@@ -40,6 +42,12 @@ export function UsuarioLinhaAcoes({
     startTransition(async () => {
       const resultado = await alternarAtivoUsuarioAction(perfilId, !ativo);
       setMensagem(resultado.ok ? resultado.mensagem : resultado.error);
+      // `revalidatePath` na action só marca a rota como stale no servidor —
+      // como esta função é chamada direto (não via `<form action>`), o Next
+      // não busca os dados de novo sozinho: sem isto, o badge Ativo/Inativo
+      // fica com o valor antigo na tela mesmo a mudança tendo sido salva de
+      // verdade no banco (parecia "não funcionar").
+      if (resultado.ok) router.refresh();
     });
   }
 
@@ -50,6 +58,7 @@ export function UsuarioLinhaAcoes({
     startTransition(async () => {
       const resultado = await alterarRoleUsuarioAction(perfilId, novoRole);
       setMensagem(resultado.ok ? resultado.mensagem : resultado.error);
+      if (resultado.ok) router.refresh();
     });
   }
 
@@ -68,6 +77,7 @@ export function UsuarioLinhaAcoes({
     startTransition(async () => {
       const resultado = await promoverAdminPlataformaAction(perfilId);
       setMensagem(resultado.ok ? resultado.mensagem : resultado.error);
+      if (resultado.ok) router.refresh();
     });
   }
 
@@ -83,6 +93,7 @@ export function UsuarioLinhaAcoes({
     startTransition(async () => {
       const resultado = await alterarPlanoEscritorioAction(escritorioId, novoPlano);
       setMensagem(resultado.ok ? resultado.mensagem : resultado.error);
+      if (resultado.ok) router.refresh();
     });
   }
 
@@ -110,7 +121,16 @@ export function UsuarioLinhaAcoes({
     setMensagem(null);
     startTransition(async () => {
       const resultado = await excluirUsuarioAction(perfilId);
-      setMensagem(resultado.ok ? resultado.mensagem : resultado.error);
+      if (!resultado.ok) {
+        setMensagem(resultado.error);
+        return;
+      }
+      // A linha/o perfil não existe mais — refresh sozinho deixaria a
+      // página de detalhe (/admin/usuarios/[id]) cair em notFound() sem
+      // explicação; manda de volta pra lista, onde o refresh já reflete
+      // a exclusão.
+      router.push("/admin/usuarios");
+      router.refresh();
     });
   }
 
