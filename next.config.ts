@@ -8,11 +8,10 @@ import path from "node:path";
  * "Headers & Transport" do checklist OWASP Top 10:2025 / Security
  * Misconfiguration).
  *
- * CSP deliberadamente NAO incluida aqui: o app usa scripts/estilos
- * inline gerados pelo Next (hidratacao) sem nonce configurado ainda -
- * uma CSP restritiva sem esse trabalho quebraria a aplicacao inteira.
- * Recomendado como item separado (ver auditoria), com nonce por
- * request via middleware antes de ativar.
+ * CSP NAO fica aqui: precisa de nonce por request (script-src
+ * 'nonce-...', sem unsafe-inline), o que exige middleware, nao esta
+ * config estatica. Ver `middleware.ts` para a Content-Security-Policy
+ * real, aplicada em toda resposta.
  */
 const SECURITY_HEADERS = [
   // HSTS: forca HTTPS por 2 anos, incluindo subdominios, e elegivel a

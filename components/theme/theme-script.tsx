@@ -35,7 +35,7 @@ const INLINE_SCRIPT = `
 })();
 `;
 
-export function ThemeScript() {
+export function ThemeScript({ nonce }: { nonce?: string }) {
   return (
     // A regra `@next/next/no-before-interactive-script-outside-document`
     // ainda assume o Pages Router (`_document.js`) — no App Router (usado
@@ -43,7 +43,7 @@ export function ThemeScript() {
     // lugar correto para `beforeInteractive`, não existe `_document.js`
     // aqui. Falso positivo conhecido, não um desvio de padrão real.
     // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
-    <Script id="theme-script" strategy="beforeInteractive">
+    <Script id="theme-script" strategy="beforeInteractive" nonce={nonce}>
       {INLINE_SCRIPT}
     </Script>
   );

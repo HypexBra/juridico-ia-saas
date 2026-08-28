@@ -4,10 +4,11 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = [
   "/",
   "/login",
+  "/login/recuperar",
   "/cadastro",
-  "/precos",
   "/auth/callback",
   "/portal/login",
+  "/portal/recuperar",
   "/portal/ativar",
   "/portal/consultar",
 ];
@@ -40,6 +41,8 @@ export async function updateSession(request: NextRequest) {
   // Qualquer x-user-id/x-user-email que o cliente tenha mandado é descartado
   // aqui e nunca chega à rota. Todo `NextResponse.next` abaixo (inclusive os
   // caminhos de fail-open) parte desta versão saneada, nunca de `request` cru.
+  // `x-nonce` (injetado por middleware.ts antes de chamar esta função) é
+  // preservado — não está na lista de headers de identidade descartados.
   let response = NextResponse.next({ request: { headers: semHeadersDeIdentidadeDoCliente(request) } });
 
   // Fail-open controlado (robustez): env ausente (ex.: ambiente local sem

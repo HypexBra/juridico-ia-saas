@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { portalLoginAction, type PortalLoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -38,6 +39,12 @@ export function PortalLoginForm({ tokenConvitePendente }: { tokenConvitePendente
           placeholder="••••••••"
           required
         />
+        <Link
+          href="/portal/recuperar"
+          className="mt-1.5 inline-block text-xs font-medium text-silver underline underline-offset-2 hover:text-silver-2"
+        >
+          Esqueceu a senha?
+        </Link>
       </div>
 
       {state.error && (

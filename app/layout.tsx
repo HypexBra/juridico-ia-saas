@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Fraunces, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { Analytics } from "@vercel/analytics/next";
+import { obterAppUrl } from "@/lib/app/url";
 import "./globals.css";
 
 /* ---- Fontes GLOBAIS unificadas (landing + app interno) ----
@@ -35,9 +37,16 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // Necessário para resolver URLs absolutas de OG/canonical (sem isso, a
+  // imagem gerada por app/opengraph-image.tsx e as tags og:url ficam
+  // relativas — preview quebrado ao compartilhar em WhatsApp/LinkedIn).
+  metadataBase: new URL(obterAppUrl()),
   title: "Jurídico IA — O trabalho jurídico, finalmente organizado",
   description:
     "Documentos analisados, prazos encontrados no diário oficial, tarefas criadas sozinhas e o cliente informado. Um lugar para o caso inteiro. Comece gratuitamente.",
+  alternates: {
+    canonical: "/",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -80,7 +89,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Nonce gerado por request em `middleware.ts` — repassado ao ThemeScript
+  // para satisfazer a CSP `script-src 'nonce-...'` sem `unsafe-inline`.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang="pt-BR"
@@ -100,7 +112,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             — não precisa (e não deve) ficar dentro de um <head> manual, que
             conflitaria com o <head> já gerenciado pela Metadata API do App
             Router. Ver docs do next/script. */}
-        <ThemeScript />
+        <ThemeScript nonce={nonce} />
         <PwaRegister />
         {children}
         <Analytics />

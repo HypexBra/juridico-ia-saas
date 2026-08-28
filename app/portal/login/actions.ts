@@ -1,8 +1,20 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { verificarRateLimit } from "@/lib/rate-limit";
+
+const MAX_TENTATIVAS_LOGIN = 10;
+const JANELA_LOGIN_MS = 10 * 60 * 1000; // 10 minutos
+
+async function resolverIpOrigem(): Promise<string> {
+  const listaHeaders = await headers();
+  const encaminhadoPor = listaHeaders.get("x-forwarded-for");
+  if (encaminhadoPor) return encaminhadoPor.split(",")[0]?.trim() ?? "desconhecido";
+  return listaHeaders.get("x-real-ip") ?? "desconhecido";
+}
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, "Informe o e-mail.").email("E-mail inválido."),
@@ -26,6 +38,19 @@ export async function portalLoginAction(
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const ip = await resolverIpOrigem();
+  const permitidoIp = await verificarRateLimit(`portal-login:ip:${ip}`, {
+    maxTentativas: MAX_TENTATIVAS_LOGIN,
+    janelaMs: JANELA_LOGIN_MS,
+  });
+  const permitidoEmail = await verificarRateLimit(`portal-login:email:${parsed.data.email.toLowerCase()}`, {
+    maxTentativas: MAX_TENTATIVAS_LOGIN,
+    janelaMs: JANELA_LOGIN_MS,
+  });
+  if (!permitidoIp || !permitidoEmail) {
+    return { error: "Muitas tentativas em pouco tempo. Aguarde alguns minutos antes de tentar novamente." };
   }
 
   const supabase = await createClient();

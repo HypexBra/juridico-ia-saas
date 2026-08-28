@@ -32,6 +32,38 @@ const CANAIS = [
     nota: "Atendimento comercial em horário comercial (Brasília).",
     external: true,
   },
+  {
+    icone: IconWhatsapp,
+    rotulo: "WhatsApp — Matheus Nunez",
+    valor: "+55 (61) 99671-3206",
+    href: "https://wa.me/5561996713206?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
+    nota: "Suporte comercial.",
+    external: true,
+  },
+  {
+    icone: IconMail,
+    rotulo: "E-mail — Matheus Nunez",
+    valor: "rodriguez.founder@gmail.com",
+    href: "mailto:rodriguez.founder@gmail.com",
+    nota: "Resposta em até 1 dia útil.",
+    external: false,
+  },
+  {
+    icone: IconWhatsapp,
+    rotulo: "WhatsApp — Joao",
+    valor: "+55 (61) 98347-7750",
+    href: "https://wa.me/5561983477750?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
+    nota: "Suporte comercial.",
+    external: true,
+  },
+  {
+    icone: IconMail,
+    rotulo: "E-mail — Joao",
+    valor: "jp021105@gmail.com",
+    href: "mailto:jp021105@gmail.com",
+    nota: "Resposta em até 1 dia útil.",
+    external: false,
+  },
 ] as const;
 
 /**
