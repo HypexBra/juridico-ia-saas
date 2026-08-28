@@ -9,12 +9,15 @@ import { IconPlus } from "./icons";
    exportação DOCX/PDF (não implementado) e convites de equipe (desatualizado);
    a resposta sobre limites foi corrigida — o Pro já existe (R$ 149/mês). */
 
-interface FaqEntry {
+export interface FaqEntry {
   readonly question: string;
   readonly answer: string;
 }
 
-const FAQ_ENTRIES: readonly FaqEntry[] = [
+// Exportado: app/page.tsx reusa este array literal pra montar o JSON-LD
+// FAQPage (AEO/GEO) — mesma fonte da verdade, nunca duas listas de
+// pergunta/resposta divergindo entre o schema e o que é renderizado.
+export const FAQ_ENTRIES: readonly FaqEntry[] = [
   {
     question: "A IA inventa artigos de lei ou jurisprudência?",
     answer:

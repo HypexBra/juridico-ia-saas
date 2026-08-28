@@ -18,7 +18,7 @@ const CANAIS = [
   },
   {
     icone: IconWhatsapp,
-    rotulo: "WhatsApp — direto com o fundador",
+    rotulo: "WhatsApp — direto com o desenvolvedor",
     valor: "+55 (61) 98139-9051",
     href: "https://wa.me/5561981399051?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
     nota: "O canal mais rápido para dúvidas sobre planos e demonstração.",

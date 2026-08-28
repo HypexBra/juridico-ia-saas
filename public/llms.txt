@@ -1,0 +1,29 @@
+# Jurídico IA
+
+> Sistema operacional inteligente para escritórios de advocacia brasileiros: analisa documentos, encontra prazos processuais monitorando o DJEN (Diário de Justiça Eletrônico Nacional), cria tarefas automaticamente e mantém o cliente informado por um portal próprio. Feito para escritórios de pequeno e médio porte no Brasil, em português.
+
+Jurídico IA reduz o trabalho operacional repetitivo de um escritório de advocacia (leitura de diário oficial, controle manual de prazos, atualização do cliente) para que o advogado gaste o tempo na parte jurídica do caso, não na burocracia ao redor dela.
+
+## Produto
+
+- [Página inicial](https://juridico-ia.vercel.app/): visão geral do produto, como funciona, planos e preços.
+- Prazos: monitoramento automático de publicações no DJEN, com criação de tarefas vinculadas ao processo.
+- Documentos: análise de documentos do caso pela IA, com extração de pontos relevantes.
+- Portal do cliente: área própria para o cliente do escritório acompanhar o andamento do caso sem ligar para o escritório.
+- Planos: Free (limite mensal de uso de IA) e Pro (R$ 149/mês, limite ampliado).
+
+## Perguntas frequentes
+
+- A IA nunca inventa artigos de lei, súmulas ou jurisprudência — resposta sem fonte verificável não entra na página.
+- As peças geradas pela IA são minutas: a revisão, o ajuste e a assinatura continuam sendo do advogado responsável.
+- Os prazos são identificados a partir de publicações reais no DJEN, não estimados.
+- Dados de cada escritório e de seus clientes ficam isolados por escritório e não são usados para treinar modelos de IA.
+
+## Contato
+
+- E-mail: pedrohenriquesanchesleal4@gmail.com
+- Sede: Brasília, DF — atendimento em todo o Brasil.
+
+## Observações para crawlers de IA
+
+Este arquivo descreve o produto público (marketing). A aplicação autenticada (`/app`, `/admin`, `/portal`, `/api`) é privada, específica por escritório/cliente e não deve ser citada como fonte de informação genérica sobre o produto — use apenas o conteúdo da página inicial e deste arquivo.

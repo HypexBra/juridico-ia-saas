@@ -5,7 +5,7 @@ import { ContactSection } from "@/components/marketing/contact-section";
 import { CtaFinal } from "@/components/marketing/cta-final";
 import { DevilSection } from "@/components/marketing/devil-section";
 import { DocumentsSection } from "@/components/marketing/documents-section";
-import { Faq } from "@/components/marketing/faq";
+import { Faq, FAQ_ENTRIES } from "@/components/marketing/faq";
 import { Footer } from "@/components/marketing/footer";
 import { Hero } from "@/components/marketing/hero";
 import { MemorySection } from "@/components/marketing/memory-section";
@@ -19,24 +19,66 @@ import { SecuritySection } from "@/components/marketing/security-section";
 import { SilverThread } from "@/components/marketing/silver-thread";
 import { WhatsappSection } from "@/components/marketing/whatsapp-section";
 import { WorkflowSection } from "@/components/marketing/workflow-section";
+import { obterAppUrl } from "@/lib/app/url";
 
-const JSON_LD = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Jurídico IA",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  description:
-    "Sistema operacional inteligente para escritórios de advocacia: casos, documentos analisados, prazos monitorados no diário oficial, tarefas automáticas e portal do cliente.",
-  inLanguage: "pt-BR",
-  offers: {
-    "@type": "OfferAggregate",
-    lowPrice: "0",
-    highPrice: "149",
-    priceCurrency: "BRL",
-    offerCount: "2",
-  },
-};
+/**
+ * `@graph` único combinando os 3 schemas (AEO/GEO — resposta direta em
+ * buscadores de IA e no rich snippet do Google, não só SEO clássico):
+ * SoftwareApplication (o produto), Organization (a empresa por trás, com
+ * canal de contato real) e FAQPage (as mesmas perguntas de `<Faq>`, nunca
+ * uma segunda lista divergente).
+ */
+function construirJsonLd(appUrl: string) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${appUrl}/#software`,
+        name: "Jurídico IA",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        description:
+          "Sistema operacional inteligente para escritórios de advocacia: casos, documentos analisados, prazos monitorados no diário oficial, tarefas automáticas e portal do cliente.",
+        inLanguage: "pt-BR",
+        url: appUrl,
+        offers: {
+          "@type": "OfferAggregate",
+          lowPrice: "0",
+          highPrice: "149",
+          priceCurrency: "BRL",
+          offerCount: "2",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${appUrl}/#organization`,
+        name: "Jurídico IA",
+        url: appUrl,
+        email: "pedrohenriquesanchesleal4@gmail.com",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Brasília",
+          addressRegion: "DF",
+          addressCountry: "BR",
+        },
+        areaServed: "BR",
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${appUrl}/#faq`,
+        mainEntity: FAQ_ENTRIES.map((entry) => ({
+          "@type": "Question",
+          name: entry.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: entry.answer,
+          },
+        })),
+      },
+    ],
+  };
+}
 
 export default function Home() {
   return (
@@ -68,7 +110,7 @@ export default function Home() {
       <Footer />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(construirJsonLd(obterAppUrl())) }}
       />
     </div>
   );
