@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { PlataformaAdmin } from "@/lib/types";
 
@@ -22,8 +23,23 @@ export type AdminAtual = {
  */
 export const getAdminAtual = cache(async (): Promise<AdminAtual | null> => {
   const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+
+  // Mesmo fast path de `lib/app/current-user.ts`: o middleware já validou a
+  // sessão e injetou id+email via header — evita repetir aqui o round-trip
+  // de rede que `auth.getUser()` faz ao Supabase Auth, chamado em TODA
+  // navegação de /app (via app/app/layout.tsx), admin ou não.
+  const requestHeaders = await headers();
+  const userIdDoHeader = requestHeaders.get("x-user-id");
+  const userEmailDoHeader = requestHeaders.get("x-user-email");
+
+  let user: { id: string; email?: string | null } | null = userIdDoHeader
+    ? { id: userIdDoHeader, email: userEmailDoHeader }
+    : null;
+
+  if (!user) {
+    const { data: userData } = await supabase.auth.getUser();
+    user = userData.user;
+  }
   if (!user) return null;
 
   const { data: admin, error } = await supabase

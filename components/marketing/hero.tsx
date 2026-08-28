@@ -9,7 +9,7 @@ import { Reveal } from "./reveal";
 
 export function Hero() {
   return (
-    <section className="pb-20 pt-28 md:pb-28 md:pt-40">
+    <section className="pb-10 pt-28 md:pb-14 md:pt-40">
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-5 md:px-10 lg:grid-cols-[11fr_9fr] lg:gap-16">
         {/* Coluna de texto — hierarquia editorial, nada centralizado */}
         <div>

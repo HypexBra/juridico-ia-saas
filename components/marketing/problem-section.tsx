@@ -129,7 +129,7 @@ export function ProblemSection() {
           ordenada logo abaixo, então aqui vale aria-hidden. */}
       <div
         aria-hidden
-        className="relative mx-auto h-[360px] w-full max-w-4xl sm:h-[430px] md:h-[500px]"
+        className="relative -mt-6 mx-auto h-[220px] w-full max-w-4xl sm:h-[280px] md:-mt-10 md:h-[320px]"
       >
         <style>{CSS_NUVEM}</style>
         {PALAVRAS.map((palavra) => (

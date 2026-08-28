@@ -4,13 +4,14 @@ import { getAdminAtual } from "@/lib/admin/auth";
 import { AppShell } from "@/components/app/app-shell";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
-  const usuario = await getUsuarioAtual();
+  // Nenhuma depende do resultado da outra (ambas leem o mesmo fast path de
+  // headers injetado pelo middleware) — rodar em paralelo evita pagar dois
+  // round-trips sequenciais em toda navegação dentro de /app.
+  const [usuario, admin] = await Promise.all([getUsuarioAtual(), getAdminAtual()]);
 
   if (!usuario) {
     redirect("/login");
   }
-
-  const admin = await getAdminAtual();
 
   return (
     <AppShell

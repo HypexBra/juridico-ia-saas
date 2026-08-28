@@ -35,6 +35,12 @@ export function LoginForm() {
           placeholder="••••••••"
           required
         />
+        <Link
+          href="/login/recuperar"
+          className="mt-1.5 inline-block text-xs font-medium text-silver underline underline-offset-2 hover:text-silver-2"
+        >
+          Esqueceu a senha?
+        </Link>
       </div>
 
       {state.error && (

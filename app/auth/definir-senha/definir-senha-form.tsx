@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { resolverDestinoPosSenhaAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
@@ -50,7 +51,8 @@ export function DefinirSenhaForm() {
       return;
     }
 
-    router.push("/app/dashboard");
+    const destino = await resolverDestinoPosSenhaAction();
+    router.push(destino);
     router.refresh();
   }
 

@@ -26,11 +26,13 @@ export const maxDuration = 300;
 export async function POST(request: NextRequest) {
   let autorizado = autorizarChamadaCron(request).ok;
   if (!autorizado) {
-    // Trigger manual: admin autenticado via sessão (mesmo gate de /admin).
+    // Trigger manual: admin de PLATAFORMA autenticado (mesmo gate de /admin).
+    // Owner de escritório NÃO basta aqui — o job consome infra/custo
+    // compartilhado entre todos os tenants, não só o do escritório dele.
     try {
-      const { getUsuarioAtual } = await import("@/lib/app/current-user");
-      const usuario = await getUsuarioAtual();
-      autorizado = Boolean(usuario?.perfil.escritorio.id) && usuario?.perfil.role === "owner";
+      const { getAdminAtual } = await import("@/lib/admin/auth");
+      const admin = await getAdminAtual();
+      autorizado = Boolean(admin);
     } catch {
       autorizado = false;
     }

@@ -62,7 +62,7 @@ export async function consultarStatusPublicoAction(
   }
 
   const ip = await resolverIpOrigem();
-  const permitido = verificarRateLimit(`consulta-status-publico:${ip}`, {
+  const permitido = await verificarRateLimit(`consulta-status-publico:${ip}`, {
     maxTentativas: MAX_TENTATIVAS,
     janelaMs: JANELA_MS,
   });

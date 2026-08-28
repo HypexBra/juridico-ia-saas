@@ -3,6 +3,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { autenticarApiKey } from "@/lib/apikeys/autenticar";
 import { escritorioTemAcessoApiPublica } from "@/lib/apikeys/verificar-acesso";
 import { parsearPaginacao } from "@/lib/apikeys/paginacao";
+import { verificarRateLimit } from "@/lib/rate-limit";
+
+const MAX_TENTATIVAS_API = 60;
+const JANELA_API_MS = 60 * 1000; // 1 minuto
 
 /**
  * GET /api/v1/prazos — lista os prazos do escritório dono da API key.
@@ -23,6 +27,14 @@ export async function GET(request: NextRequest) {
   const auth = await autenticarApiKey(request);
   if (!auth.ok) {
     return NextResponse.json({ error: "Chave de API ausente ou inválida." }, { status: 401 });
+  }
+
+  const permitido = await verificarRateLimit(`api-v1:${auth.escritorioId}`, {
+    maxTentativas: MAX_TENTATIVAS_API,
+    janelaMs: JANELA_API_MS,
+  });
+  if (!permitido) {
+    return NextResponse.json({ error: "Limite de requisições excedido. Tente novamente em instantes." }, { status: 429 });
   }
 
   const temAcesso = await escritorioTemAcessoApiPublica(auth.escritorioId, "api_integracoes");
