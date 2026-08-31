@@ -89,6 +89,8 @@ export type Mensagem = {
   tokens_out: number;
   proposta_id: string | null;
   fontes: FonteCitadaMensagem[] | null;
+  /** Números de "[Doc #N]" citados no texto que NÃO existem no contexto injetado (ver lib/rag/citacoes.ts). `null`/vazio = nenhuma citação inventada detectada. */
+  citacoes_invalidas: number[] | null;
   criado_em: string;
 };
 

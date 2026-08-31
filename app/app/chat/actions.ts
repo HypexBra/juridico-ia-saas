@@ -597,6 +597,7 @@ export async function enviarMensagemAction(
       tokens_out: respostaIa.tokensOut,
       proposta_id: propostaId,
       fontes: chunksRag.length > 0 ? montarFontesCitaveis(chunksRag) : null,
+      citacoes_invalidas: citacoesInvalidas.length > 0 ? citacoesInvalidas : null,
     })
     .select("*")
     .single();

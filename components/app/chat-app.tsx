@@ -19,6 +19,7 @@ import type { Mensagem } from "@/lib/types";
 type MensagemLocal = Pick<Mensagem, "id" | "role" | "conteudo" | "criado_em"> & {
   proposta_id?: string | null;
   fontes?: Mensagem["fontes"];
+  citacoes_invalidas?: Mensagem["citacoes_invalidas"];
 };
 
 /** Fontes RAG citadas por uma resposta — clicáveis quando a fonte tem tela de detalhe (ver lib/rag/retrieval.ts#montarFontesCitaveis). */
@@ -729,7 +730,7 @@ export function ChatApp({
                       }`}
                     >
                       {m.role === "assistant" ? (
-                        <MarkdownLite texto={m.conteudo} />
+                        <MarkdownLite texto={m.conteudo} citacoesInvalidas={m.citacoes_invalidas} />
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{m.conteudo}</p>
                       )}

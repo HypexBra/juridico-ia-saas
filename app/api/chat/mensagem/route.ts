@@ -434,26 +434,10 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        const { data: msgAssistant, error: erroInsertAssistant } = await supabase
-          .from("mensagens")
-          .insert({
-            escritorio_id: escritorioId,
-            conversa_id: conversaId,
-            role: "assistant",
-            conteudo: texto,
-            tokens_in: tokensIn,
-            tokens_out: tokensOut,
-            proposta_id: propostaId,
-            fontes: !trivial && ragResultado.length > 0 ? montarFontesCitaveis(ragResultado) : null,
-          })
-          .select("*")
-          .single();
-
-        if (erroInsertAssistant || !msgAssistant) throw new Error("Não foi possível salvar a resposta.");
-
         // Mesma checagem determinística de citação do fluxo one-shot (ver
         // app/app/chat/actions.ts) — aqui contra `ragResultado`, o RAG desta
-        // mesma requisição.
+        // mesma requisição. Calculada ANTES do insert pra já gravar na
+        // própria mensagem (frontend colore a citação verde/vermelho).
         const { invalidas: citacoesInvalidas } = validarCitacoes(texto, trivial ? 0 : ragResultado.length);
         if (citacoesInvalidas.length > 0) {
           console.error(
@@ -465,6 +449,24 @@ export async function POST(request: NextRequest) {
             }),
           );
         }
+
+        const { data: msgAssistant, error: erroInsertAssistant } = await supabase
+          .from("mensagens")
+          .insert({
+            escritorio_id: escritorioId,
+            conversa_id: conversaId,
+            role: "assistant",
+            conteudo: texto,
+            tokens_in: tokensIn,
+            tokens_out: tokensOut,
+            proposta_id: propostaId,
+            fontes: !trivial && ragResultado.length > 0 ? montarFontesCitaveis(ragResultado) : null,
+            citacoes_invalidas: citacoesInvalidas.length > 0 ? citacoesInvalidas : null,
+          })
+          .select("*")
+          .single();
+
+        if (erroInsertAssistant || !msgAssistant) throw new Error("Não foi possível salvar a resposta.");
 
         if (interrompida) {
           console.error(
