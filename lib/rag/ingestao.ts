@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { dividirEmChunksComPai } from "./chunking";
-import { gerarEmbedding } from "./embeddings";
+import { gerarEmbeddingsEmLote } from "./embeddings";
 
 type FonteTipo = "documento_upload" | "ficha_caso" | "prazo" | "modelo" | "memoria_ia_caso";
 
@@ -28,20 +28,24 @@ export async function indexarTexto(
   const chunks = dividirEmChunksComPai(texto);
   if (chunks.length === 0) return { totalChunks: 0 };
 
-  const linhas = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = await gerarEmbedding(chunks[i].conteudo, "RETRIEVAL_DOCUMENT");
-    linhas.push({
-      escritorio_id: escritorioId,
-      fonte_tipo: fonteTipo,
-      fonte_id: fonteId,
-      chunk_index: i,
-      conteudo: chunks[i].conteudo,
-      conteudo_pai: chunks[i].conteudoPai,
-      metadata,
-      embedding,
-    });
-  }
+  // Concorrência limitada (ver embeddings.ts) — corta o tempo de indexação de
+  // um documento grande em ~5x, importante porque isto roda em background
+  // (`after()`, ver app/app/base-conhecimento/actions.ts) dentro de um teto
+  // de tempo real (`maxDuration`).
+  const embeddings = await gerarEmbeddingsEmLote(
+    chunks.map((c) => c.conteudo),
+    "RETRIEVAL_DOCUMENT",
+  );
+  const linhas = chunks.map((chunk, i) => ({
+    escritorio_id: escritorioId,
+    fonte_tipo: fonteTipo,
+    fonte_id: fonteId,
+    chunk_index: i,
+    conteudo: chunk.conteudo,
+    conteudo_pai: chunk.conteudoPai,
+    metadata,
+    embedding: embeddings[i],
+  }));
 
   const { error } = await supabase.from("embeddings_chunks").insert(linhas);
   if (error) throw new Error(`Falha ao indexar chunks: ${error.message}`);
@@ -77,20 +81,20 @@ export async function indexarJurisprudenciaChunk(
   const chunks = dividirEmChunksComPai(texto);
   if (chunks.length === 0) return { totalChunks: 0 };
 
-  const linhas = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = await gerarEmbedding(chunks[i].conteudo, "RETRIEVAL_DOCUMENT");
-    linhas.push({
-      escritorio_id: null,
-      fonte_tipo: "jurisprudencia" as const,
-      fonte_id: jurisprudenciaId,
-      chunk_index: i,
-      conteudo: chunks[i].conteudo,
-      conteudo_pai: chunks[i].conteudoPai,
-      metadata,
-      embedding,
-    });
-  }
+  const embeddings = await gerarEmbeddingsEmLote(
+    chunks.map((c) => c.conteudo),
+    "RETRIEVAL_DOCUMENT",
+  );
+  const linhas = chunks.map((chunk, i) => ({
+    escritorio_id: null,
+    fonte_tipo: "jurisprudencia" as const,
+    fonte_id: jurisprudenciaId,
+    chunk_index: i,
+    conteudo: chunk.conteudo,
+    conteudo_pai: chunk.conteudoPai,
+    metadata,
+    embedding: embeddings[i],
+  }));
 
   const { error } = await supabase.from("embeddings_chunks").insert(linhas);
   if (error) throw new Error(`Falha ao indexar chunks de jurisprudência: ${error.message}`);
