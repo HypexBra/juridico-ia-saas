@@ -16,6 +16,8 @@ import {
 } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { validarCitacoes } from "@/lib/rag/citacoes";
+import { gerarEmbedding } from "@/lib/rag/embeddings";
+import { buscarRespostaCacheada, salvarRespostaCacheSemantico } from "@/lib/rag/cache-semantico";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara, type Mensagem } from "@/lib/types";
 import { decidirContexto } from "@/lib/ia/roteador-contexto";
@@ -182,6 +184,79 @@ export async function POST(request: NextRequest) {
         const contexto = decidirContexto(input.texto);
         const trivial = contexto.modo === "rapido";
 
+        // Caching semântico (mesma regra de app/app/chat/actions.ts): só
+        // para pergunta classificada como conhecimento geral, nunca com
+        // provider forçado pelo usuário. HIT simula digitação (delta por
+        // pedaço de texto) em vez de mandar tudo de uma vez — mantém a
+        // sensação de streaming mesmo sem chamar o LLM.
+        let embeddingConsultaCache: number[] | null = null;
+        if (contexto.modo === "interno" && !input.provider) {
+          try {
+            embeddingConsultaCache = await gerarEmbedding(input.texto, "RETRIEVAL_QUERY");
+            const cacheado = await buscarRespostaCacheada(supabase, escritorioId, embeddingConsultaCache);
+            if (cacheado) {
+              const { error: erroInsertUser } = await supabase.from("mensagens").insert({
+                escritorio_id: escritorioId,
+                conversa_id: conversaId,
+                role: "user",
+                conteudo: input.texto,
+              });
+              if (erroInsertUser) throw new Error("Não foi possível salvar a mensagem.");
+
+              const PEDACO = 24;
+              for (let i = 0; i < cacheado.resposta.length; i += PEDACO) {
+                enviar({ tipo: "delta", texto: cacheado.resposta.slice(i, i + PEDACO) });
+                await new Promise((resolve) => setTimeout(resolve, 12));
+              }
+
+              await supabase.from("uso_ia").insert({
+                escritorio_id: escritorioId,
+                conversa_id: conversaId,
+                tokens_in: 0,
+                tokens_out: 0,
+                mes_ref: mesRef,
+                origem: "chat_cache_semantico",
+                duracao_ms: 0,
+                modelo: cacheado.modelo,
+              });
+
+              const { data: msgAssistantCache, error: erroInsertAssistantCache } = await supabase
+                .from("mensagens")
+                .insert({
+                  escritorio_id: escritorioId,
+                  conversa_id: conversaId,
+                  role: "assistant",
+                  conteudo: cacheado.resposta,
+                  tokens_in: 0,
+                  tokens_out: 0,
+                  fontes: null,
+                })
+                .select("*")
+                .single();
+              if (erroInsertAssistantCache || !msgAssistantCache) {
+                throw new Error("A IA respondeu, mas houve um erro ao salvar a resposta.");
+              }
+
+              enviar({
+                tipo: "done",
+                conversaId,
+                mensagem: msgAssistantCache as Mensagem,
+                usoMes: usoAtual ?? 0,
+                propostaId: null,
+                tokensIn: 0,
+                tokensOut: 0,
+                modoRapido: false,
+                modoContexto: contexto.modo,
+                interrompida: false,
+                cache: true,
+              });
+              return;
+            }
+          } catch (erro) {
+            console.error("[chat/stream] Falha no cache semântico; seguindo sem cache:", erro);
+          }
+        }
+
         // Três consultas INDEPENDENTES em paralelo (a latência total é o
         // maior dos três tempos, não a soma): propostas pendentes (gate do
         // agente), RAG e memória do escritório (Fase 17). A memória é
@@ -345,6 +420,20 @@ export async function POST(request: NextRequest) {
           duracao_ms: duracaoGeracaoMs,
           modelo: respostaFinal?.modelo ?? null,
         });
+        // Mesma regra de gravação do fluxo one-shot (ver actions.ts): só
+        // conhecimento geral, resposta de texto de verdade, sem proposta.
+        if (embeddingConsultaCache && !propostaId && (respostaFinal?.texto || textoAcumulado)) {
+          void salvarRespostaCacheSemantico(supabase, {
+            escritorioId,
+            pergunta: input.texto,
+            embeddingConsulta: embeddingConsultaCache,
+            resposta: texto,
+            tokensIn,
+            tokensOut,
+            modelo: respostaFinal?.modelo ?? null,
+          });
+        }
+
         const { data: msgAssistant, error: erroInsertAssistant } = await supabase
           .from("mensagens")
           .insert({
