@@ -711,6 +711,14 @@ export function ChatApp({
                   className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   onMouseEnter={() => setMensagemHoverId(m.id)}
                   onMouseLeave={() => setMensagemHoverId((atual) => (atual === m.id ? null : atual))}
+                  // `content-visibility: auto` (sem lib nova, sem mudar
+                  // estrutura de DOM/scroll): o navegador pula layout/paint de
+                  // bolhas fora da viewport numa conversa longa, sem exigir
+                  // remeasure a cada delta de streaming como um virtualizador
+                  // full exigiria na ÚLTIMA mensagem (que muda de tamanho a
+                  // cada token). `containIntrinsicSize` evita salto de scroll
+                  // ao entrar/sair da viewport.
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}
                 >
                   <div className={`relative flex items-center gap-1.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
                     <div
