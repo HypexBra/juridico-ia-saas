@@ -65,6 +65,7 @@ returns table (
 language sql
 security definer
 stable
+set search_path = public, pg_temp
 as $$
   with candidatos_base as (
     select ec.id, ec.fonte_tipo, ec.fonte_id, ec.conteudo, ec.conteudo_pai, ec.metadata,
