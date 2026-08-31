@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea, Select } from "@/components/ui/input";
 import { MarkdownLite } from "./markdown-lite";
 import { PropostaAcaoCard } from "./proposta-acao-card";
+import { AnotacoesConversa } from "./anotacoes-conversa";
 import {
   carregarMensagensAction,
   excluirConversaAction,
@@ -690,6 +691,8 @@ export function ChatApp({
             Limite mensal de {uso.limite} mensagens de IA do plano free atingido.
           </div>
         )}
+
+        <AnotacoesConversa conversaId={conversaId} />
 
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5">
           {isPendingHistorico ? (
