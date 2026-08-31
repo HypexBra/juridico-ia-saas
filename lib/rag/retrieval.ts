@@ -165,7 +165,11 @@ export async function buscarContextoRelevante(
     );
   }
 
-  return semDuplicataDePai.map(({ distancia: _distancia, ...chunk }) => chunk);
+  return semDuplicataDePai.map((chunk) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- `distancia` era só o índice de ordenação para selecionarChunks, não faz parte de ChunkRecuperado
+    const { distancia, ...resto } = chunk;
+    return resto;
+  });
 }
 
 const RÓTULO_FONTE: Record<FonteTipoChunk, string> = {
