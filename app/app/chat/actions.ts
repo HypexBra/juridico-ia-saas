@@ -6,6 +6,7 @@ import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from "@/lib/ia/provider";
 import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
+import { validarCitacoes } from "@/lib/rag/citacoes";
 import { decidirContexto } from "@/lib/ia/roteador-contexto";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
@@ -478,6 +479,22 @@ export async function enviarMensagemAction(
     (propostaId
       ? "Preparei uma proposta de ação — revise e aprove ou rejeite no card abaixo."
       : "Não foi possível gerar uma resposta em texto para esta mensagem.");
+
+  // Checagem determinística (sem chamada de IA) das citações "[Doc #N]" que o
+  // modelo colocou no texto contra o total de chunks de fato injetados no
+  // prompt — nunca bloqueia a resposta (o texto já está pronto), só dá
+  // visibilidade em log quando o modelo referencia um doc que não existe.
+  const { invalidas: citacoesInvalidas } = validarCitacoes(textoResposta, chunksRag.length);
+  if (citacoesInvalidas.length > 0) {
+    console.error(
+      JSON.stringify({
+        evento: "rag_citacao_invalida",
+        conversaId,
+        totalChunks: chunksRag.length,
+        citacoesInvalidas,
+      }),
+    );
+  }
 
   const { data: mensagemAssistente, error: erroInsertAssistente } = await supabase
     .from("mensagens")

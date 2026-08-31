@@ -15,6 +15,7 @@ import {
   type ChunkRecuperado,
 } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
+import { validarCitacoes } from "@/lib/rag/citacoes";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara, type Mensagem } from "@/lib/types";
 import { decidirContexto } from "@/lib/ia/roteador-contexto";
@@ -360,6 +361,22 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (erroInsertAssistant || !msgAssistant) throw new Error("Não foi possível salvar a resposta.");
+
+        // Mesma checagem determinística de citação do fluxo one-shot (ver
+        // app/app/chat/actions.ts) — aqui contra `ragResultado`, o RAG desta
+        // mesma requisição.
+        const { invalidas: citacoesInvalidas } = validarCitacoes(texto, trivial ? 0 : ragResultado.length);
+        if (citacoesInvalidas.length > 0) {
+          console.error(
+            JSON.stringify({
+              evento: "rag_citacao_invalida",
+              conversaId,
+              totalChunks: trivial ? 0 : ragResultado.length,
+              citacoesInvalidas,
+            }),
+          );
+        }
+
         if (interrompida) {
           console.error(
             JSON.stringify({
