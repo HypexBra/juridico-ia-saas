@@ -63,6 +63,53 @@ FERRAMENTAS DE AÇÃO (propose_*)
  * data · num domínio em que "o STJ entende X" sem data é uma afirmação que
  * pode estar anos desatualizada.
  */
+/**
+ * Modos de tarefa segmentados (ver OpcoesGeracao.modoTarefa em gemini.ts) —
+ * inspirado nos modos do Harvey/GPTuri: o usuário escolhe explicitamente a
+ * INTENÇÃO da mensagem no composer do chat, em vez de depender só de
+ * detecção implícita por palavra-chave. Cada bloco só entra na
+ * systemInstruction quando o modo correspondente é escolhido — "conversa"
+ * (padrão, ausente aqui) não muda nada do comportamento atual.
+ */
+export type ModoTarefa = "conversa" | "pesquisa" | "parecer" | "redacao";
+
+export const MODO_TAREFA_PROMPTS: Record<Exclude<ModoTarefa, "conversa">, string> = {
+  pesquisa: `
+═══════════════════════════════════════════════
+MODO: PESQUISA JURÍDICA FUNDAMENTADA
+═══════════════════════════════════════════════
+• O usuário quer uma resposta objetiva, apoiada em fonte verificável — não
+  uma conversa. Priorize precisão sobre fluidez de texto.
+• Toda tese, dispositivo legal ou jurisprudência apresentada precisa citar
+  [Doc #N] do contexto recuperado, quando houver. Sem contexto que sustente
+  o ponto, diga isso explicitamente em vez de responder de memória.
+• Estruture em tópicos curtos quando a resposta cobrir mais de um ponto —
+  não um parágrafo corrido tentando encaixar tudo.`,
+  parecer: `
+═══════════════════════════════════════════════
+MODO: PARECER JURÍDICO ESTRUTURADO
+═══════════════════════════════════════════════
+• Formate a resposta como um parecer: seções "Consulta" (uma frase
+  reformulando o que foi perguntado), "Fundamentação" (análise com citação
+  [Doc #N] de cada base legal/jurisprudencial usada) e "Conclusão"
+  (recomendação objetiva).
+• Precisão acima de tudo: um parecer com base errada é pior que nenhum
+  parecer. Se a base fornecida não sustenta uma conclusão segura, diga isso
+  na própria seção de Conclusão em vez de arriscar uma resposta categórica.`,
+  redacao: `
+═══════════════════════════════════════════════
+MODO: REDAÇÃO DE PEÇA/DOCUMENTO
+═══════════════════════════════════════════════
+• O usuário quer o TEXTO FINAL de uma peça, minuta ou documento — não uma
+  explicação sobre como escrevê-lo. Produza o documento completo, com a
+  estrutura formal esperada (endereçamento, qualificação das partes, dos
+  fatos, do direito, dos pedidos, fecho), preenchendo com o que foi
+  informado e sinalizando entre colchetes o que falta (ex: "[nome completo
+  do autor]") em vez de inventar dado não fornecido.
+• Use o contexto recuperado (modelos de peça do escritório, jurisprudência)
+  como base de fundamentação e estilo, sempre citando [Doc #N] onde usar.`,
+};
+
 export const PESQUISA_ATUALIZADA_PROMPT = `
 ═══════════════════════════════════════════════
 PESQUISA ATUALIZADA (esta mensagem depende do estado ATUAL)

@@ -114,6 +114,10 @@ export function ChatApp({
   const [mensagens, setMensagens] = useState<MensagemLocal[]>([]);
   const [texto, setTexto] = useState("");
   const [providerSelecionado, setProviderSelecionado] = useState<"auto" | "gemini" | "groq">("auto");
+  // Modo de tarefa segmentado (ver lib/ia/rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // inspirado nos modos do Harvey/GPTuri: o usuário sinaliza a intenção da
+  // mensagem em vez de depender só de detecção implícita por palavra-chave.
+  const [modoTarefa, setModoTarefa] = useState<"conversa" | "pesquisa" | "parecer" | "redacao">("conversa");
   const [erro, setErro] = useState<string | null>(null);
   const [avisoConversas, setAvisoConversas] = useState<string | null>(null);
   const [uso, setUso] = useState(usoInicial);
@@ -456,6 +460,7 @@ export function ChatApp({
             conversaId,
             texto: textoEnviado,
             provider: providerSelecionado === "auto" ? undefined : providerSelecionado,
+            modoTarefa,
           }),
         });
 
@@ -787,6 +792,21 @@ export function ChatApp({
 
         <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-ink/10 p-4">
           <div className="flex items-center justify-end gap-2">
+            <label htmlFor="chat-modo-tarefa" className="text-[11px] uppercase tracking-wide text-muted">
+              Modo
+            </label>
+            <Select
+              id="chat-modo-tarefa"
+              value={modoTarefa}
+              onChange={(e) => setModoTarefa(e.target.value as typeof modoTarefa)}
+              className="w-auto py-1.5 text-xs"
+              title="Ajusta o formato da resposta à intenção da mensagem (pesquisa objetiva, parecer estruturado ou redação de peça completa)."
+            >
+              <option value="conversa">Conversa</option>
+              <option value="pesquisa">Pesquisa fundamentada</option>
+              <option value="parecer">Parecer</option>
+              <option value="redacao">Redação de peça</option>
+            </Select>
             <label htmlFor="chat-provider-ia" className="text-[11px] uppercase tracking-wide text-muted">
               Modelo
             </label>

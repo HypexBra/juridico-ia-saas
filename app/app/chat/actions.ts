@@ -227,6 +227,9 @@ const enviarMensagemSchema = z.object({
   // ausente/undefined = "Automático" (fluxo atual Gemini -> fallback Groq);
   // presente = usuário escolheu explicitamente, sem fallback cross-provider.
   provider: z.enum(["gemini", "groq"]).optional(),
+  // Modo de tarefa segmentado (ver rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // ausente/"conversa" = comportamento padrão, sem mudança de prompt.
+  modoTarefa: z.enum(["conversa", "pesquisa", "parecer", "redacao"]).optional(),
 });
 
 export type EnviarMensagemResultado =
@@ -464,6 +467,7 @@ export async function enviarMensagemAction(
       modoContexto: contexto.modo,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
       blocoMemoriaEscritorio: blocoMemoria || undefined,
+      modoTarefa: parsed.data.modoTarefa,
       providerOverride: parsed.data.provider ? { provider: parsed.data.provider } : undefined,
     });
   } catch (erro) {

@@ -42,6 +42,9 @@ const enviarMensagemSchema = z.object({
   // "Automático" (fluxo atual Gemini -> fallback Groq); presente = usuário
   // escolheu explicitamente, sem fallback cross-provider.
   provider: z.enum(["gemini", "groq"]).optional(),
+  // Modo de tarefa segmentado (ver rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // ausente/"conversa" = comportamento padrão, sem mudança de prompt.
+  modoTarefa: z.enum(["conversa", "pesquisa", "parecer", "redacao"]).optional(),
 });
 
 /**
@@ -295,6 +298,7 @@ export async function POST(request: NextRequest) {
             modoRapido: trivial,
             modoContexto: contexto.modo,
             blocoMemoriaEscritorio: blocoMemoria || undefined,
+            modoTarefa: input.modoTarefa,
             providerOverride: input.provider ? { provider: input.provider } : undefined,
           })) {
             if (evento.tipo === "delta") {
