@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from "@/lib/ia/provider";
-import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
+import { buscarContextoRelevante, buscarContextoMultiConsulta, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
 import { validarCitacoes } from "@/lib/rag/citacoes";
 import { gerarEmbedding } from "@/lib/rag/embeddings";
 import { buscarRespostaCacheada, salvarRespostaCacheSemantico } from "@/lib/rag/cache-semantico";
@@ -441,7 +441,10 @@ export async function enviarMensagemAction(
       .eq("conversa_id", conversaId)
       .eq("status", "pending"),
     contexto.usarRag
-      ? buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[])
+      ? (parsed.data.modoTarefa === "pesquisa"
+          ? buscarContextoMultiConsulta(supabase, escritorioId, parsed.data.texto)
+          : buscarContextoRelevante(supabase, escritorioId, parsed.data.texto)
+        ).catch(() => [] as ChunkRecuperado[])
       : Promise.resolve([] as ChunkRecuperado[]),
     carregarMemoriaEscritorio(supabase, escritorioId),
   ]);

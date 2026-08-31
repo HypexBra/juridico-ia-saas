@@ -10,6 +10,7 @@ import {
 } from "@/lib/ia/provider";
 import {
   buscarContextoRelevante,
+  buscarContextoMultiConsulta,
   montarBlocoContexto,
   montarFontesCitaveis,
   type ChunkRecuperado,
@@ -272,7 +273,10 @@ export async function POST(request: NextRequest) {
             .eq("conversa_id", conversaId)
             .eq("status", "pending"),
           contexto.usarRag
-            ? buscarContextoRelevante(supabase, escritorioId, input.texto).catch(() => [] as ChunkRecuperado[])
+            ? (input.modoTarefa === "pesquisa"
+                ? buscarContextoMultiConsulta(supabase, escritorioId, input.texto)
+                : buscarContextoRelevante(supabase, escritorioId, input.texto)
+              ).catch(() => [] as ChunkRecuperado[])
             : Promise.resolve([] as ChunkRecuperado[]),
           carregarMemoriaEscritorio(supabase, escritorioId),
         ]);

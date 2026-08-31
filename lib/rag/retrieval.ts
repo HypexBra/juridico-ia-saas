@@ -5,6 +5,7 @@ import { gerarEmbedding } from "./embeddings";
 import { obterEmbeddingCacheado, guardarEmbeddingCache } from "./embedding-cache";
 import { selecionarChunks, SELECAO_PADRAO, type OpcoesSelecao } from "./selecao";
 import { rerankCandidatos } from "./reranker";
+import { decomporConsulta } from "./multi-consulta";
 
 // Parâmetros de relevância/diversidade/orçamento vivem em `./selecao.ts`
 // (SELECAO_PADRAO), junto da lógica que os aplica — antes estavam soltos aqui
@@ -162,6 +163,65 @@ export async function buscarContextoRelevante(
     const { distancia, ...resto } = chunk;
     return resto;
   });
+}
+
+// Orçamento de caracteres do modo "pesquisa fundamentada" (mais generoso que
+// SELECAO_PADRAO.orcamentoChars, 6.000): o usuário optou explicitamente por
+// uma busca mais completa ao escolher esse modo — ver
+// buscarContextoMultiConsulta abaixo e MODO_TAREFA_PROMPTS em lib/ia/rag-prompt.ts.
+const ORCAMENTO_CHARS_MULTI_CONSULTA = 9_000;
+
+/**
+ * Versão "deep research" leve de `buscarContextoRelevante`, para o modo de
+ * tarefa "pesquisa" (ver components/app/chat-app.tsx): quando a pergunta do
+ * usuário contém MÚLTIPLAS questões distintas (`decomporConsulta`), busca
+ * cada uma separadamente — em paralelo — e funde os resultados, em vez de
+ * uma única busca sobre o texto inteiro (que dilui o embedding entre
+ * assuntos diferentes e tende a favorecer nenhum dos dois).
+ *
+ * Sem decomposição por LLM de propósito: isso custaria uma chamada extra em
+ * TODA mensagem do modo pesquisa. A decisão de "vale a pena decompor" é
+ * heurística e determinística (ver ./multi-consulta.ts) — quando a pergunta
+ * não tem sinal de múltiplas questões, decompõe para `[pergunta]` e este
+ * caminho tem o MESMO custo de uma busca única.
+ */
+export async function buscarContextoMultiConsulta(
+  supabase: SupabaseClient,
+  escritorioId: string,
+  pergunta: string,
+  opcoes: { fonteTipos?: readonly FonteTipoChunk[] } = {},
+): Promise<ChunkRecuperado[]> {
+  const subConsultas = decomporConsulta(pergunta);
+
+  if (subConsultas.length <= 1) {
+    return buscarContextoRelevante(supabase, escritorioId, pergunta, opcoes);
+  }
+
+  const resultadosPorSubConsulta = await Promise.all(
+    subConsultas.map((sub) => buscarContextoRelevante(supabase, escritorioId, sub, opcoes)),
+  );
+
+  // Merge por id (um mesmo chunk pode responder a mais de uma sub-consulta —
+  // conta uma vez só) preservando a ordem de relevância de cada sub-busca
+  // (round-robin: o 1º colocado de cada sub-consulta entra antes do 2º
+  // colocado de qualquer uma delas), até o orçamento de caracteres do modo.
+  const vistos = new Set<string>();
+  const mesclados: ChunkRecuperado[] = [];
+  let charsUsados = 0;
+  const maiorTamanho = Math.max(...resultadosPorSubConsulta.map((r) => r.length));
+
+  for (let posicao = 0; posicao < maiorTamanho; posicao++) {
+    for (const resultado of resultadosPorSubConsulta) {
+      const chunk = resultado[posicao];
+      if (!chunk || vistos.has(chunk.id)) continue;
+      if (charsUsados + chunk.conteudo.length > ORCAMENTO_CHARS_MULTI_CONSULTA && mesclados.length > 0) continue;
+      vistos.add(chunk.id);
+      mesclados.push(chunk);
+      charsUsados += chunk.conteudo.length;
+    }
+  }
+
+  return mesclados;
 }
 
 const RÓTULO_FONTE: Record<FonteTipoChunk, string> = {
