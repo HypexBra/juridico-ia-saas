@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dividirEmChunks } from "./chunking";
+import { dividirEmChunksComPai } from "./chunking";
 import { gerarEmbedding } from "./embeddings";
 
 type FonteTipo = "documento_upload" | "ficha_caso" | "prazo" | "modelo" | "memoria_ia_caso";
@@ -25,18 +25,19 @@ export async function indexarTexto(
 
   await supabase.rpc("limpar_chunks_da_fonte", { p_fonte_tipo: fonteTipo, p_fonte_id: fonteId });
 
-  const chunks = dividirEmChunks(texto);
+  const chunks = dividirEmChunksComPai(texto);
   if (chunks.length === 0) return { totalChunks: 0 };
 
   const linhas = [];
   for (let i = 0; i < chunks.length; i++) {
-    const embedding = await gerarEmbedding(chunks[i], "RETRIEVAL_DOCUMENT");
+    const embedding = await gerarEmbedding(chunks[i].conteudo, "RETRIEVAL_DOCUMENT");
     linhas.push({
       escritorio_id: escritorioId,
       fonte_tipo: fonteTipo,
       fonte_id: fonteId,
       chunk_index: i,
-      conteudo: chunks[i],
+      conteudo: chunks[i].conteudo,
+      conteudo_pai: chunks[i].conteudoPai,
       metadata,
       embedding,
     });
@@ -73,18 +74,19 @@ export async function indexarJurisprudenciaChunk(
 
   await supabase.rpc("limpar_chunks_da_fonte", { p_fonte_tipo: "jurisprudencia", p_fonte_id: jurisprudenciaId });
 
-  const chunks = dividirEmChunks(texto);
+  const chunks = dividirEmChunksComPai(texto);
   if (chunks.length === 0) return { totalChunks: 0 };
 
   const linhas = [];
   for (let i = 0; i < chunks.length; i++) {
-    const embedding = await gerarEmbedding(chunks[i], "RETRIEVAL_DOCUMENT");
+    const embedding = await gerarEmbedding(chunks[i].conteudo, "RETRIEVAL_DOCUMENT");
     linhas.push({
       escritorio_id: null,
       fonte_tipo: "jurisprudencia" as const,
       fonte_id: jurisprudenciaId,
       chunk_index: i,
-      conteudo: chunks[i],
+      conteudo: chunks[i].conteudo,
+      conteudo_pai: chunks[i].conteudoPai,
       metadata,
       embedding,
     });
