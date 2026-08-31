@@ -49,7 +49,7 @@ export async function uploadDocumentoAction(_prev: ResultadoUpload, formData: Fo
     return { ok: false, error: "Selecione um arquivo (.pdf ou .txt)." };
   }
   if (arquivo.size > MAX_TAMANHO_ARQUIVO) {
-    return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
+    return { ok: false, error: "Arquivo muito grande (limite de 40MB)." };
   }
 
   const ehPdf = arquivo.type === "application/pdf" || arquivo.name.toLowerCase().endsWith(".pdf");

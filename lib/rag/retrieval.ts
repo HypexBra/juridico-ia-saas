@@ -127,21 +127,13 @@ export async function buscarContextoRelevante(
   const candidatos = candidatosReordenados.map((c, indice) => ({ ...c, distancia: indice }));
 
   // Selecao final delegada a `lib/rag/selecao.ts` (funcao pura, testada):
-  // dedup por sobreposicao de texto, teto por fonte e orcamento de caracteres
-  // (cortes absoluto/relativo desligados aqui — ver SELECAO_HIBRIDA acima).
+  // dedup por sobreposicao de texto E por chunk-pai compartilhado, teto por
+  // fonte e orcamento de caracteres (cortes absoluto/relativo desligados
+  // aqui — ver SELECAO_HIBRIDA acima). O dedup por pai acontece DENTRO do
+  // loop de selecao (repõe do pool em vez de só filtrar depois) — ver
+  // selecao.ts — para não devolver menos que `topK` quando há candidatos de
+  // pais distintos sobrando.
   const { selecionados, descartes, charsUsados } = selecionarChunks(candidatos, SELECAO_HIBRIDA);
-
-  // Dedup por chunk-PAI: dois chunks-filhos selecionados podem pertencer ao
-  // mesmo bloco-pai (ex: dois parágrafos vizinhos do mesmo artigo) — sem isto,
-  // `montarBlocoContexto` injetaria o MESMO texto de pai duas vezes no prompt,
-  // desperdiçando o orçamento de tokens que a seleção acabou de economizar.
-  const paisVistos = new Set<string>();
-  const semDuplicataDePai = selecionados.filter((c) => {
-    if (!c.conteudoPai) return true;
-    if (paisVistos.has(c.conteudoPai)) return false;
-    paisVistos.add(c.conteudoPai);
-    return true;
-  });
 
   // Observabilidade barata do que a selecao economizou. `console.error` para
   // sair no log da Vercel (mesmo padrao dos demais eventos estruturados do
@@ -152,20 +144,20 @@ export async function buscarContextoRelevante(
     descartes.porRedundancia +
     descartes.porOrcamento +
     descartes.porTetoDeFonte +
-    (selecionados.length - semDuplicataDePai.length);
+    descartes.porDuplicataDePai;
   if (totalDescartado > 0) {
     console.error(
       JSON.stringify({
         evento: "rag_selecao_chunks",
         candidatos: candidatos.length,
-        selecionados: semDuplicataDePai.length,
+        selecionados: selecionados.length,
         charsUsados,
-        descartes: { ...descartes, porDuplicataDePai: selecionados.length - semDuplicataDePai.length },
+        descartes,
       }),
     );
   }
 
-  return semDuplicataDePai.map((chunk) => {
+  return selecionados.map((chunk) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- `distancia` era só o índice de ordenação para selecionarChunks, não faz parte de ChunkRecuperado
     const { distancia, ...resto } = chunk;
     return resto;

@@ -32,6 +32,8 @@ export type ChunkSelecionavel = {
   fonteId: string;
   conteudo: string;
   distancia: number;
+  /** Bloco-pai (parent-child chunking, ver migration 0050) — opcional; quando presente, dois candidatos com o MESMO pai nunca são ambos selecionados (ver `selecionarChunks`). */
+  conteudoPai?: string | null;
 };
 
 export type OpcoesSelecao = {
@@ -121,6 +123,7 @@ export type ResultadoSelecao<T extends ChunkSelecionavel> = {
     porRedundancia: number;
     porOrcamento: number;
     porTetoDeFonte: number;
+    porDuplicataDePai: number;
   };
   charsUsados: number;
 };
@@ -143,6 +146,7 @@ export function selecionarChunks<T extends ChunkSelecionavel>(
     porRedundancia: 0,
     porOrcamento: 0,
     porTetoDeFonte: 0,
+    porDuplicataDePai: 0,
   };
 
   const ordenados = [...candidatos].sort((a, b) => a.distancia - b.distancia);
@@ -174,6 +178,7 @@ export function selecionarChunks<T extends ChunkSelecionavel>(
 
   const selecionados: T[] = [];
   const porTipo = new Map<string, number>();
+  const paisUsados = new Set<string>();
   let charsUsados = 0;
 
   for (const candidato of noCorte) {
@@ -182,6 +187,18 @@ export function selecionarChunks<T extends ChunkSelecionavel>(
     const usadosDoTipo = porTipo.get(candidato.fonteTipo) ?? 0;
     if (usadosDoTipo >= opcoes.maxPorFonte) {
       descartes.porTetoDeFonte++;
+      continue;
+    }
+
+    // Dois chunks-filhos do MESMO bloco-pai (ver migration 0050) nunca são
+    // ambos selecionados — sem isto, `montarBlocoContexto` injetaria o MESMO
+    // texto de pai duas vezes. Verificado AQUI (dentro do loop, com reposição
+    // do próximo candidato do pool) em vez de como filtro pós-seleção: um
+    // filtro pós-seleção encolhe o resultado abaixo de `topK` mesmo havendo
+    // candidatos de pais distintos sobrando — este loop já teria os próximos
+    // candidatos do pool disponíveis pra preencher a vaga.
+    if (candidato.conteudoPai && paisUsados.has(candidato.conteudoPai)) {
+      descartes.porDuplicataDePai++;
       continue;
     }
 
@@ -204,6 +221,7 @@ export function selecionarChunks<T extends ChunkSelecionavel>(
 
     selecionados.push(candidato);
     porTipo.set(candidato.fonteTipo, usadosDoTipo + 1);
+    if (candidato.conteudoPai) paisUsados.add(candidato.conteudoPai);
     charsUsados += candidato.conteudo.length;
   }
 
