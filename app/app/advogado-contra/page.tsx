@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { listarAnalisesAdvogadoContraAction } from "./actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { OrigemAdvogadoContra, StatusAdvogadoContra } from "@/lib/types";
 import type { Vulnerabilidade } from "@/lib/advogado-contra/tipos";
 
@@ -112,7 +113,7 @@ export default async function AdvogadoContraPage() {
                           "Tese sem título"}
                       </p>
                       <p className="text-xs text-muted">
-                        {new Date(analise.criado_em).toLocaleString("pt-BR")} · {ORIGEM_LABEL[analise.origem]}
+                        {formatarDataHora(analise.criado_em)} · {ORIGEM_LABEL[analise.origem]}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

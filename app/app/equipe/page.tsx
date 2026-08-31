@@ -7,6 +7,7 @@ import { ConvidarForm } from "@/components/app/convidar-form";
 import { MembroLinhaAcoes } from "@/components/app/membro-linha-acoes";
 import { CancelarConviteButton } from "@/components/app/cancelar-convite-button";
 import { listarConvitesPendentesAction } from "@/app/app/equipe/actions";
+import { formatarData } from "@/lib/app/formatar-data";
 import type { Perfil, Role } from "@/lib/types";
 
 export const metadata = { title: "Equipe — Jurídico IA" };
@@ -63,7 +64,7 @@ export default async function EquipePage() {
                   </p>
                   <p className="text-xs text-muted">
                     {ROLE_LABEL[convite.role]} · expira em{" "}
-                    {new Date(convite.expira_em).toLocaleDateString("pt-BR")}
+                    {formatarData(convite.expira_em)}
                   </p>
                 </div>
                 <CancelarConviteButton conviteId={convite.id} />

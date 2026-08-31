@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { DocumentoResultado } from "@/components/app/documento-resultado";
 import { buscarAnaliseDocumentoAction } from "../actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { StatusAnaliseDocumento } from "@/lib/types";
 
 export const metadata = { title: "Resultado da análise — Jurídico IA" };
@@ -51,7 +52,7 @@ export default async function DetalheDocumentoPage({ params }: PageProps<"/app/d
           <div>
             <h1 className="font-display text-2xl font-semibold text-ice">{analise.nome_arquivo}</h1>
             <p className="mt-1 text-sm text-muted">
-              {new Date(analise.criado_em).toLocaleString("pt-BR")} · {analise.tipo_arquivo.toUpperCase()}
+              {formatarDataHora(analise.criado_em)} · {analise.tipo_arquivo.toUpperCase()}
               {analise.modelo_ia_usado ? ` · ${analise.modelo_ia_usado}` : ""}
             </p>
           </div>

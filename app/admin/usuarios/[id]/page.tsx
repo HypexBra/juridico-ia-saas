@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UsuarioLinhaAcoes } from "@/components/admin/usuario-linha-acoes";
+import { formatarDataHora as formatarDataHoraBase } from "@/lib/app/formatar-data";
 
 export const metadata = { title: "Detalhe do usuário — Admin" };
 
@@ -12,7 +13,7 @@ const ROLE_LABEL = { owner: "Titular", admin: "Administrador(a)", advogado: "Adv
 
 function formatarDataHora(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR");
+  return formatarDataHoraBase(iso);
 }
 
 export default async function AdminUsuarioDetalhePage({ params }: PageProps<"/admin/usuarios/[id]">) {

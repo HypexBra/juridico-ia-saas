@@ -10,11 +10,15 @@ import {
 } from "@/lib/ia/provider";
 import {
   buscarContextoRelevante,
+  buscarContextoMultiConsulta,
   montarBlocoContexto,
   montarFontesCitaveis,
   type ChunkRecuperado,
 } from "@/lib/rag/retrieval";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
+import { validarCitacoes } from "@/lib/rag/citacoes";
+import { gerarEmbedding } from "@/lib/rag/embeddings";
+import { buscarRespostaCacheada, salvarRespostaCacheSemantico } from "@/lib/rag/cache-semantico";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
 import { limiteMensagensIaPara, type Mensagem } from "@/lib/types";
 import { decidirContexto } from "@/lib/ia/roteador-contexto";
@@ -39,6 +43,9 @@ const enviarMensagemSchema = z.object({
   // "Automático" (fluxo atual Gemini -> fallback Groq); presente = usuário
   // escolheu explicitamente, sem fallback cross-provider.
   provider: z.enum(["gemini", "groq"]).optional(),
+  // Modo de tarefa segmentado (ver rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // ausente/"conversa" = comportamento padrão, sem mudança de prompt.
+  modoTarefa: z.enum(["conversa", "pesquisa", "parecer", "redacao"]).optional(),
 });
 
 /**
@@ -181,6 +188,79 @@ export async function POST(request: NextRequest) {
         const contexto = decidirContexto(input.texto);
         const trivial = contexto.modo === "rapido";
 
+        // Caching semântico (mesma regra de app/app/chat/actions.ts): só
+        // para pergunta classificada como conhecimento geral, nunca com
+        // provider forçado pelo usuário. HIT simula digitação (delta por
+        // pedaço de texto) em vez de mandar tudo de uma vez — mantém a
+        // sensação de streaming mesmo sem chamar o LLM.
+        let embeddingConsultaCache: number[] | null = null;
+        if (contexto.modo === "interno" && !input.provider) {
+          try {
+            embeddingConsultaCache = await gerarEmbedding(input.texto, "RETRIEVAL_QUERY");
+            const cacheado = await buscarRespostaCacheada(supabase, escritorioId, embeddingConsultaCache);
+            if (cacheado) {
+              const { error: erroInsertUser } = await supabase.from("mensagens").insert({
+                escritorio_id: escritorioId,
+                conversa_id: conversaId,
+                role: "user",
+                conteudo: input.texto,
+              });
+              if (erroInsertUser) throw new Error("Não foi possível salvar a mensagem.");
+
+              const PEDACO = 24;
+              for (let i = 0; i < cacheado.resposta.length; i += PEDACO) {
+                enviar({ tipo: "delta", texto: cacheado.resposta.slice(i, i + PEDACO) });
+                await new Promise((resolve) => setTimeout(resolve, 12));
+              }
+
+              await supabase.from("uso_ia").insert({
+                escritorio_id: escritorioId,
+                conversa_id: conversaId,
+                tokens_in: 0,
+                tokens_out: 0,
+                mes_ref: mesRef,
+                origem: "chat_cache_semantico",
+                duracao_ms: 0,
+                modelo: cacheado.modelo,
+              });
+
+              const { data: msgAssistantCache, error: erroInsertAssistantCache } = await supabase
+                .from("mensagens")
+                .insert({
+                  escritorio_id: escritorioId,
+                  conversa_id: conversaId,
+                  role: "assistant",
+                  conteudo: cacheado.resposta,
+                  tokens_in: 0,
+                  tokens_out: 0,
+                  fontes: null,
+                })
+                .select("*")
+                .single();
+              if (erroInsertAssistantCache || !msgAssistantCache) {
+                throw new Error("A IA respondeu, mas houve um erro ao salvar a resposta.");
+              }
+
+              enviar({
+                tipo: "done",
+                conversaId,
+                mensagem: msgAssistantCache as Mensagem,
+                usoMes: usoAtual ?? 0,
+                propostaId: null,
+                tokensIn: 0,
+                tokensOut: 0,
+                modoRapido: false,
+                modoContexto: contexto.modo,
+                interrompida: false,
+                cache: true,
+              });
+              return;
+            }
+          } catch (erro) {
+            console.error("[chat/stream] Falha no cache semântico; seguindo sem cache:", erro);
+          }
+        }
+
         // Três consultas INDEPENDENTES em paralelo (a latência total é o
         // maior dos três tempos, não a soma): propostas pendentes (gate do
         // agente), RAG e memória do escritório (Fase 17). A memória é
@@ -193,7 +273,10 @@ export async function POST(request: NextRequest) {
             .eq("conversa_id", conversaId)
             .eq("status", "pending"),
           contexto.usarRag
-            ? buscarContextoRelevante(supabase, escritorioId, input.texto).catch(() => [] as ChunkRecuperado[])
+            ? (input.modoTarefa === "pesquisa"
+                ? buscarContextoMultiConsulta(supabase, escritorioId, input.texto)
+                : buscarContextoRelevante(supabase, escritorioId, input.texto)
+              ).catch(() => [] as ChunkRecuperado[])
             : Promise.resolve([] as ChunkRecuperado[]),
           carregarMemoriaEscritorio(supabase, escritorioId),
         ]);
@@ -219,6 +302,7 @@ export async function POST(request: NextRequest) {
             modoRapido: trivial,
             modoContexto: contexto.modo,
             blocoMemoriaEscritorio: blocoMemoria || undefined,
+            modoTarefa: input.modoTarefa,
             providerOverride: input.provider ? { provider: input.provider } : undefined,
           })) {
             if (evento.tipo === "delta") {
@@ -344,6 +428,36 @@ export async function POST(request: NextRequest) {
           duracao_ms: duracaoGeracaoMs,
           modelo: respostaFinal?.modelo ?? null,
         });
+        // Mesma regra de gravação do fluxo one-shot (ver actions.ts): só
+        // conhecimento geral, resposta de texto de verdade, sem proposta.
+        if (embeddingConsultaCache && !propostaId && (respostaFinal?.texto || textoAcumulado)) {
+          void salvarRespostaCacheSemantico(supabase, {
+            escritorioId,
+            pergunta: input.texto,
+            embeddingConsulta: embeddingConsultaCache,
+            resposta: texto,
+            tokensIn,
+            tokensOut,
+            modelo: respostaFinal?.modelo ?? null,
+          });
+        }
+
+        // Mesma checagem determinística de citação do fluxo one-shot (ver
+        // app/app/chat/actions.ts) — aqui contra `ragResultado`, o RAG desta
+        // mesma requisição. Calculada ANTES do insert pra já gravar na
+        // própria mensagem (frontend colore a citação verde/vermelho).
+        const { invalidas: citacoesInvalidas } = validarCitacoes(texto, trivial ? 0 : ragResultado.length);
+        if (citacoesInvalidas.length > 0) {
+          console.error(
+            JSON.stringify({
+              evento: "rag_citacao_invalida",
+              conversaId,
+              totalChunks: trivial ? 0 : ragResultado.length,
+              citacoesInvalidas,
+            }),
+          );
+        }
+
         const { data: msgAssistant, error: erroInsertAssistant } = await supabase
           .from("mensagens")
           .insert({
@@ -355,11 +469,13 @@ export async function POST(request: NextRequest) {
             tokens_out: tokensOut,
             proposta_id: propostaId,
             fontes: !trivial && ragResultado.length > 0 ? montarFontesCitaveis(ragResultado) : null,
+            citacoes_invalidas: citacoesInvalidas.length > 0 ? citacoesInvalidas : null,
           })
           .select("*")
           .single();
 
         if (erroInsertAssistant || !msgAssistant) throw new Error("Não foi possível salvar a resposta.");
+
         if (interrompida) {
           console.error(
             JSON.stringify({

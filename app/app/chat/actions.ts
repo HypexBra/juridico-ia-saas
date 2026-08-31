@@ -5,7 +5,10 @@ import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { gerarResposta, TodosProvidersIndisponiveisError, type ChatTurno } from "@/lib/ia/provider";
-import { buscarContextoRelevante, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
+import { buscarContextoRelevante, buscarContextoMultiConsulta, montarBlocoContexto, montarFontesCitaveis, type ChunkRecuperado } from "@/lib/rag/retrieval";
+import { validarCitacoes } from "@/lib/rag/citacoes";
+import { gerarEmbedding } from "@/lib/rag/embeddings";
+import { buscarRespostaCacheada, salvarRespostaCacheSemantico } from "@/lib/rag/cache-semantico";
 import { decidirContexto } from "@/lib/ia/roteador-contexto";
 import { TOOL_PARA_TIPO_PROPOSTA, TOOL_SCHEMAS, type NomeTool } from "@/lib/rag/tools";
 import { montarResumoProposta } from "@/lib/rag/resumo-proposta";
@@ -130,6 +133,61 @@ export async function excluirTodasConversasAction(): Promise<ExcluirConversaResu
   return { ok: true };
 }
 
+export type ExcluirMensagemResultado = { ok: true } | { ok: false; error: string };
+
+/**
+ * Exclui UMA mensagem da conversa (estilo WhatsApp: apaga uma bolha, não a
+ * conversa inteira). Mesma regra de posse de `excluirConversaAction` — só
+ * quem criou a conversa pode apagar mensagens dela, mesmo apagando uma
+ * resposta da IA (a conversa é dele, a resposta só existe porque ele
+ * perguntou). Depois de apagar, recalcula `conversas.total_msgs` do mesmo
+ * jeito que o envio de mensagem já faz (contagem real, nunca incremento
+ * manual — ver final de `enviarMensagemAction`).
+ */
+export async function excluirMensagemAction(mensagemId: string): Promise<ExcluirMensagemResultado> {
+  const usuario = await getUsuarioAtual();
+  if (!usuario) return { ok: false, error: "Não autenticado." };
+
+  const parsed = z.string().uuid().safeParse(mensagemId);
+  if (!parsed.success) return { ok: false, error: "Mensagem inválida." };
+
+  const supabase = await createClient();
+
+  const { data: mensagem, error: erroBusca } = await supabase
+    .from("mensagens")
+    .select("id, conversa_id")
+    .eq("id", parsed.data)
+    .maybeSingle<{ id: string; conversa_id: string }>();
+  if (erroBusca) return { ok: false, error: "Não foi possível localizar a mensagem." };
+  if (!mensagem) return { ok: false, error: "Mensagem não encontrada." };
+
+  const { data: conversa, error: erroConversa } = await supabase
+    .from("conversas")
+    .select("id, criado_por")
+    .eq("id", mensagem.conversa_id)
+    .maybeSingle<{ id: string; criado_por: string | null }>();
+  if (erroConversa) return { ok: false, error: "Não foi possível localizar a conversa." };
+  if (!conversa || conversa.criado_por !== usuario.perfil.id) {
+    return { ok: false, error: "Você só pode excluir mensagens de conversas criadas por você." };
+  }
+
+  const { error: erroExclusao } = await supabase.from("mensagens").delete().eq("id", parsed.data);
+  if (erroExclusao) {
+    console.error("[chat/excluirMensagemAction] Falha ao excluir mensagem:", erroExclusao);
+    return { ok: false, error: "Não foi possível excluir a mensagem." };
+  }
+
+  const { count: totalMsgs } = await supabase
+    .from("mensagens")
+    .select("id", { count: "exact", head: true })
+    .eq("conversa_id", mensagem.conversa_id);
+
+  await supabase.from("conversas").update({ total_msgs: totalMsgs ?? 0 }).eq("id", mensagem.conversa_id);
+
+  revalidatePath("/app/chat");
+  return { ok: true };
+}
+
 export async function carregarMensagensAction(conversaId: string): Promise<Mensagem[]> {
   const usuario = await getUsuarioAtual();
   if (!usuario) throw new Error("Não autenticado.");
@@ -169,6 +227,9 @@ const enviarMensagemSchema = z.object({
   // ausente/undefined = "Automático" (fluxo atual Gemini -> fallback Groq);
   // presente = usuário escolheu explicitamente, sem fallback cross-provider.
   provider: z.enum(["gemini", "groq"]).optional(),
+  // Modo de tarefa segmentado (ver rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // ausente/"conversa" = comportamento padrão, sem mudança de prompt.
+  modoTarefa: z.enum(["conversa", "pesquisa", "parecer", "redacao"]).optional(),
 });
 
 export type EnviarMensagemResultado =
@@ -293,6 +354,77 @@ export async function enviarMensagemAction(
   // que a rota de streaming usa, para os dois caminhos nao divergirem.
   const contexto = decidirContexto(parsed.data.texto);
 
+  // Caching semântico (Fase 3 do plano RAG): só para perguntas classificadas
+  // como conhecimento geral — `modo === 'interno'` já significa "não depende
+  // de RAG nem de pesquisa web" (ver roteador-contexto.ts). Um HIT evita a
+  // chamada de LLM inteira. Nunca aplicado com `providerOverride`: o usuário
+  // escolheu explicitamente um provider, servir um cache gravado por outro
+  // seria surpreendente. Falha no embedding/RPC é fail-open (segue pro fluxo
+  // normal) — ver lib/rag/cache-semantico.ts.
+  let embeddingConsultaCache: number[] | null = null;
+  if (contexto.modo === "interno" && !parsed.data.provider) {
+    try {
+      embeddingConsultaCache = await gerarEmbedding(parsed.data.texto, "RETRIEVAL_QUERY");
+      const cacheado = await buscarRespostaCacheada(supabase, escritorioId, embeddingConsultaCache);
+      if (cacheado) {
+        const { error: erroInsertUser } = await supabase.from("mensagens").insert({
+          escritorio_id: escritorioId,
+          conversa_id: conversaId,
+          role: "user",
+          conteudo: parsed.data.texto,
+        });
+        if (erroInsertUser) return { ok: false, error: "Não foi possível salvar a mensagem." };
+
+        const { data: mensagemAssistente, error: erroInsertAssistente } = await supabase
+          .from("mensagens")
+          .insert({
+            escritorio_id: escritorioId,
+            conversa_id: conversaId,
+            role: "assistant",
+            conteudo: cacheado.resposta,
+            tokens_in: 0,
+            tokens_out: 0,
+            fontes: null,
+          })
+          .select("*")
+          .single();
+        if (erroInsertAssistente || !mensagemAssistente) {
+          return { ok: false, error: "A IA respondeu, mas houve um erro ao salvar a resposta." };
+        }
+
+        await supabase.from("uso_ia").insert({
+          escritorio_id: escritorioId,
+          conversa_id: conversaId,
+          tokens_in: 0,
+          tokens_out: 0,
+          mes_ref: mesRef,
+          origem: "chat_cache_semantico",
+          duracao_ms: 0,
+          modelo: cacheado.modelo,
+        });
+
+        const { count: totalMsgsCache } = await supabase
+          .from("mensagens")
+          .select("id", { count: "exact", head: true })
+          .eq("conversa_id", conversaId);
+        await supabase.from("conversas").update({ total_msgs: totalMsgsCache ?? 0 }).eq("id", conversaId);
+
+        revalidatePath("/app/chat");
+        revalidatePath("/app/dashboard");
+        revalidatePath("/app/financeiro");
+
+        return {
+          ok: true,
+          conversaId,
+          assistente: mensagemAssistente as Mensagem,
+          usoMes: usoAtual ?? 0,
+        };
+      }
+    } catch (erro) {
+      console.error("[chat/enviarMensagemAction] Falha no cache semântico; seguindo sem cache:", erro);
+    }
+  }
+
   // Gate de segurança do agente (query de propostas pendentes), busca RAG e
   // memória do escritório (Fase 17) são independentes entre si (não
   // compartilham dado nenhum) e todas precisam terminar antes de chamar a IA
@@ -309,7 +441,10 @@ export async function enviarMensagemAction(
       .eq("conversa_id", conversaId)
       .eq("status", "pending"),
     contexto.usarRag
-      ? buscarContextoRelevante(supabase, escritorioId, parsed.data.texto).catch(() => [] as ChunkRecuperado[])
+      ? (parsed.data.modoTarefa === "pesquisa"
+          ? buscarContextoMultiConsulta(supabase, escritorioId, parsed.data.texto)
+          : buscarContextoRelevante(supabase, escritorioId, parsed.data.texto)
+        ).catch(() => [] as ChunkRecuperado[])
       : Promise.resolve([] as ChunkRecuperado[]),
     carregarMemoriaEscritorio(supabase, escritorioId),
   ]);
@@ -335,6 +470,7 @@ export async function enviarMensagemAction(
       modoContexto: contexto.modo,
       habilitarFerramentas: (propostasPendentes ?? 0) === 0,
       blocoMemoriaEscritorio: blocoMemoria || undefined,
+      modoTarefa: parsed.data.modoTarefa,
       providerOverride: parsed.data.provider ? { provider: parsed.data.provider } : undefined,
     });
   } catch (erro) {
@@ -424,6 +560,39 @@ export async function enviarMensagemAction(
       ? "Preparei uma proposta de ação — revise e aprove ou rejeite no card abaixo."
       : "Não foi possível gerar uma resposta em texto para esta mensagem.");
 
+  // Checagem determinística (sem chamada de IA) das citações "[Doc #N]" que o
+  // modelo colocou no texto contra o total de chunks de fato injetados no
+  // prompt — nunca bloqueia a resposta (o texto já está pronto), só dá
+  // visibilidade em log quando o modelo referencia um doc que não existe.
+  const { invalidas: citacoesInvalidas } = validarCitacoes(textoResposta, chunksRag.length);
+  if (citacoesInvalidas.length > 0) {
+    console.error(
+      JSON.stringify({
+        evento: "rag_citacao_invalida",
+        conversaId,
+        totalChunks: chunksRag.length,
+        citacoesInvalidas,
+      }),
+    );
+  }
+
+  // Grava no cache semântico (best-effort, nunca bloqueia) só quando: a
+  // pergunta já tinha sido classificada como conhecimento geral (o mesmo
+  // `embeddingConsultaCache` calculado acima pro lookup), a resposta é texto
+  // de verdade (não function call) e nenhuma proposta de ação foi criada —
+  // uma proposta é específica do turno, memoizar isso não faz sentido.
+  if (embeddingConsultaCache && !propostaId && respostaIa.texto) {
+    void salvarRespostaCacheSemantico(supabase, {
+      escritorioId,
+      pergunta: parsed.data.texto,
+      embeddingConsulta: embeddingConsultaCache,
+      resposta: textoResposta,
+      tokensIn: respostaIa.tokensIn,
+      tokensOut: respostaIa.tokensOut,
+      modelo: respostaIa.modelo ?? null,
+    });
+  }
+
   const { data: mensagemAssistente, error: erroInsertAssistente } = await supabase
     .from("mensagens")
     .insert({
@@ -435,6 +604,7 @@ export async function enviarMensagemAction(
       tokens_out: respostaIa.tokensOut,
       proposta_id: propostaId,
       fontes: chunksRag.length > 0 ? montarFontesCitaveis(chunksRag) : null,
+      citacoes_invalidas: citacoesInvalidas.length > 0 ? citacoesInvalidas : null,
     })
     .select("*")
     .single();

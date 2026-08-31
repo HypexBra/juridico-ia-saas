@@ -58,3 +58,57 @@ export function dividirEmChunks(textoBruto: string): string[] {
 
   return chunks;
 }
+
+/**
+ * Alvo de tamanho do chunk PAI (parent-child chunking, ver migration 0050):
+ * bloco amplo que preserva o capítulo/ementa/cláusula inteira em torno de um
+ * chunk-filho, para o modelo receber o arcabouço completo em vez de um
+ * parágrafo isolado sem entorno. ~6.000 caracteres (~1.600-2.000 tokens) está
+ * na faixa recomendada de 1.200-2.500 tokens por bloco pai.
+ */
+const TAMANHO_PAI = 6_000;
+
+export type ChunkComPai = {
+  /** Chunk-filho: unidade usada na busca (precisão) — ver `dividirEmChunks`. */
+  conteudo: string;
+  /** Bloco pai: unidade injetada no prompt (contexto) — vários filhos compartilham o mesmo pai. */
+  conteudoPai: string;
+};
+
+/**
+ * Agrupa chunks-filhos consecutivos em blocos-pai de até `TAMANHO_PAI`
+ * caracteres. A busca/reranking continuam operando sobre `conteudo` (filho);
+ * só o texto efetivamente enviado ao modelo passa a ser `conteudoPai`.
+ *
+ * Quando um único filho já excede `TAMANHO_PAI` sozinho (ex: artigo de lei
+ * muito extenso), ele forma um grupo próprio e `conteudoPai === conteudo` —
+ * nunca pior que o comportamento anterior a esta função.
+ */
+export function dividirEmChunksComPai(textoBruto: string): ChunkComPai[] {
+  const filhos = dividirEmChunks(textoBruto);
+  if (filhos.length === 0) return [];
+
+  const grupos: string[][] = [];
+  let grupoAtual: string[] = [];
+  let tamanhoGrupo = 0;
+
+  for (const filho of filhos) {
+    if (tamanhoGrupo + filho.length > TAMANHO_PAI && grupoAtual.length > 0) {
+      grupos.push(grupoAtual);
+      grupoAtual = [];
+      tamanhoGrupo = 0;
+    }
+    grupoAtual.push(filho);
+    tamanhoGrupo += filho.length;
+  }
+  if (grupoAtual.length > 0) grupos.push(grupoAtual);
+
+  const resultado: ChunkComPai[] = [];
+  for (const grupo of grupos) {
+    const pai = grupo.join("\n\n");
+    for (const filho of grupo) {
+      resultado.push({ conteudo: filho, conteudoPai: pai });
+    }
+  }
+  return resultado;
+}

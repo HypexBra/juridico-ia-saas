@@ -3,13 +3,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ExcluirConversaBotao } from "@/components/admin/excluir-conversa-botao";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { Mensagem } from "@/lib/types";
 
 export const metadata = { title: "Conversa — Admin" };
-
-function formatarDataHora(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR");
-}
 
 /**
  * Só leitura (seção 8 do pedido: "não permitir que o administrador altere

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { alterarRoleMembroAction, alternarAtivoMembroAction } from "@/app/app/equipe/actions";
 import type { Role } from "@/lib/types";
 
@@ -24,6 +25,7 @@ export function MembroLinhaAcoes({
   /** false quando o membro alvo é owner e quem está logado não é owner. */
   podeAlterarRole: boolean;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -35,8 +37,12 @@ export function MembroLinhaAcoes({
     setErro(null);
     startTransition(async () => {
       const resultado = await alterarRoleMembroAction(perfilId, novoRole);
-      if (resultado.ok) setMensagem(resultado.mensagem);
-      else setErro(resultado.error);
+      if (resultado.ok) {
+        setMensagem(resultado.mensagem);
+        router.refresh();
+      } else {
+        setErro(resultado.error);
+      }
     });
   }
 
@@ -47,8 +53,12 @@ export function MembroLinhaAcoes({
     setErro(null);
     startTransition(async () => {
       const resultado = await alternarAtivoMembroAction(perfilId, !ativo);
-      if (resultado.ok) setMensagem(resultado.mensagem);
-      else setErro(resultado.error);
+      if (resultado.ok) {
+        setMensagem(resultado.mensagem);
+        router.refresh();
+      } else {
+        setErro(resultado.error);
+      }
     });
   }
 

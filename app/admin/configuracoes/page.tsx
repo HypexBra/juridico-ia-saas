@@ -2,6 +2,7 @@ import { buscarConfiguracoesPlataforma } from "@/lib/admin/configuracoes";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfiguracaoToggle } from "@/components/admin/configuracao-toggle";
 import { LIMITE_MENSAGENS_FREE } from "@/lib/types";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 
 export const metadata = { title: "Configurações — Admin" };
 
@@ -21,7 +22,7 @@ export default async function AdminConfiguracoesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-ice">Configurações da plataforma</h1>
-        <p className="mt-1 text-sm text-muted">Últimas alterações aplicadas: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}.</p>
+        <p className="mt-1 text-sm text-muted">Últimas alterações aplicadas: {formatarDataHora(config.atualizadoEm)}.</p>
       </div>
 
       <Card>

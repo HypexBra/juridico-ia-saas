@@ -33,6 +33,17 @@ export type Perfil = {
   criado_em: string;
 };
 
+/** Comentário de equipe numa conversa do chat (ver app/app/chat/anotacoes-actions.ts) — nunca entra no histórico enviado ao LLM. */
+export type AnotacaoConversa = {
+  id: string;
+  escritorio_id: string;
+  conversa_id: string;
+  autor_id: string;
+  autor_nome: string;
+  texto: string;
+  criado_em: string;
+};
+
 export type StatusConviteEquipe = "pendente" | "aceito" | "cancelado" | "expirado";
 
 export type ConviteEquipe = {
@@ -89,6 +100,8 @@ export type Mensagem = {
   tokens_out: number;
   proposta_id: string | null;
   fontes: FonteCitadaMensagem[] | null;
+  /** Números de "[Doc #N]" citados no texto que NÃO existem no contexto injetado (ver lib/rag/citacoes.ts). `null`/vazio = nenhuma citação inventada detectada. */
+  citacoes_invalidas: number[] | null;
   criado_em: string;
 };
 

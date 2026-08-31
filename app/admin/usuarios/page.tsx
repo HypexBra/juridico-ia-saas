@@ -4,6 +4,7 @@ import { listarUsuariosAdmin } from "@/lib/admin/usuarios";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { UsuarioLinhaAcoes } from "@/components/admin/usuario-linha-acoes";
+import { formatarData } from "@/lib/app/formatar-data";
 import type { Role } from "@/lib/types";
 
 export const metadata = { title: "Usuários — Admin" };
@@ -30,9 +31,9 @@ const ORDENACOES: { valor: Ordenacao; label: string }[] = [
   { valor: "conversas", label: "Qtd. conversas" },
 ];
 
-function formatarData(iso: string | null) {
+function formatarDataOuTraco(iso: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return formatarData(iso);
 }
 
 export default async function AdminUsuariosPage({ searchParams }: PageProps<"/admin/usuarios">) {
@@ -176,8 +177,8 @@ export default async function AdminUsuariosPage({ searchParams }: PageProps<"/ad
                   <p className="text-xs text-muted">{u.escritorioNome}</p>
                 </td>
                 <td className="py-3 pr-3 text-muted">{u.email ?? "—"}</td>
-                <td className="py-3 pr-3 text-muted">{formatarData(u.criadoEm)}</td>
-                <td className="py-3 pr-3 text-muted">{formatarData(u.ultimoAcesso)}</td>
+                <td className="py-3 pr-3 text-muted">{formatarDataOuTraco(u.criadoEm)}</td>
+                <td className="py-3 pr-3 text-muted">{formatarDataOuTraco(u.ultimoAcesso)}</td>
                 <td className="py-3 pr-3">
                   <Badge tone={u.ativo ? "green" : "red"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
                 </td>

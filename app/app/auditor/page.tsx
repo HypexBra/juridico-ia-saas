@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AuditorForm } from "@/components/app/auditor-form";
 import { listarAuditoriasPecaAction } from "./actions";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 import type { OrigemAuditoriaPeca, StatusAuditoriaPeca } from "@/lib/types";
 import type { VereditoRiscoAuditoria } from "@/lib/auditoria-peca/tipos";
 
@@ -120,7 +121,7 @@ export default async function AuditorPage({
                         {auditoria.titulo ?? auditoria.nome_arquivo ?? "Peça sem título"}
                       </p>
                       <p className="text-xs text-muted">
-                        {new Date(auditoria.criado_em).toLocaleString("pt-BR")} · {ORIGEM_LABEL[auditoria.origem]}
+                        {formatarDataHora(auditoria.criado_em)} · {ORIGEM_LABEL[auditoria.origem]}
                         {auditoria.resultado_auditoria ? ` · ${auditoria.resultado_auditoria.tipoPeca}` : ""}
                       </p>
                     </div>

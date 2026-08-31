@@ -2,12 +2,9 @@ import Link from "next/link";
 import { listarConversasAdmin } from "@/lib/admin/usuarios";
 import { Card } from "@/components/ui/card";
 import { ExcluirConversaBotao } from "@/components/admin/excluir-conversa-botao";
+import { formatarDataHora } from "@/lib/app/formatar-data";
 
 export const metadata = { title: "Conversas — Admin" };
-
-function formatarDataHora(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR");
-}
 
 export default async function AdminConversasPage({ searchParams }: PageProps<"/admin/conversas">) {
   const params = await searchParams;

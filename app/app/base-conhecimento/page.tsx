@@ -9,6 +9,14 @@ import { ReindexarInternoButton } from "@/components/app/reindexar-interno-butto
 
 export const metadata = { title: "Base de Conhecimento — Jurídico IA" };
 
+// A extração/chunking/embedding do upload de documento rodam em background
+// (`after()`, ver actions.ts#uploadDocumentoAction) DEPOIS da resposta ser
+// enviada — mas ainda dentro da mesma invocação serverless, que só fica viva
+// até `maxDuration`. Sem isto, o teto herdado (padrão do Next) cortaria a
+// indexação de um PDF grande no meio, mesmo com o usuário já tendo recebido
+// a resposta de sucesso.
+export const maxDuration = 120;
+
 export default async function BaseConhecimentoPage() {
   const usuario = await getUsuarioAtual();
   if (!usuario) redirect("/login");

@@ -7,6 +7,7 @@ import {
   resolverModoRapido,
   type ChatTurno,
   type ModoContexto,
+  type ModoTarefa,
   type OpcoesGeracao,
   type RespostaIa,
   type StreamEvento,
@@ -14,7 +15,7 @@ import {
 import { gerarRespostaGroq, gerarRespostaGroqStream } from "./groq";
 import { QuotaExcedidaError, TodosProvidersIndisponiveisError } from "@/lib/ia/erros";
 
-export type { ChatTurno, RespostaIa, StreamEvento, OpcoesGeracao, ModoContexto };
+export type { ChatTurno, RespostaIa, StreamEvento, OpcoesGeracao, ModoContexto, ModoTarefa };
 export { TodosProvidersIndisponiveisError };
 
 /**
@@ -54,6 +55,8 @@ export async function gerarResposta(
      * (gemini e groq recebem, pois ambos compõem via comporSystemInstruction).
      */
     blocoMemoriaEscritorio?: string | null;
+    /** Modo de tarefa escolhido no composer (ver rag-prompt.ts#MODO_TAREFA_PROMPTS). Ausente/"conversa" = comportamento padrão. */
+    modoTarefa?: ModoTarefa;
     providerOverride?: { provider: "gemini" | "groq" };
   } = {},
 ): Promise<RespostaIa> {
@@ -127,6 +130,8 @@ export async function* gerarRespostaStream(
      * recebem; composição idêntica via comporSystemInstruction).
      */
     blocoMemoriaEscritorio?: string | null;
+    /** Modo de tarefa escolhido no composer (ver rag-prompt.ts#MODO_TAREFA_PROMPTS). Ausente/"conversa" = comportamento padrão. */
+    modoTarefa?: ModoTarefa;
     providerOverride?: { provider: "gemini" | "groq" };
   } = {},
 ): AsyncGenerator<StreamEvento, void, unknown> {

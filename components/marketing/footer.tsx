@@ -2,8 +2,9 @@ import Link from "next/link";
 
 /* Footer minimalista da spec v3: logo serif, três colunas de links e uma
    linha final mono. Links âncora consistentes com o nav (#como-funciona,
-   #recursos, #planos). Termos/Privacidade/Contato aguardam rotas próprias
-   — apontam "#" até o integrador ligá-las. */
+   #recursos, #planos). Termos/Privacidade agora apontam para rotas reais
+   (app/termos, app/privacidade) — LGPD exige política publicada e acessível,
+   não só linkada em texto. */
 
 const PRODUCT_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
@@ -12,8 +13,8 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { href: "#", label: "Termos" },
-  { href: "#", label: "Privacidade" },
+  { href: "/termos", label: "Termos" },
+  { href: "/privacidade", label: "Privacidade" },
 ] as const;
 
 export function Footer() {
