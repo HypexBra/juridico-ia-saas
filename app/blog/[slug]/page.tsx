@@ -20,10 +20,10 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const { slug } = await params;
   const post = obterBlogPost(slug);
   if (!post) {
-    return { title: "Artigo não encontrado — Jurídico IA" };
+    return { title: "Artigo não encontrado: Jurídico IA" };
   }
   return {
-    title: `${post.title} — Jurídico IA`,
+    title: `${post.title}: Jurídico IA`,
     description: post.description,
     alternates: {
       canonical: `/blog/${post.slug}`,
@@ -73,7 +73,7 @@ function renderBloco(bloco: BlogBlock, indice: number) {
 
 /**
  * `BlogPosting` gerado a partir dos mesmos campos do artigo (título,
- * descrição, data de publicação) — sem uma segunda cópia de conteúdo
+ * descrição, data de publicação): sem uma segunda cópia de conteúdo
  * divergente do que é renderizado na página.
  */
 function construirJsonLd(appUrl: string, post: ReturnType<typeof obterBlogPost>) {

@@ -1,7 +1,7 @@
 /**
  * Faixa de prova social discreta entre o Hero e a seção 01 (Problema).
  *
- * Decisão do dono do produto: SEM número/depoimento inventado — nada de
+ * Decisão do dono do produto: SEM número/depoimento inventado. Nada de
  * "500+ escritórios" ou citação fabricada. É uma faixa fina (não uma
  * <Section> numerada completa, que quebraria a sequência 01..15 das demais
  * seções), com uma frase honesta sobre o estágio atual do produto.

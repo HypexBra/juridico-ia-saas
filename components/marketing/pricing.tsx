@@ -6,10 +6,10 @@ import { IconCheck } from "./icons";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
 
-/** Preços exibidos aqui são só cópia/UI — a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL
+/** Preços exibidos aqui são só cópia/UI: a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL
  * (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar
  * o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx).
- * O plano anual (2 meses grátis) é cobrança única de R$ 1.490/ano — ainda sem price ID
+ * O plano anual (2 meses grátis) é cobrança única de R$ 1.490/ano, ainda sem price ID
  * dedicado no Stripe; o CTA do Pro segue apontando para /cadastro nos dois modos até o
  * checkout anual existir. */
 const PRECO_PRO_MENSAL = "R$ 149";
@@ -96,7 +96,7 @@ function Plano({ nome, lema, preco, precoNota, selo, destaque = false, features,
   );
 }
 
-/** Toggle Mensal/Anual — dois botões estilo "segmented control" no traço
+/** Toggle Mensal/Anual: dois botões estilo "segmented control" no traço
  * editorial do site (rodape-none, hairline ink/15), sem lib externa. */
 function TogglePeriodicidade({
   valor,
@@ -169,7 +169,7 @@ export function Pricing() {
       </Reveal>
 
       {/* Três larguras deliberadamente diferentes e alturas assimétricas
-          (Pro mais largo e descido) — nada de trio de cards idênticos. */}
+          (Pro mais largo e descido), nada de trio de cards idênticos. */}
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.15fr_0.85fr] md:items-start">
         <Reveal>
           <Plano

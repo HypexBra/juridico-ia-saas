@@ -7,7 +7,7 @@ import { Reveal } from "@/components/marketing/reveal";
 import { BLOG_POSTS } from "@/lib/blog-posts";
 
 export const metadata: Metadata = {
-  title: "Blog — Jurídico IA",
+  title: "Blog: Jurídico IA",
   description:
     "Artigos práticos sobre prazos processuais, auditoria de peças e uso responsável de inteligência artificial na advocacia.",
   alternates: {
@@ -28,7 +28,7 @@ export default function BlogIndexPage() {
             </h1>
             <p className="mt-5 max-w-prose text-lg leading-relaxed text-ink-2">
               Prazos, auditoria de peças e uso responsável de inteligência
-              artificial no direito — sem propaganda, com o que dá pra aplicar
+              artificial no direito: sem propaganda, com o que dá pra aplicar
               na prática.
             </p>
           </Reveal>
