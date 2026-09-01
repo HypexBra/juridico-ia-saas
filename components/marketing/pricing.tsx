@@ -135,9 +135,12 @@ export function Pricing() {
               { label: "Workflows avançados" },
             ]}
             rodape={
-              <p className="font-mono-ed text-xs uppercase tracking-[0.16em] text-ink-3">
-                Em breve
-              </p>
+              <a
+                href="mailto:pedrohenriquesanchesleal4@gmail.com?subject=Interesse%20no%20plano%20Firm"
+                className="block rounded-none border border-ink/20 px-5 py-3 text-center text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-paper-2"
+              >
+                Entrar na lista de espera
+              </a>
             }
           />
         </Reveal>

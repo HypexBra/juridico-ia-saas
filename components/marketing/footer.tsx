@@ -2,8 +2,9 @@ import Link from "next/link";
 
 /* Footer minimalista da spec v3: logo serif, três colunas de links e uma
    linha final mono. Links âncora consistentes com o nav (#como-funciona,
-   #recursos, #planos). Termos/Privacidade/Contato aguardam rotas próprias
-   — apontam "#" até o integrador ligá-las. */
+   #recursos, #planos). Termos/Privacidade/Exclusão de dados apontam para
+   rotas estáticas reais (rascunho de transparência, ver aviso em cada
+   página) — não são placeholders "#". */
 
 const PRODUCT_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
@@ -12,8 +13,9 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { href: "#", label: "Termos" },
-  { href: "#", label: "Privacidade" },
+  { href: "/termos-de-uso", label: "Termos" },
+  { href: "/politica-de-privacidade", label: "Privacidade" },
+  { href: "/exclusao-de-dados", label: "Exclusão de dados" },
 ] as const;
 
 export function Footer() {
@@ -54,12 +56,12 @@ export function Footer() {
               <ul className="mt-4 space-y-2.5">
                 {LEGAL_LINKS.map((link) => (
                   <li key={link.label}>
-                    <a
+                    <Link
                       href={link.href}
                       className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
                     >
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -89,6 +91,9 @@ export function Footer() {
             Menos operação. Mais advocacia.
           </p>
         </div>
+        <p className="mt-3 font-mono-ed text-[11px] tracking-wide text-ink-3">
+          Processamento de linguagem natural via Google Gemini.
+        </p>
       </div>
     </footer>
   );
