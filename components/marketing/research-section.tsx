@@ -156,7 +156,7 @@ export function ResearchSection() {
                 cada citação (número de processo, súmula, tema repetitivo)
                 identificada num texto é conferida DEPOIS da geração,
                 diretamente contra a base local — não é apenas uma instrução
-                pedindo ao modelo para "não inventar". Cada citação recebe um
+                pedindo ao modelo para &ldquo;não inventar&rdquo;. Cada citação recebe um
                 de três status: <strong className="text-ink">verificada</strong>{" "}
                 (encontrada na base, com metadados oficiais exibidos junto),{" "}
                 <strong className="text-ink">não verificada</strong> (não
