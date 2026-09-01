@@ -4,8 +4,10 @@ import {
   agregarPorDia,
   agregarPorOrigem,
   agregarTotais,
+  agruparCustoPorEscritorio,
   calcularCustoEstimado,
   type RegistroUsoIa,
+  type RegistroUsoIaComEscritorio,
 } from "./agregar";
 
 const BASE_REGISTRO: RegistroUsoIa = {
@@ -161,6 +163,63 @@ describe("agregarPorDia", () => {
       const atual = dias[i];
       expect(anterior && atual ? anterior.dia < atual.dia : false).toBe(true);
     }
+  });
+});
+
+describe("agruparCustoPorEscritorio", () => {
+  function registroEscritorio(
+    escritorioId: string,
+    overrides: Partial<RegistroUsoIa> = {},
+  ): RegistroUsoIaComEscritorio {
+    return { ...registro(overrides), escritorio_id: escritorioId };
+  }
+
+  it("retorna lista vazia com zero registros", () => {
+    expect(agruparCustoPorEscritorio([], PRECOS_POR_MILHAO)).toEqual([]);
+  });
+
+  it("agrupa custo por escritorio_id, um total por escritório", () => {
+    const linhas = agruparCustoPorEscritorio(
+      [
+        registroEscritorio("escritorio-a", { tokens_in: 1_000_000, tokens_out: 0 }),
+        registroEscritorio("escritorio-a", { tokens_in: 1_000_000, tokens_out: 0 }),
+        registroEscritorio("escritorio-b", { tokens_in: 1_000_000, tokens_out: 0 }),
+      ],
+      PRECOS_POR_MILHAO,
+    );
+
+    const precoEntrada = PRECOS_POR_MILHAO["gemini-flash-latest"]?.entrada ?? 0;
+    const linhaA = linhas.find((l) => l.escritorioId === "escritorio-a");
+    const linhaB = linhas.find((l) => l.escritorioId === "escritorio-b");
+
+    expect(linhaA?.totalUsd).toBeCloseTo(precoEntrada * 2, 10);
+    expect(linhaA?.registrosPrecificados).toBe(2);
+    expect(linhaB?.totalUsd).toBeCloseTo(precoEntrada, 10);
+  });
+
+  it("ordena por totalUsd decrescente, tratando null (sem registro precificável) como o menor", () => {
+    const linhas = agruparCustoPorEscritorio(
+      [
+        registroEscritorio("barato", { tokens_in: 1000, tokens_out: 0 }),
+        registroEscritorio("caro", { tokens_in: 10_000_000, tokens_out: 0 }),
+        registroEscritorio("sem-preco", { modelo: "modelo-desconhecido" }),
+      ],
+      PRECOS_POR_MILHAO,
+    );
+
+    expect(linhas.map((l) => l.escritorioId)).toEqual(["caro", "barato", "sem-preco"]);
+    expect(linhas.find((l) => l.escritorioId === "sem-preco")?.totalUsd).toBeNull();
+  });
+
+  it("nunca inventa custo pra modelo desconhecido, mesmo agrupado por escritório", () => {
+    const linhas = agruparCustoPorEscritorio(
+      [registroEscritorio("escritorio-x", { modelo: "modelo-secreto-futuro" })],
+      PRECOS_POR_MILHAO,
+    );
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0]?.totalUsd).toBeNull();
+    expect(linhas[0]?.registrosPrecificados).toBe(0);
+    expect(linhas[0]?.registrosTotal).toBe(1);
   });
 });
 

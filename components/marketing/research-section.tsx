@@ -1,6 +1,6 @@
 import { Reveal } from "./reveal";
 import { Section } from "./section";
-import { IconArrowRight } from "./icons";
+import { IconArrowRight, IconPlus } from "./icons";
 
 /**
  * Seção 08 · PESQUISA VERIFICÁVEL — busca mock com resultados que carregam
@@ -123,6 +123,50 @@ export function ResearchSection() {
             localizada fonte verificável suficiente.” Nada é inventado para
             preencher lacunas.
           </p>
+        </div>
+      </Reveal>
+
+      {/* Transparência técnica: como a verificação funciona de fato — não é
+          só instrução de prompt, é checagem pós-geração contra base local.
+          Reaproveita o padrão <details>/<summary> nativo do FAQ. */}
+      <Reveal delayMs={220}>
+        <div className="mx-auto mt-6 max-w-3xl border-t border-ink/10">
+          <details className="faq-suave group">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-left font-sans-ed text-base text-ink-2 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+              Como funciona a verificação, tecnicamente
+              <IconPlus className="h-4 w-4 shrink-0 text-ink-3 transition-transform duration-300 ease-out group-open:rotate-45" />
+            </summary>
+            <div className="space-y-4 pb-6 pr-8 text-sm leading-relaxed text-ink-2">
+              <p>
+                <span className="font-medium text-ink">Base consultada:</span>{" "}
+                jurisprudência do STJ, sincronizada a partir dos dados abertos
+                oficiais do tribunal (Espelhos de Acórdão, licença CC-BY).
+              </p>
+              <p>
+                <span className="font-medium text-ink">
+                  Frequência de atualização:
+                </span>{" "}
+                sincronização mensal, alinhada à publicação dos arquivos
+                oficiais do STJ.
+              </p>
+              <p>
+                <span className="font-medium text-ink">
+                  Processo de verificação:
+                </span>{" "}
+                cada citação (número de processo, súmula, tema repetitivo)
+                identificada num texto é conferida DEPOIS da geração,
+                diretamente contra a base local — não é apenas uma instrução
+                pedindo ao modelo para &ldquo;não inventar&rdquo;. Cada citação recebe um
+                de três status: <strong className="text-ink">verificada</strong>{" "}
+                (encontrada na base, com metadados oficiais exibidos junto),{" "}
+                <strong className="text-ink">não verificada</strong> (não
+                encontrada na base local — o que não significa que seja falsa,
+                só que ainda não está indexada) ou{" "}
+                <strong className="text-ink">mal formada</strong> (o número não
+                passa na validação de dígito verificador do padrão CNJ).
+              </p>
+            </div>
+          </details>
         </div>
       </Reveal>
     </Section>

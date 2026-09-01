@@ -1,5 +1,6 @@
 import { Reveal } from "./reveal";
 import { Section } from "./section";
+import { IconPlus } from "./icons";
 
 /* 11 · MEMÓRIA DO ESCRITÓRIO (spec v3 §6): o inventário "SEU ESCRITÓRIO"
    como tabela minimalista — rótulos à esquerda, descrição à direita,
@@ -67,6 +68,26 @@ export function MemorySection() {
             Isolado por escritório — nenhum dado cruza a fronteira entre
             escritórios.
           </p>
+        </Reveal>
+
+        {/* Nota técnica: o isolamento também cobre a camada vetorial (RAG),
+            não só as tabelas relacionais — afirmação correspondente à policy
+            `embeddings_chunks_isolamento` (migration 0002_rag_e_propostas.sql). */}
+        <Reveal delayMs={LINHAS_INVENTARIO.length * PASSO_CASCATA_MS + 140}>
+          <details className="faq-suave group mt-4 border-t border-ink/10">
+            <summary className="flex cursor-pointer list-none items-center justify-center gap-2 py-4 text-center font-mono-ed text-[11px] tracking-wide text-ink-3 transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+              O isolamento cobre também a busca por similaridade?
+              <IconPlus className="h-3.5 w-3.5 shrink-0 transition-transform duration-300 ease-out group-open:rotate-45" />
+            </summary>
+            <p className="mx-auto max-w-prose pb-5 text-center text-xs leading-relaxed text-ink-2">
+              Sim. A memória do escritório também é armazenada como vetores
+              (embeddings) para permitir busca por significado, não só por
+              palavra-chave — e essa tabela tem sua própria política de Row
+              Level Security por escritório, separada das tabelas relacionais.
+              Uma consulta vetorial de um escritório nunca retorna trechos de
+              outro.
+            </p>
+          </details>
         </Reveal>
       </div>
     </Section>

@@ -1,10 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useId, useState } from "react";
 import { IconCheck } from "./icons";
 import { Reveal } from "./reveal";
 import { Section } from "./section";
 
-/** Preço exibido aqui é só cópia/UI — a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx). */
+/** Preços exibidos aqui são só cópia/UI: a cobrança real usa STRIPE_PRICE_ID_PRO_MENSAL
+ * (fonte de verdade, ver lib/billing/stripe-client.ts). Mantenha sincronizado ao trocar
+ * o valor no Stripe (o mesmo valor também aparece em components/app/assinatura-card.tsx).
+ * O plano anual (2 meses grátis) é cobrança única de R$ 1.490/ano, ainda sem price ID
+ * dedicado no Stripe; o CTA do Pro segue apontando para /cadastro nos dois modos até o
+ * checkout anual existir. */
 const PRECO_PRO_MENSAL = "R$ 149";
+const PRECO_PRO_ANUAL_MES = "R$ 124,17";
+const PRECO_PRO_ANUAL_TOTAL = "R$ 1.490";
+
+type Periodicidade = "mensal" | "anual";
 
 interface PlanFeature {
   label: string;
@@ -31,12 +43,14 @@ interface PlanoProps {
   nome: string;
   lema: string;
   preco?: string;
+  precoNota?: string;
+  selo?: string;
   destaque?: boolean;
   features: PlanFeature[];
   rodape: React.ReactNode;
 }
 
-function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoProps) {
+function Plano({ nome, lema, preco, precoNota, selo, destaque = false, features, rodape }: PlanoProps) {
   return (
     <div
       className={`relative flex h-full flex-col rounded-none border p-8 ${
@@ -56,10 +70,18 @@ function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoP
       </div>
       <p className="mt-1.5 text-sm text-ink-2">{lema}</p>
       {preco ? (
-        <p className="mt-6 flex items-baseline gap-1.5">
-          <span className="font-serif-ed text-4xl text-ink">{preco}</span>
-          <span className="text-sm text-ink-3">/mês</span>
-        </p>
+        <div className="mt-6">
+          <p className="flex items-baseline gap-1.5">
+            <span className="font-serif-ed text-4xl text-ink">{preco}</span>
+            <span className="text-sm text-ink-3">/mês</span>
+          </p>
+          {precoNota ? <p className="mt-1 text-xs text-ink-3">{precoNota}</p> : null}
+          {selo ? (
+            <span className="mt-2 inline-block border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono-ed text-[10px] uppercase tracking-[0.14em] text-accent">
+              {selo}
+            </span>
+          ) : null}
+        </div>
       ) : null}
       <ul className="mt-7 flex flex-1 flex-col gap-3">
         {features.map((feature) => (
@@ -74,7 +96,60 @@ function Plano({ nome, lema, preco, destaque = false, features, rodape }: PlanoP
   );
 }
 
+/** Toggle Mensal/Anual: dois botões estilo "segmented control" no traço
+ * editorial do site (rodape-none, hairline ink/15), sem lib externa. */
+function TogglePeriodicidade({
+  valor,
+  onChange,
+}: {
+  valor: Periodicidade;
+  onChange: (valor: Periodicidade) => void;
+}) {
+  const groupId = useId();
+  return (
+    <div
+      role="group"
+      aria-label="Periodicidade de cobrança"
+      className="inline-flex border border-ink/15 p-1"
+    >
+      {(
+        [
+          { valor: "mensal" as const, label: "Mensal" },
+          { valor: "anual" as const, label: "Anual" },
+        ]
+      ).map((opcao) => (
+        <button
+          key={opcao.valor}
+          type="button"
+          id={`${groupId}-${opcao.valor}`}
+          aria-pressed={valor === opcao.valor}
+          onClick={() => onChange(opcao.valor)}
+          className={`px-4 py-2 font-sans-ed text-sm font-medium transition-colors ${
+            valor === opcao.valor
+              ? "bg-ink text-paper"
+              : "text-ink-2 hover:text-ink"
+          }`}
+        >
+          {opcao.label}
+          {opcao.valor === "anual" ? (
+            <span
+              className={`ml-2 font-mono-ed text-[10px] uppercase tracking-[0.12em] ${
+                valor === opcao.valor ? "text-paper/70" : "text-accent"
+              }`}
+            >
+              2 meses grátis
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Pricing() {
+  const [periodicidade, setPeriodicidade] = useState<Periodicidade>("mensal");
+  const anual = periodicidade === "anual";
+
   return (
     <Section
       id="planos"
@@ -87,9 +162,15 @@ export function Pricing() {
       }
       intro="Assine quando quiser, cancele quando quiser — sem fidelidade."
     >
+      <Reveal>
+        <div className="flex justify-center md:justify-start">
+          <TogglePeriodicidade valor={periodicidade} onChange={setPeriodicidade} />
+        </div>
+      </Reveal>
+
       {/* Três larguras deliberadamente diferentes e alturas assimétricas
-          (Pro mais largo e descido) — nada de trio de cards idênticos. */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.15fr_0.85fr] md:items-start">
+          (Pro mais largo e descido), nada de trio de cards idênticos. */}
+      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.15fr_0.85fr] md:items-start">
         <Reveal>
           <Plano
             nome="Free"
@@ -111,7 +192,9 @@ export function Pricing() {
           <Plano
             nome="Pro"
             lema="Para quem quer automatizar."
-            preco={PRECO_PRO_MENSAL}
+            preco={anual ? PRECO_PRO_ANUAL_MES : PRECO_PRO_MENSAL}
+            precoNota={anual ? `Cobrança anual de ${PRECO_PRO_ANUAL_TOTAL}` : undefined}
+            selo={anual ? "2 meses grátis" : undefined}
             destaque
             features={PRO_FEATURES}
             rodape={
@@ -135,9 +218,12 @@ export function Pricing() {
               { label: "Workflows avançados" },
             ]}
             rodape={
-              <p className="font-mono-ed text-xs uppercase tracking-[0.16em] text-ink-3">
-                Em breve
-              </p>
+              <a
+                href="mailto:pedrohenriquesanchesleal4@gmail.com?subject=Interesse%20no%20plano%20Firm"
+                className="block rounded-none border border-ink/20 px-5 py-3 text-center text-sm font-medium text-ink transition-colors hover:border-ink/40 hover:bg-paper-2"
+              >
+                Entrar na lista de espera
+              </a>
             }
           />
         </Reveal>
@@ -145,8 +231,13 @@ export function Pricing() {
 
       <Reveal delayMs={250}>
         <p className="mx-auto mt-12 max-w-md text-center text-sm text-ink-3">
-          O plano Pro é cobrado mensamente pelo Stripe. Cancele quando quiser,
-          direto no perfil.
+          {anual
+            ? "O plano Pro anual é cobrado uma vez por ano pelo Stripe, equivalente a 10 meses. Cancele quando quiser, direto no perfil."
+            : "O plano Pro é cobrado mensalmente pelo Stripe. Cancele quando quiser, direto no perfil."}
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-center text-xs text-ink-3/70">
+          &ldquo;Sem limite mensal de IA&rdquo; refere-se a mensagens, dentro do uso
+          profissional normal de um escritório de advocacia (ver Termos de Uso).
         </p>
       </Reveal>
     </Section>

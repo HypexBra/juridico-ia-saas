@@ -4,6 +4,8 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
   title: "Entrar — Jurídico IA",
+  description:
+    "Acesse o painel do seu escritório no Jurídico IA para acompanhar casos, prazos e documentos.",
 };
 
 export default function LoginPage() {

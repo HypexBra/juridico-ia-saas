@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/conversas", label: "Conversas" },
   { href: "/admin/administradores", label: "Administradores" },
   { href: "/admin/ia-chaves", label: "Chaves de IA" },
+  { href: "/admin/uso-excedente", label: "Uso excedente (Pro)" },
   { href: "/admin/logs", label: "Logs" },
   { href: "/admin/configuracoes", label: "Configurações" },
 ];

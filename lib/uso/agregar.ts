@@ -85,6 +85,48 @@ export function calcularCustoEstimado(
   };
 }
 
+/**
+ * Teto de referência de CUSTO estimado (USD, mês corrente) para um
+ * escritório do plano Pro — usado SÓ para alertar o admin da plataforma
+ * (`app/admin/uso-excedente`), nunca para bloquear ou degradar o cliente
+ * final: o plano Pro promete "sem limite mensal de IA" e essa promessa não
+ * muda por causa deste teto interno. Valor de referência inicial (não é
+ * cobrado nem exposto ao cliente — ver cláusula de uso razoável nos Termos).
+ */
+export const TETO_CUSTO_USD_PRO_MES = 15;
+
+/** Linha de `uso_ia` com o identificador do escritório, para agregação cross-tenant (só admin). */
+export type RegistroUsoIaComEscritorio = RegistroUsoIa & { escritorio_id: string };
+
+export type CustoPorEscritorio = CustoEstimado & { escritorioId: string };
+
+/**
+ * Agrupa o custo estimado por `escritorio_id` — mesma lógica HONESTA de
+ * `calcularCustoEstimado` (modelo desconhecido nunca entra no total),
+ * aplicada em lote por escritório. Ordena por `totalUsd` decrescente,
+ * tratando `null` (nenhum registro precificável) como o menor valor, para
+ * que escritórios com custo real conhecido sempre apareçam primeiro.
+ */
+export function agruparCustoPorEscritorio(
+  registros: RegistroUsoIaComEscritorio[],
+  precos: Record<string, PrecoModelo>,
+): CustoPorEscritorio[] {
+  const porEscritorio = new Map<string, RegistroUsoIaComEscritorio[]>();
+
+  for (const registro of registros) {
+    const lista = porEscritorio.get(registro.escritorio_id) ?? [];
+    lista.push(registro);
+    porEscritorio.set(registro.escritorio_id, lista);
+  }
+
+  return [...porEscritorio.entries()]
+    .map(([escritorioId, lista]) => ({
+      escritorioId,
+      ...calcularCustoEstimado(lista, precos),
+    }))
+    .sort((a, b) => (b.totalUsd ?? -1) - (a.totalUsd ?? -1));
+}
+
 export type TotaisPeriodo = {
   chamadas: number;
   tokensIn: number;

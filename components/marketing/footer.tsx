@@ -2,19 +2,22 @@ import Link from "next/link";
 
 /* Footer minimalista da spec v3: logo serif, três colunas de links e uma
    linha final mono. Links âncora consistentes com o nav (#como-funciona,
-   #recursos, #planos). Termos/Privacidade agora apontam para rotas reais
-   (app/termos, app/privacidade) — LGPD exige política publicada e acessível,
-   não só linkada em texto. */
+   #recursos, #planos). Termos/Privacidade apontam para rotas reais
+   (app/termos, app/privacidade: LGPD exige política publicada e acessível,
+   não só linkada em texto); Exclusão de dados é página própria em
+   app/exclusao-de-dados. */
 
 const PRODUCT_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#recursos", label: "Recursos" },
   { href: "#planos", label: "Planos" },
+  { href: "/blog", label: "Blog" },
 ] as const;
 
 const LEGAL_LINKS = [
   { href: "/termos", label: "Termos" },
   { href: "/privacidade", label: "Privacidade" },
+  { href: "/exclusao-de-dados", label: "Exclusão de dados" },
 ] as const;
 
 export function Footer() {
@@ -35,16 +38,27 @@ export function Footer() {
                 Produto
               </p>
               <ul className="mt-4 space-y-2.5">
-                {PRODUCT_LINKS.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
+                {PRODUCT_LINKS.map((link) =>
+                  link.href.startsWith("/") ? (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ) : (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ),
+                )}
               </ul>
             </nav>
 
@@ -55,12 +69,12 @@ export function Footer() {
               <ul className="mt-4 space-y-2.5">
                 {LEGAL_LINKS.map((link) => (
                   <li key={link.label}>
-                    <a
+                    <Link
                       href={link.href}
                       className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
                     >
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -90,6 +104,9 @@ export function Footer() {
             Menos operação. Mais advocacia.
           </p>
         </div>
+        <p className="mt-3 font-mono-ed text-[11px] tracking-wide text-ink-3">
+          Processamento de linguagem natural via Google Gemini.
+        </p>
       </div>
     </footer>
   );

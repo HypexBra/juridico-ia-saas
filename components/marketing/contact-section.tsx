@@ -1,66 +1,26 @@
 import { Section } from "./section";
-import { IconArrowRight, IconMail, IconPhone, IconWhatsapp } from "./icons";
+import { IconArrowRight, IconMail, IconWhatsapp } from "./icons";
 import { Reveal } from "./reveal";
 
 /**
- * Contatos oficiais do escritório — dados fornecidos pelo dono do produto.
- * WhatsApp pessoal (com link direto wa.me) e telefone da empresa (tel:).
- * Números exibidos EXATAMENTE como cadastrados; nenhum dígito é inventado.
+ * Canal de contato oficial único do Jurídico IA — dados confirmados pelo
+ * dono do produto. Nenhum dígito ou endereço é inventado; produto ainda em
+ * fase early-stage, sem domínio de e-mail próprio ainda (Gmail por ora).
  */
 const CANAIS = [
   {
-    icone: IconMail,
-    rotulo: "E-mail",
-    valor: "pedrohenriquesanchesleal4@gmail.com",
-    href: "mailto:pedrohenriquesanchesleal4@gmail.com",
-    nota: "Resposta em até 1 dia útil.",
-    external: false,
-  },
-  {
     icone: IconWhatsapp,
-    rotulo: "WhatsApp — direto com o desenvolvedor",
+    rotulo: "WhatsApp",
     valor: "+55 (61) 98139-9051",
     href: "https://wa.me/5561981399051?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
     nota: "O canal mais rápido para dúvidas sobre planos e demonstração.",
     external: true,
   },
   {
-    icone: IconPhone,
-    rotulo: "Telefone — empresa",
-    valor: "+55 (61) 9515-3136",
-    href: "tel:+556195153136",
-    nota: "Atendimento comercial em horário comercial (Brasília).",
-    external: true,
-  },
-  {
-    icone: IconWhatsapp,
-    rotulo: "WhatsApp — Matheus Nunez",
-    valor: "+55 (61) 99671-3206",
-    href: "https://wa.me/5561996713206?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
-    nota: "Suporte comercial.",
-    external: true,
-  },
-  {
     icone: IconMail,
-    rotulo: "E-mail — Matheus Nunez",
-    valor: "rodriguez.founder@gmail.com",
-    href: "mailto:rodriguez.founder@gmail.com",
-    nota: "Resposta em até 1 dia útil.",
-    external: false,
-  },
-  {
-    icone: IconWhatsapp,
-    rotulo: "WhatsApp — Joao",
-    valor: "+55 (61) 98347-7750",
-    href: "https://wa.me/5561983477750?text=Ol%C3%A1%2C%20vim%20pela%20p%C3%A1gina%20do%20Jur%C3%ADdico%20IA.",
-    nota: "Suporte comercial.",
-    external: true,
-  },
-  {
-    icone: IconMail,
-    rotulo: "E-mail — Joao",
-    valor: "jp021105@gmail.com",
-    href: "mailto:jp021105@gmail.com",
+    rotulo: "E-mail",
+    valor: "pedrohenriquesanchesleal4@gmail.com",
+    href: "mailto:pedrohenriquesanchesleal4@gmail.com",
     nota: "Resposta em até 1 dia útil.",
     external: false,
   },
@@ -76,7 +36,7 @@ export function ContactSection() {
   return (
     <Section
       id="contato"
-      numero="15"
+      numero="19"
       kicker="CONTATO"
       titulo={
         <>

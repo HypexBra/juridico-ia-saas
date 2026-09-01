@@ -19,6 +19,7 @@ type Citacao = {
     dataJulgamento?: string | null;
     tese?: string | null;
     tema?: number | null;
+    inteiroTeorUrl?: string | null;
   };
 };
 
@@ -102,6 +103,19 @@ export function VerificarCitacoesForm() {
                       .filter(Boolean)
                       .join(" · ")}
                     {citacao.detalhe.dataJulgamento ? ` · Julg. ${citacao.detalhe.dataJulgamento.split("-").reverse().join("/")}` : ""}
+                    {citacao.detalhe.inteiroTeorUrl ? (
+                      <>
+                        {" · "}
+                        <a
+                          href={citacao.detalhe.inteiroTeorUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline decoration-dotted underline-offset-2 hover:text-ink"
+                        >
+                          Inteiro teor
+                        </a>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
                 {citacao.status === "nao_verificada" ? (

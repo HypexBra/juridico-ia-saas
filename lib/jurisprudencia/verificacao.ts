@@ -84,6 +84,8 @@ export type CitacaoVerificada = CitacaoExtraida & {
     dataJulgamento?: string | null;
     tese?: string | null;
     tema?: number | null;
+    /** Link para o inteiro teor na fonte oficial · null quando a fonte não o disponibilizou. */
+    inteiroTeorUrl?: string | null;
   };
 };
 
@@ -97,6 +99,7 @@ type JurisprudenciaRow = {
   data_julgamento: string | null;
   tese: string | null;
   tema: number | null;
+  inteiro_teor_url: string | null;
 };
 
 /**
@@ -125,7 +128,7 @@ export async function verificarCitacoes(
     const { data } = await supabase
       .from("jurisprudencias")
       .select(
-        "id, tribunal, numero_processo, classe, relator, orgao_julgador, data_julgamento, tese, tema",
+        "id, tribunal, numero_processo, classe, relator, orgao_julgador, data_julgamento, tese, tema, inteiro_teor_url",
       )
       .in("numero_processo", candidatos)
       .limit(50);
@@ -135,7 +138,7 @@ export async function verificarCitacoes(
   if (temas.length > 0) {
     const { data } = await supabase
       .from("jurisprudencias")
-      .select("id, tribunal, numero_processo, classe, relator, orgao_julgador, data_julgamento, tese, tema")
+      .select("id, tribunal, numero_processo, classe, relator, orgao_julgador, data_julgamento, tese, tema, inteiro_teor_url")
       .in("tema", temas)
       .limit(50);
     for (const row of (data ?? []) as JurisprudenciaRow[]) {
@@ -166,6 +169,7 @@ export async function verificarCitacoes(
           dataJulgamento: achado.data_julgamento,
           tese: achado.tese,
           tema: achado.tema,
+          inteiroTeorUrl: achado.inteiro_teor_url,
         },
       };
     }
@@ -185,6 +189,7 @@ export async function verificarCitacoes(
           dataJulgamento: achado.data_julgamento,
           tese: achado.tese,
           tema: achado.tema,
+          inteiroTeorUrl: achado.inteiro_teor_url,
         },
       };
     }
