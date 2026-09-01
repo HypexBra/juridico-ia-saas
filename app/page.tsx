@@ -17,6 +17,7 @@ import { ResearchSection } from "@/components/marketing/research-section";
 import { ResultSection } from "@/components/marketing/result-section";
 import { SecuritySection } from "@/components/marketing/security-section";
 import { SilverThread } from "@/components/marketing/silver-thread";
+import { SocialProofSection } from "@/components/marketing/social-proof-section";
 import { WhatsappSection } from "@/components/marketing/whatsapp-section";
 import { WorkflowSection } from "@/components/marketing/workflow-section";
 import { obterAppUrl } from "@/lib/app/url";
@@ -89,6 +90,7 @@ export default function Home() {
       <main id="conteudo" className="relative flex-1">
         <SilverThread />
         <Hero />
+        <SocialProofSection />
         <ProblemSection />
         <CaseSection />
         <DocumentsSection />
