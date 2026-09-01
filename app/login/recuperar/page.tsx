@@ -4,6 +4,8 @@ import { RecuperarSenhaForm } from "./recuperar-form";
 
 export const metadata: Metadata = {
   title: "Recuperar senha — Jurídico IA",
+  description:
+    "Informe o e-mail da sua conta no Jurídico IA e receba um link para definir uma nova senha.",
 };
 
 export default function RecuperarSenhaPage() {

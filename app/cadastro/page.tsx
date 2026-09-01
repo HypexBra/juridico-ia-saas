@@ -4,6 +4,8 @@ import { CadastroForm } from "./cadastro-form";
 
 export const metadata: Metadata = {
   title: "Criar conta — Jurídico IA",
+  description:
+    "Crie o escritório e comece a usar o Jurídico IA gratuitamente: casos, documentos, prazos e tarefas em um só lugar, sem cartão de crédito.",
 };
 
 export default function CadastroPage() {
