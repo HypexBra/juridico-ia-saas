@@ -36,7 +36,7 @@ export function ContactSection() {
   return (
     <Section
       id="contato"
-      numero="15"
+      numero="19"
       kicker="CONTATO"
       titulo={
         <>
