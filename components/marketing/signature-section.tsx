@@ -3,13 +3,13 @@ import { Section } from "./section";
 import { IconCheck } from "./icons";
 
 /**
- * Seção 17 · ASSINATURA ELETRÔNICA — baseada em `lib/assinatura/autentique.ts`
+ * Seção 17 · ASSINATURA ELETRÔNICA: baseada em `lib/assinatura/autentique.ts`
  * e `lib/assinatura/tipos.ts`. Provedor real é o Autentique (GraphQL, upload
- * multipart, webhook com verificação HMAC-SHA256 via `x-autentique-signature`)
- * — nunca citar Clicksign/DocuSign, que não são o que está integrado. Sem
+ * multipart, webhook com verificação HMAC-SHA256 via `x-autentique-signature`).
+ * Nunca citar Clicksign/DocuSign, que não são o que está integrado. Sem
  * chave em `FEATURES_PREMIUM` (`lib/planos/gating.ts`): não é gated por
  * plano, só depende de `AUTENTIQUE_API_TOKEN` estar configurada (a própria
- * `autentiqueEstaConfigurado()` documenta isso) — por isso nenhum selo "Pro"
+ * `autentiqueEstaConfigurado()` documenta isso). Por isso nenhum selo "Pro"
  * nesta seção.
  */
 
@@ -30,7 +30,7 @@ export function SignatureSection() {
           Do documento pronto ao <em>assinado</em>, sem sair do sistema.
         </>
       }
-      intro="Envio direto para assinatura eletrônica via Autentique. O status de cada signatário chega por webhook — ninguém precisa checar o e-mail manualmente."
+      intro="Envio direto para assinatura eletrônica via Autentique. O status de cada signatário chega por webhook, sem precisar checar o e-mail manualmente."
     >
       <div className="mx-auto max-w-2xl">
         <Reveal>

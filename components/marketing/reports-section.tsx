@@ -2,15 +2,15 @@ import { Reveal } from "./reveal";
 import { Section } from "./section";
 
 /**
- * Seção 16 · RELATÓRIOS — baseada em `app/app/relatorios/page.tsx` e
+ * Seção 16 · RELATÓRIOS: baseada em `app/app/relatorios/page.tsx` e
  * `lib/relatorios/avancado.ts`. O relatório BASE (produtividade por
  * advogado: casos, prazos cumpridos/atrasados, honorários gerados/recebidos
  * via rateio) é livre em todo plano. O breakdown de "realization rate"
  * (recebido / contratado) por caso e área do direito é a feature
- * `relatorios_avancados` (`lib/planos/gating.ts`) — Pro-only, com selo
+ * `relatorios_avancados` (`lib/planos/gating.ts`), Pro-only, com selo
  * explícito abaixo. Nunca chamado de "dashboard de BI": é um relatório de
  * produtividade, e o próprio código documenta que não há taxa de êxito no
- * schema atual — texto aqui reflete essa limitação real, não promete o que
+ * schema atual. Texto aqui reflete essa limitação real, não promete o que
  * falta.
  */
 
@@ -85,7 +85,7 @@ export function ReportsSection() {
           <p className="mt-6 max-w-prose text-sm leading-relaxed text-ink-3">
             Honestidade de escopo: este relatório mede produtividade e
             financeiro, não resultado processual. O schema atual não guarda
-            desfecho de caso (ganho/perdido) — não há taxa de êxito aqui.
+            desfecho de caso (ganho/perdido). Não há taxa de êxito aqui.
           </p>
         </Reveal>
       </div>

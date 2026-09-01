@@ -2,12 +2,12 @@ import { Reveal } from "./reveal";
 import { Section } from "./section";
 
 /**
- * Seção 18 · API PÚBLICA — baseada em `app/api/v1/fichas/route.ts`,
+ * Seção 18 · API PÚBLICA: baseada em `app/api/v1/fichas/route.ts`,
  * `app/api/v1/prazos/route.ts` e `lib/apikeys/`. Auth via `Authorization:
  * Bearer <chave>` (gerada em `/app/perfil`, ver `lib/apikeys/gerar.ts`).
- * Gated pela feature `api_integracoes` (`lib/planos/gating.ts`) — selo "Pro"
+ * Gated pela feature `api_integracoes` (`lib/planos/gating.ts`), selo "Pro"
  * explícito. Só existem 2 recursos hoje (fichas de caso e prazos, ambos
- * GET/paginados) — texto deixa claro que é uma API inicial, sem prometer
+ * GET/paginados). Texto deixa claro que é uma API inicial, sem prometer
  * cobertura do sistema inteiro.
  */
 

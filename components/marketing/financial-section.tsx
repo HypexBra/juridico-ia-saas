@@ -2,13 +2,13 @@ import { Reveal } from "./reveal";
 import { Section } from "./section";
 
 /**
- * Seção 15 · FINANCEIRO — baseada em `app/app/financeiro/` (page.tsx,
+ * Seção 15 · FINANCEIRO: baseada em `app/app/financeiro/` (page.tsx,
  * actions.ts, inadimplencia/, projecao-exito/). Recurso disponível em todos
  * os planos (sem chave em `lib/planos/gating.ts`), por isso nenhum selo
  * "Pro" aqui. Mostra só o que existe de verdade: contrato de honorário
  * (fixo/êxito/AAJ), rateio entre sócios, parcelas com controle de
  * pendente/atrasado/pago, painel de inadimplência, projeção de recebíveis de
- * êxito e exportação em CSV — nada de fluxo de caixa completo ou conciliação
+ * êxito e exportação em CSV. Nada de fluxo de caixa completo ou conciliação
  * bancária, que não existem no produto.
  */
 
