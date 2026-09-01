@@ -3,14 +3,17 @@ import { Footer } from "./footer";
 import { Nav } from "./nav";
 
 /**
- * Layout compartilhado das três páginas legais estáticas (Termos, Privacidade,
- * Exclusão de dados). Reaproveita Nav/Footer e a paleta papel-e-tinta da
- * landing para que as páginas pareçam nativas do site, não coladas depois.
+ * Layout compartilhado das páginas legais estáticas do site. Reaproveita
+ * Nav/Footer e a paleta papel-e-tinta da landing para que a página pareça
+ * nativa do site, não colada depois.
  *
- * Estas páginas são um RASCUNHO de transparência inicial (produto
- * early-stage, sem CNPJ/razão social ainda) — o <AvisoRascunho> abaixo é
- * obrigatório em todas elas e não deve ser removido antes de revisão
- * jurídica formal (ver PENDENCIAS.md).
+ * Hoje usado só por app/exclusao-de-dados: Termos (app/termos) e Privacidade
+ * (app/privacidade) migraram para um shell próprio com aviso de cookies e
+ * conteúdo mais completo (ver histórico de merge de staging, 2026-09-01).
+ *
+ * Esta página é um RASCUNHO de transparência inicial (produto early-stage,
+ * sem CNPJ/razão social ainda) — o <AvisoRascunho> abaixo é obrigatório e
+ * não deve ser removido antes de revisão jurídica formal (ver PENDENCIAS.md).
  */
 interface LegalPageShellProps {
   kicker: string;

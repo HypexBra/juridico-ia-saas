@@ -1,4 +1,4 @@
--- 0050 — Leitura cross-tenant de `uso_ia` para o admin da plataforma
+-- 0055 — Leitura cross-tenant de `uso_ia` para o admin da plataforma
 -- (Fase 5, alerta de uso razoável no plano Pro). `uso_ia_isolamento`
 -- (migration 0001) só permite `escritorio_id = escritorio_atual()`, então
 -- o painel /admin/uso-excedente (agregação de custo estimado por escritório
