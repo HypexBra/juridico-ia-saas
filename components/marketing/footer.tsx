@@ -10,6 +10,7 @@ const PRODUCT_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#recursos", label: "Recursos" },
   { href: "#planos", label: "Planos" },
+  { href: "/blog", label: "Blog" },
 ] as const;
 
 const LEGAL_LINKS = [
@@ -36,16 +37,27 @@ export function Footer() {
                 Produto
               </p>
               <ul className="mt-4 space-y-2.5">
-                {PRODUCT_LINKS.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
+                {PRODUCT_LINKS.map((link) =>
+                  link.href.startsWith("/") ? (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ) : (
+                    <li key={link.label}>
+                      <a
+                        href={link.href}
+                        className="font-sans-ed text-sm text-ink-2 transition-colors hover:text-ink"
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ),
+                )}
               </ul>
             </nav>
 
