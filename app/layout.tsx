@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Fraunces, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import { PwaRegister } from "@/components/pwa-register";
 import { ThemeScript } from "@/components/theme/theme-script";
+import { CookieConsent } from "@/components/marketing/cookie-consent";
 import { Analytics } from "@vercel/analytics/next";
 import { obterAppUrl } from "@/lib/app/url";
 import "./globals.css";
@@ -115,6 +116,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeScript nonce={nonce} />
         <PwaRegister />
         {children}
+        <CookieConsent />
         <Analytics />
       </body>
     </html>

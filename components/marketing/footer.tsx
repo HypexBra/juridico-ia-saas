@@ -2,9 +2,10 @@ import Link from "next/link";
 
 /* Footer minimalista da spec v3: logo serif, três colunas de links e uma
    linha final mono. Links âncora consistentes com o nav (#como-funciona,
-   #recursos, #planos). Termos/Privacidade/Exclusão de dados apontam para
-   rotas estáticas reais (rascunho de transparência, ver aviso em cada
-   página) — não são placeholders "#". */
+   #recursos, #planos). Termos/Privacidade apontam para rotas reais
+   (app/termos, app/privacidade: LGPD exige política publicada e acessível,
+   não só linkada em texto); Exclusão de dados é página própria em
+   app/exclusao-de-dados. */
 
 const PRODUCT_LINKS = [
   { href: "#como-funciona", label: "Como funciona" },
@@ -14,8 +15,8 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { href: "/termos-de-uso", label: "Termos" },
-  { href: "/politica-de-privacidade", label: "Privacidade" },
+  { href: "/termos", label: "Termos" },
+  { href: "/privacidade", label: "Privacidade" },
   { href: "/exclusao-de-dados", label: "Exclusão de dados" },
 ] as const;
 

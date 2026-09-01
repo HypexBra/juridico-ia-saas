@@ -111,6 +111,26 @@ describe("selecionarChunks", () => {
     expect(r.descartes.porTetoDeFonte).toBe(1);
   });
 
+  it("repõe do pool quando dois candidatos compartilham o mesmo chunk-pai, em vez de encolher abaixo do topK", () => {
+    // 2 filhos do MESMO pai (posições 0 e 1) + 6 filhos de pais distintos —
+    // pool suficiente para preencher topK=6 mesmo descartando um dos dois
+    // duplicados de pai. Bug real corrigido: um filtro pós-seleção (dedup só
+    // depois de já ter os 6 primeiros) devolvia 5, não 6, porque não tinha
+    // mais de onde repor.
+    const candidatos = [
+      chunk({ distancia: 0.2, conteudo: texto("a"), conteudoPai: "PAI-COMPARTILHADO", fonteTipo: "tipo0" }),
+      chunk({ distancia: 0.21, conteudo: texto("b"), conteudoPai: "PAI-COMPARTILHADO", fonteTipo: "tipo1" }),
+      ...Array.from({ length: 6 }, (_, i) =>
+        chunk({ distancia: 0.22 + i * 0.001, conteudo: texto(`p${i}_`), conteudoPai: `pai-${i}`, fonteTipo: `tipo${i}` }),
+      ),
+    ];
+    const r = selecionarChunks(candidatos);
+    expect(r.selecionados.length).toBe(SELECAO_PADRAO.topK);
+    const paisNoResultado = r.selecionados.map((c) => c.conteudoPai);
+    expect(new Set(paisNoResultado).size).toBe(paisNoResultado.length);
+    expect(r.descartes.porDuplicataDePai).toBe(1);
+  });
+
   it("respeita o topK", () => {
     const candidatos = Array.from({ length: 20 }, (_, i) =>
       chunk({ distancia: 0.2 + i * 0.001, fonteTipo: `tipo${i % 6}`, conteudo: texto(`t${i}_`, 20) }),

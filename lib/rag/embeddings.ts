@@ -78,14 +78,28 @@ export async function gerarEmbedding(
   throw ultimoErro;
 }
 
-/** Gera embeddings em lote, sequencial com retry por item (evita estourar rate-limit em rajada). */
+// Concorrência limitada (não paralelo total): um documento grande pode gerar
+// centenas de chunks — mandar todos de uma vez estouraria o rate-limit por
+// segundo da API do Gemini; sequencial (1 por vez) desperdiça o tempo de I/O
+// esperando cada round-trip terminar antes de começar o próximo. 5 é uma
+// concessão pequena o bastante para não estourar RPM em uma chave só, grande
+// o bastante para cortar o tempo de indexação de um documento grande em ~5x
+// (ver lib/rag/ingestao.ts — indexação roda em background via `after()`,
+// dentro do teto de `maxDuration`, então tempo total importa de verdade aqui).
+const CONCORRENCIA_EMBEDDING = 5;
+
+/** Gera embeddings em lote, com concorrência limitada e retry por item (ver CONCORRENCIA_EMBEDDING). */
 export async function gerarEmbeddingsEmLote(
   textos: string[],
   taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
 ): Promise<number[][]> {
-  const resultado: number[][] = [];
-  for (const texto of textos) {
-    resultado.push(await gerarEmbedding(texto, taskType));
+  const resultado: number[][] = new Array(textos.length);
+  for (let inicio = 0; inicio < textos.length; inicio += CONCORRENCIA_EMBEDDING) {
+    const lote = textos.slice(inicio, inicio + CONCORRENCIA_EMBEDDING);
+    const embeddings = await Promise.all(lote.map((texto) => gerarEmbedding(texto, taskType)));
+    embeddings.forEach((embedding, indice) => {
+      resultado[inicio + indice] = embedding;
+    });
   }
   return resultado;
 }

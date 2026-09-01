@@ -44,6 +44,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
+  experimental: {
+    serverActions: {
+      // Sem isto, o limite PADRÃO de 1MB do Next rejeita o upload antes de
+      // chegar em `uploadDocumentoAction` — o teto de negócio real
+      // (MAX_TAMANHO_ARQUIVO em app/app/base-conhecimento/actions.ts, 40MB)
+      // é quem deve decidir, não um limite de infra invisível. Uma folga
+      // pequena acima disso cobre o overhead do multipart/form-data.
+      bodySizeLimit: "45mb",
+    },
+  },
 };
 
 export default nextConfig;

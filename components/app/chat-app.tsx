@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea, Select } from "@/components/ui/input";
 import { MarkdownLite } from "./markdown-lite";
 import { PropostaAcaoCard } from "./proposta-acao-card";
+import { AnotacoesConversa } from "./anotacoes-conversa";
 import {
   carregarMensagensAction,
   excluirConversaAction,
@@ -19,6 +20,7 @@ import type { Mensagem } from "@/lib/types";
 type MensagemLocal = Pick<Mensagem, "id" | "role" | "conteudo" | "criado_em"> & {
   proposta_id?: string | null;
   fontes?: Mensagem["fontes"];
+  citacoes_invalidas?: Mensagem["citacoes_invalidas"];
 };
 
 /** Fontes RAG citadas por uma resposta — clicáveis quando a fonte tem tela de detalhe (ver lib/rag/retrieval.ts#montarFontesCitaveis). */
@@ -112,6 +114,10 @@ export function ChatApp({
   const [mensagens, setMensagens] = useState<MensagemLocal[]>([]);
   const [texto, setTexto] = useState("");
   const [providerSelecionado, setProviderSelecionado] = useState<"auto" | "gemini" | "groq">("auto");
+  // Modo de tarefa segmentado (ver lib/ia/rag-prompt.ts#MODO_TAREFA_PROMPTS) —
+  // inspirado nos modos do Harvey/GPTuri: o usuário sinaliza a intenção da
+  // mensagem em vez de depender só de detecção implícita por palavra-chave.
+  const [modoTarefa, setModoTarefa] = useState<"conversa" | "pesquisa" | "parecer" | "redacao">("conversa");
   const [erro, setErro] = useState<string | null>(null);
   const [avisoConversas, setAvisoConversas] = useState<string | null>(null);
   const [uso, setUso] = useState(usoInicial);
@@ -454,6 +460,7 @@ export function ChatApp({
             conversaId,
             texto: textoEnviado,
             provider: providerSelecionado === "auto" ? undefined : providerSelecionado,
+            modoTarefa,
           }),
         });
 
@@ -690,6 +697,8 @@ export function ChatApp({
           </div>
         )}
 
+        <AnotacoesConversa conversaId={conversaId} />
+
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-5">
           {isPendingHistorico ? (
             <p className="text-sm text-muted">Carregando conversa…</p>
@@ -711,6 +720,14 @@ export function ChatApp({
                   className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   onMouseEnter={() => setMensagemHoverId(m.id)}
                   onMouseLeave={() => setMensagemHoverId((atual) => (atual === m.id ? null : atual))}
+                  // `content-visibility: auto` (sem lib nova, sem mudar
+                  // estrutura de DOM/scroll): o navegador pula layout/paint de
+                  // bolhas fora da viewport numa conversa longa, sem exigir
+                  // remeasure a cada delta de streaming como um virtualizador
+                  // full exigiria na ÚLTIMA mensagem (que muda de tamanho a
+                  // cada token). `containIntrinsicSize` evita salto de scroll
+                  // ao entrar/sair da viewport.
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "0 80px" }}
                 >
                   <div className={`relative flex items-center gap-1.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
                     <div
@@ -721,7 +738,7 @@ export function ChatApp({
                       }`}
                     >
                       {m.role === "assistant" ? (
-                        <MarkdownLite texto={m.conteudo} />
+                        <MarkdownLite texto={m.conteudo} citacoesInvalidas={m.citacoes_invalidas} />
                       ) : (
                         <p className="whitespace-pre-wrap text-sm">{m.conteudo}</p>
                       )}
@@ -775,6 +792,21 @@ export function ChatApp({
 
         <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-ink/10 p-4">
           <div className="flex items-center justify-end gap-2">
+            <label htmlFor="chat-modo-tarefa" className="text-[11px] uppercase tracking-wide text-muted">
+              Modo
+            </label>
+            <Select
+              id="chat-modo-tarefa"
+              value={modoTarefa}
+              onChange={(e) => setModoTarefa(e.target.value as typeof modoTarefa)}
+              className="w-auto py-1.5 text-xs"
+              title="Ajusta o formato da resposta à intenção da mensagem (pesquisa objetiva, parecer estruturado ou redação de peça completa)."
+            >
+              <option value="conversa">Conversa</option>
+              <option value="pesquisa">Pesquisa fundamentada</option>
+              <option value="parecer">Parecer</option>
+              <option value="redacao">Redação de peça</option>
+            </Select>
             <label htmlFor="chat-provider-ia" className="text-[11px] uppercase tracking-wide text-muted">
               Modelo
             </label>

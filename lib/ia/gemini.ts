@@ -2,14 +2,14 @@ import "server-only";
 
 import { GoogleGenAI, type Schema } from "@google/genai";
 import { SYSTEM_PROMPT } from "./system-prompt";
-import { PESQUISA_ATUALIZADA_PROMPT, RAG_TOOLING_PROMPT } from "./rag-prompt";
+import { PESQUISA_ATUALIZADA_PROMPT, RAG_TOOLING_PROMPT, MODO_TAREFA_PROMPTS, type ModoTarefa } from "./rag-prompt";
 import { GEMINI_FUNCTION_DECLARATIONS } from "@/lib/rag/tools";
 import { selecionarChave, registrarFalhaQuota } from "@/lib/ia/chaves/pool";
 import { QuotaExcedidaError } from "@/lib/ia/erros";
 import { mensagemTrivial } from "./gate-trivialidade";
 import { decidirContexto, type ModoContexto } from "./roteador-contexto";
 
-export type { ModoContexto };
+export type { ModoContexto, ModoTarefa };
 
 export { QuotaExcedidaError };
 
@@ -115,6 +115,15 @@ export type OpcoesGeracao = {
    * comportamento IDÊNTICO ao anterior à Fase 17 (zero custo de tokens).
    */
   blocoMemoriaEscritorio?: string | null;
+  /**
+   * Modo de tarefa escolhido explicitamente pelo usuário no composer do chat
+   * (ver components/app/chat-app.tsx) — inspirado nos modos segmentados do
+   * Harvey/GPTuri (research de concorrentes): em vez de um chat genérico, o
+   * usuário sinaliza a INTENÇÃO da mensagem, e o prompt se ajusta ao formato
+   * esperado dessa intenção. Ausente/"conversa" = comportamento padrão
+   * (nenhuma mudança de prompt). Ver MODO_TAREFA_PROMPTS em ./rag-prompt.ts.
+   */
+  modoTarefa?: ModoTarefa;
 };
 
 /**
@@ -130,7 +139,7 @@ export type OpcoesGeracao = {
  * contrário, composição clássica `SYSTEM_PROMPT\nRAG_TOOLING_PROMPT`.
  */
 export function comporSystemInstruction(
-  opcoes: Pick<OpcoesGeracao, "systemPromptOverride" | "blocoMemoriaEscritorio" | "modoContexto">,
+  opcoes: Pick<OpcoesGeracao, "systemPromptOverride" | "blocoMemoriaEscritorio" | "modoContexto" | "modoTarefa">,
 ): string {
   const override = opcoes.systemPromptOverride;
   if (override) return override;
@@ -146,8 +155,13 @@ export function comporSystemInstruction(
   // PESQUISA_ATUALIZADA_PROMPT em ./rag-prompt.ts).
   const sufixoPesquisa = opcoes.modoContexto === "atualizado" ? `\n${PESQUISA_ATUALIZADA_PROMPT}` : "";
 
-  if (!bloco) return `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}`;
-  return `${SYSTEM_PROMPT}\n${bloco}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}`;
+  // Modo de tarefa escolhido explicitamente no composer (ver
+  // MODO_TAREFA_PROMPTS em ./rag-prompt.ts) — "conversa"/ausente não muda nada.
+  const modoTarefa = opcoes.modoTarefa;
+  const sufixoModoTarefa = modoTarefa && modoTarefa !== "conversa" ? `\n${MODO_TAREFA_PROMPTS[modoTarefa]}` : "";
+
+  if (!bloco) return `${SYSTEM_PROMPT}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}${sufixoModoTarefa}`;
+  return `${SYSTEM_PROMPT}\n${bloco}\n${RAG_TOOLING_PROMPT}${sufixoPesquisa}${sufixoModoTarefa}`;
 }
 
 /**

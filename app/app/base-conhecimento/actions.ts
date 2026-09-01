@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getUsuarioAtual } from "@/lib/app/current-user";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +10,13 @@ import { indexarTexto, removerIndexacao } from "@/lib/rag/ingestao";
 import { reindexarTudoDoEscritorio } from "@/lib/rag/indexacao-interna";
 import type { DocumentoConhecimento } from "@/lib/types";
 
-const MAX_TAMANHO_ARQUIVO = 15 * 1024 * 1024; // 15MB
+// 40MB: teto elevado de 15MB agora que a extração/chunking/embedding rodam
+// em background (após a resposta — ver `after()` abaixo), não mais dentro do
+// tempo de resposta da Server Action. Continua bem abaixo dos ~150MB
+// mencionados como referência de mercado — chegar lá exigiria upload direto
+// para um object storage (Supabase Storage/S3) em vez de multipart/form-data
+// para a própria Server Action, fora do escopo deste passo.
+const MAX_TAMANHO_ARQUIVO = 40 * 1024 * 1024;
 const TIPOS_ACEITOS = ["legislacao", "jurisprudencia", "doutrina", "outro"] as const;
 
 export async function listarDocumentosAction(): Promise<DocumentoConhecimento[]> {
@@ -42,7 +49,7 @@ export async function uploadDocumentoAction(_prev: ResultadoUpload, formData: Fo
     return { ok: false, error: "Selecione um arquivo (.pdf ou .txt)." };
   }
   if (arquivo.size > MAX_TAMANHO_ARQUIVO) {
-    return { ok: false, error: "Arquivo muito grande (limite de 15MB)." };
+    return { ok: false, error: "Arquivo muito grande (limite de 40MB)." };
   }
 
   const ehPdf = arquivo.type === "application/pdf" || arquivo.name.toLowerCase().endsWith(".pdf");
@@ -68,37 +75,53 @@ export async function uploadDocumentoAction(_prev: ResultadoUpload, formData: Fo
 
   if (erroInsert || !doc) return { ok: false, error: "Não foi possível registrar o documento." };
 
-  try {
-    const bytes = new Uint8Array(await arquivo.arrayBuffer());
-    const texto = ehPdf ? await extrairTextoDePdf(bytes) : new TextDecoder("utf-8").decode(bytes);
+  // Extração de texto + chunking + embedding rodam DEPOIS da resposta ser
+  // enviada ao cliente (`after`, Next.js) — não mais dentro do request/
+  // response da Server Action. Um PDF grande podia travar a extração +
+  // dezenas de chamadas de embedding sequenciais na MESMA invocação
+  // serverless que atende o usuário, estourando memória ou o timeout da
+  // função (504) antes mesmo do upload "terminar" do ponto de vista dele.
+  // Agora a action só valida, registra a linha como "processando" e devolve
+  // — o processamento pesado acontece em background, e o usuário vê o status
+  // final (pronto/erro) ao reabrir a lista (poll/revalidate já existentes na
+  // tela, sem nenhuma mudança de UI necessária aqui).
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  const nomeArquivo = arquivo.name;
+  const docId = doc.id;
 
-    if (!texto.trim()) {
-      throw new Error("Não foi possível extrair texto do arquivo (documento vazio ou digitalizado como imagem).");
+  after(async () => {
+    try {
+      const texto = ehPdf ? await extrairTextoDePdf(bytes) : new TextDecoder("utf-8").decode(bytes);
+
+      if (!texto.trim()) {
+        throw new Error("Não foi possível extrair texto do arquivo (documento vazio ou digitalizado como imagem).");
+      }
+
+      const { totalChunks } = await indexarTexto(supabase, {
+        escritorioId,
+        fonteTipo: "documento_upload",
+        fonteId: docId,
+        texto,
+        metadata: { nome_arquivo: nomeArquivo },
+      });
+
+      await supabase
+        .from("documentos_conhecimento")
+        .update({ status: "pronto", total_chunks: totalChunks, processado_em: new Date().toISOString() })
+        .eq("id", docId);
+    } catch (erro) {
+      console.error("[base-conhecimento/uploadDocumentoAction] Falha ao processar documento em background:", erro);
+      await supabase
+        .from("documentos_conhecimento")
+        .update({
+          status: "erro",
+          erro: erro instanceof Error ? erro.message : "Erro desconhecido ao processar o documento.",
+        })
+        .eq("id", docId);
+    } finally {
+      revalidatePath("/app/base-conhecimento");
     }
-
-    const { totalChunks } = await indexarTexto(supabase, {
-      escritorioId,
-      fonteTipo: "documento_upload",
-      fonteId: doc.id,
-      texto,
-      metadata: { nome_arquivo: arquivo.name },
-    });
-
-    await supabase
-      .from("documentos_conhecimento")
-      .update({ status: "pronto", total_chunks: totalChunks, processado_em: new Date().toISOString() })
-      .eq("id", doc.id);
-  } catch (erro) {
-    await supabase
-      .from("documentos_conhecimento")
-      .update({
-        status: "erro",
-        erro: erro instanceof Error ? erro.message : "Erro desconhecido ao processar o documento.",
-      })
-      .eq("id", doc.id);
-    revalidatePath("/app/base-conhecimento");
-    return { ok: false, error: "Falha ao processar o documento. Veja o status na lista." };
-  }
+  });
 
   revalidatePath("/app/base-conhecimento");
   return { ok: true };

@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/lembretes-whatsapp",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/limpar-documentos-travados",
+      "schedule": "0 6 * * *"
     }
   ]
 }
