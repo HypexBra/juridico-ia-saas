@@ -72,7 +72,7 @@ export default function ExclusaoDeDadosPage() {
         Enquanto sua conta permanece ativa, os dados do seu escritório ficam
         isolados dos demais escritórios cadastrados na plataforma (Row Level
         Security no banco de dados), como descrito na{" "}
-        <a href="/politica-de-privacidade">Política de Privacidade</a>.
+        <a href="/privacidade">Política de Privacidade</a>.
       </p>
 
       <h2>7. Contato</h2>

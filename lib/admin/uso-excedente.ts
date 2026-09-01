@@ -46,9 +46,9 @@ function primeiroEscritorio(
  * interna só para o admin da plataforma, NUNCA usado para bloquear ou
  * degradar o escritório (o plano Pro continua "sem limite mensal de IA" na
  * prática; ver `app/admin/uso-excedente/page.tsx` e a cláusula de uso
- * razoável em `app/termos-de-uso/page.tsx`).
+ * razoável em `app/termos/page.tsx`).
  *
- * Depende da RLS policy `uso_ia_select_admin_plataforma` (migration 0050)
+ * Depende da RLS policy `uso_ia_select_admin_plataforma` (migration 0055)
  * para enxergar linhas de `uso_ia` fora do próprio escritório do admin.
  */
 export async function listarEscritoriosProExcedentes(

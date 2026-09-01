@@ -94,7 +94,28 @@ export default function TermosDeUsoPage() {
           </section>
 
           <section>
-            <h2 className="font-serif-ed text-xl text-ink">8. Disponibilidade do serviço</h2>
+            <h2 className="font-serif-ed text-xl text-ink">8. Uso razoável do plano Pro</h2>
+            <p className="mt-3">
+              O plano Pro é oferecido sem limite de <strong>mensagens</strong> de IA, para cobrir o uso profissional
+              normal de um escritório de advocacia (análise de documentos, pesquisa jurisprudencial, geração de
+              minutas e demais funcionalidades de IA da plataforma). Essa oferta está sujeita a uma política de uso
+              razoável: o processamento de IA deve ser compatível com o volume e o padrão de uso de um escritório
+              real, não com finalidades alheias ao propósito do produto (por exemplo, revenda de acesso, uso
+              automatizado em massa desvinculado da atividade jurídica do escritório, ou qualquer uso que
+              sobrecarregue desproporcionalmente a infraestrutura do serviço).
+            </p>
+            <p className="mt-3">
+              Em caso de uso muito acima da média de um escritório Pro, o Jurídico IA se reserva o direito de entrar
+              em contato com o titular da conta para entender o caso, e, se necessário, ajustar condições comerciais
+              específicas ou revisar as condições do plano aplicáveis àquela conta. Nenhuma dessas medidas é aplicada
+              de forma automática nem interrompe o acesso do escritório sem contato prévio: o objetivo desta
+              cláusula é preservar a qualidade do serviço para todos os clientes, não restringir o uso profissional
+              normal do plano Pro.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-serif-ed text-xl text-ink">9. Disponibilidade do serviço</h2>
             <p className="mt-3">
               Nos esforçamos para manter o serviço disponível, mas não garantimos operação ininterrupta —
               manutenções, falhas de provedores terceiros (ex: provedores de IA) ou eventos fora do nosso controle
@@ -103,7 +124,7 @@ export default function TermosDeUsoPage() {
           </section>
 
           <section>
-            <h2 className="font-serif-ed text-xl text-ink">9. Alterações e encerramento</h2>
+            <h2 className="font-serif-ed text-xl text-ink">10. Alterações e encerramento</h2>
             <p className="mt-3">
               Podemos atualizar estes termos a qualquer momento, avisando com antecedência razoável mudanças
               relevantes. Você pode encerrar sua conta a qualquer momento; nós podemos suspender ou encerrar contas
@@ -112,7 +133,7 @@ export default function TermosDeUsoPage() {
           </section>
 
           <section>
-            <h2 className="font-serif-ed text-xl text-ink">10. Foro</h2>
+            <h2 className="font-serif-ed text-xl text-ink">11. Foro</h2>
             <p className="mt-3">
               Fica eleito o foro da comarca de [CIDADE/UF] para dirimir controvérsias decorrentes destes termos,
               com renúncia a qualquer outro, por mais privilegiado que seja.
