@@ -86,7 +86,31 @@ export default function TermosDeUsoPage() {
         da conta, e produz efeito ao final do período já pago.
       </p>
 
-      <h2>7. Disponibilidade e limitações</h2>
+      <h2>7. Uso razoável do plano Pro</h2>
+      <p>
+        O plano Pro é oferecido sem limite de <strong>mensagens</strong> de IA,
+        para cobrir o uso profissional normal de um escritório de advocacia
+        (análise de documentos, pesquisa jurisprudencial, geração de minutas
+        e demais funcionalidades de IA da plataforma). Essa oferta está
+        sujeita a uma política de uso razoável: o processamento de IA deve
+        ser compatível com o volume e o padrão de uso de um escritório real,
+        não com finalidades alheias ao propósito do produto (por exemplo,
+        revenda de acesso, uso automatizado em massa desvinculado da
+        atividade jurídica do escritório, ou qualquer uso que sobrecarregue
+        desproporcionalmente a infraestrutura do serviço).
+      </p>
+      <p>
+        Em caso de uso muito acima da média de um escritório Pro, o Jurídico
+        IA se reserva o direito de entrar em contato com o titular da conta
+        para entender o caso, e, se necessário, ajustar condições comerciais
+        específicas ou revisar as condições do plano aplicáveis àquela conta.
+        Nenhuma dessas medidas é aplicada de forma automática nem interrompe
+        o acesso do escritório sem contato prévio: o objetivo desta cláusula
+        é preservar a qualidade do serviço para todos os clientes, não
+        restringir o uso profissional normal do plano Pro.
+      </p>
+
+      <h2>8. Disponibilidade e limitações</h2>
       <p>
         Por ser um serviço em fase inicial, o Jurídico IA pode passar por
         instabilidades, manutenções e mudanças de funcionalidade sem aviso
@@ -94,7 +118,7 @@ export default function TermosDeUsoPage() {
         integridade dos dados dos usuários em qualquer circunstância.
       </p>
 
-      <h2>8. Alterações destes termos</h2>
+      <h2>9. Alterações destes termos</h2>
       <p>
         Estes termos podem ser atualizados conforme o produto evolui. A data
         de &ldquo;última atualização&rdquo; no topo desta página reflete a versão mais
@@ -102,7 +126,7 @@ export default function TermosDeUsoPage() {
         contato oficial sempre que razoavelmente possível.
       </p>
 
-      <h2>9. Contato</h2>
+      <h2>10. Contato</h2>
       <p>
         Dúvidas sobre estes Termos de Uso podem ser enviadas para{" "}
         <a href="mailto:pedrohenriquesanchesleal4@gmail.com">

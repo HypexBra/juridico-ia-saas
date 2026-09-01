@@ -235,6 +235,10 @@ export function Pricing() {
             ? "O plano Pro anual é cobrado uma vez por ano pelo Stripe, equivalente a 10 meses. Cancele quando quiser, direto no perfil."
             : "O plano Pro é cobrado mensalmente pelo Stripe. Cancele quando quiser, direto no perfil."}
         </p>
+        <p className="mx-auto mt-2 max-w-md text-center text-xs text-ink-3/70">
+          &ldquo;Sem limite mensal de IA&rdquo; refere-se a mensagens, dentro do uso
+          profissional normal de um escritório de advocacia (ver Termos de Uso).
+        </p>
       </Reveal>
     </Section>
   );
